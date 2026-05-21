@@ -9,16 +9,48 @@ import { queryTools } from "./tools/query.js";
 import { hostTools } from "./tools/hosts.js";
 import { discoveryRunTools } from "./tools/discoveryRuns.js";
 
+const MAX_BODY_BYTES = 1_000_000; // 1 MB cap on incoming JSON payloads
+
 function getBearerToken(authHeader: string | undefined): string | null {
   if (!authHeader) return null;
   const match = authHeader.match(/^Bearer\s+(.+)$/i);
   return match ? match[1] : null;
 }
 
-export async function createHttpServer(config: AppConfig): Promise<http.Server> {
-  const client = new DiscoveryClient(config);
-  const mcpServer = new McpServer({ name: "bmc-helix-discovery-mcp", version: "0.2.0" });
-  const tools = { ...aboutTools(client, config.apiVersion), ...queryTools(client), ...hostTools(client), ...discoveryRunTools(client) };
+function readJsonBody(req: http.IncomingMessage): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let total = 0;
+    req.on("data", (chunk: Buffer) => {
+      total += chunk.length;
+      if (total > MAX_BODY_BYTES) {
+        reject(new Error("Request body too large"));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => {
+      try {
+        const text = Buffer.concat(chunks).toString("utf8");
+        if (!text || text.trim() === "") return resolve(undefined);
+        resolve(JSON.parse(text));
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
+  const mcpServer = new McpServer({ name: "bmc-helix-discovery-mcp", version: "0.3.0" });
+  const tools = {
+    ...aboutTools(client, config.apiVersion),
+    ...queryTools(client),
+    ...hostTools(client),
+    ...discoveryRunTools(client)
+  };
 
   for (const [name, def] of Object.entries(tools)) {
     mcpServer.tool(name, def.schema.shape ? def.schema.shape : {}, async (input: unknown) => {
@@ -31,9 +63,11 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
       }
     });
   }
+  return mcpServer;
+}
 
-  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-  await mcpServer.connect(transport);
+export async function createHttpServer(config: AppConfig): Promise<http.Server> {
+  const client = new DiscoveryClient(config);
 
   return http.createServer(async (req, res) => {
     try {
@@ -53,25 +87,87 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
         return;
       }
 
-      if (normalizedPath === "/mcp" && (req.method === "POST" || req.method === "GET")) {
+      if (
+        normalizedPath === "/mcp" &&
+        (req.method === "POST" || req.method === "GET" || req.method === "DELETE")
+      ) {
+        // Auth check — required on every MCP request.
         const bearer = getBearerToken(req.headers.authorization);
         if (!bearer || bearer !== config.mcpServerApiKey) {
-          res.writeHead(401, { "content-type": "application/json" });
+          res.writeHead(401, {
+            "content-type": "application/json",
+            "www-authenticate": "Bearer"
+          });
           res.end(JSON.stringify({ error: true, code: "UNAUTHORIZED", message: "Unauthorized" }));
           return;
         }
 
+        // Stateless mode: build a fresh McpServer + transport per request.
+        // This is the officially recommended pattern when sessionIdGenerator is undefined.
+        // It avoids state leakage between concurrent clients and request-ID collisions.
+        const mcpServer = buildMcpServer(client, config);
+        const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+
+        // Ensure cleanup when the client disconnects or the response finishes.
+        const cleanup = (): void => {
+          try {
+            transport.close();
+          } catch {
+            /* ignore */
+          }
+          try {
+            mcpServer.close();
+          } catch {
+            /* ignore */
+          }
+        };
+        res.on("close", cleanup);
+
+        await mcpServer.connect(transport);
+
         // Rewrite req.url so the transport sees /mcp regardless of /api prefix
         req.url = normalizedPath + (rawUrl.includes("?") ? rawUrl.substring(rawUrl.indexOf("?")) : "");
-        await transport.handleRequest(req, res);
+
+        // For POST, parse JSON body first and pass it to handleRequest.
+        // For GET/DELETE there is no body.
+        if (req.method === "POST") {
+          let body: unknown;
+          try {
+            body = await readJsonBody(req);
+          } catch (parseErr) {
+            res.writeHead(400, { "content-type": "application/json" });
+            res.end(
+              JSON.stringify({
+                jsonrpc: "2.0",
+                error: { code: -32700, message: "Parse error" },
+                id: null
+              })
+            );
+            return;
+          }
+          await transport.handleRequest(req, res, body);
+        } else {
+          await transport.handleRequest(req, res);
+        }
         return;
       }
 
       res.writeHead(404, { "content-type": "application/json" });
       res.end(JSON.stringify({ error: true, code: "NOT_FOUND", message: "Route not found" }));
     } catch (error) {
-      res.writeHead(500, { "content-type": "application/json" });
-      res.end(JSON.stringify(normalizeApiError(error)));
+      // Last-resort safety net. Never leak details.
+      if (!res.headersSent) {
+        res.writeHead(500, { "content-type": "application/json" });
+      }
+      try {
+        res.end(JSON.stringify(normalizeApiError(error)));
+      } catch {
+        try {
+          res.end();
+        } catch {
+          /* ignore */
+        }
+      }
     }
   });
 }
@@ -90,18 +186,14 @@ async function main(): Promise<void> {
   const server = await createHttpServer(config);
   const host = "0.0.0.0";
   server.listen(config.port, host, () => {
-    process.stdout.write(JSON.stringify({ message: "MCP HTTP server started", host, port: config.port }) + "\n");
+    process.stdout.write(
+      JSON.stringify({ message: "MCP HTTP server started", host, port: config.port }) + "\n"
+    );
   });
 }
 
 // Always invoke main() when this file is executed (production entrypoint).
-// The previous ESM entry-point check (`import.meta.url === ...`) was fragile
-// on some hosts (Railway / containers) and could silently skip main().
 main().catch((error) => {
-  // Print BOTH the safe normalized error AND the raw error message to stderr,
-  // so missing/typo'd env var names are visible in deployment logs.
-  // We still NEVER print secret VALUES — only error messages (which reference
-  // variable NAMES, not their contents).
   const rawMessage = error instanceof Error ? error.message : String(error);
   process.stderr.write(`[startup-error] ${rawMessage}\n`);
   process.stderr.write(`${JSON.stringify(normalizeApiError(error))}\n`);
