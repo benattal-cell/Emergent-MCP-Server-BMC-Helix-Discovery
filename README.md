@@ -25,8 +25,8 @@ npm start
 
 ## Endpoints
 
-- `GET /health`
-- `POST /mcp`
+- `GET /health` (aussi disponible via `/api/health` pour le routing Emergent Preview)
+- `POST /mcp` (aussi disponible via `/api/mcp` pour le routing Emergent Preview)
 - `GET /mcp` (Streamable HTTP)
 
 Toutes les requêtes `/mcp` exigent:

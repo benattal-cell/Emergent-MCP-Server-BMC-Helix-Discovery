@@ -21,7 +21,7 @@ export function loadConfig(): AppConfig {
     throw new Error("Missing required env var: MCP_SERVER_API_KEY");
   }
 
-  const rawPort = process.env.PORT?.trim() ?? "3000";
+  const rawPort = process.env.PORT?.trim() ?? "8001";
   const port = Number(rawPort);
   if (!Number.isInteger(port) || port <= 0) {
     throw new Error("Invalid PORT env var");

@@ -41,13 +41,19 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
         res.writeHead(400).end("Bad Request");
         return;
       }
-      if (req.method === "GET" && req.url === "/health") {
+      // Normalize path: strip optional /api prefix (used by Emergent preview routing)
+      // so /health and /api/health both work; /mcp and /api/mcp both work.
+      const rawUrl = req.url;
+      const pathOnly = rawUrl.split("?")[0];
+      const normalizedPath = pathOnly.replace(/^\/api(?=\/|$)/, "") || "/";
+
+      if (req.method === "GET" && normalizedPath === "/health") {
         res.writeHead(200, { "content-type": "application/json" });
         res.end(JSON.stringify({ status: "ok", service: "bmc-helix-discovery-mcp" }));
         return;
       }
 
-      if (req.url === "/mcp" && (req.method === "POST" || req.method === "GET")) {
+      if (normalizedPath === "/mcp" && (req.method === "POST" || req.method === "GET")) {
         const bearer = getBearerToken(req.headers.authorization);
         if (!bearer || bearer !== config.mcpServerApiKey) {
           res.writeHead(401, { "content-type": "application/json" });
@@ -55,6 +61,8 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
           return;
         }
 
+        // Rewrite req.url so the transport sees /mcp regardless of /api prefix
+        req.url = normalizedPath + (rawUrl.includes("?") ? rawUrl.substring(rawUrl.indexOf("?")) : "");
         await transport.handleRequest(req, res);
         return;
       }
@@ -71,8 +79,9 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
 async function main(): Promise<void> {
   const config = loadConfig();
   const server = await createHttpServer(config);
-  server.listen(config.port, () => {
-    process.stdout.write(JSON.stringify({ message: "MCP HTTP server started", port: config.port }) + "\n");
+  const host = "0.0.0.0";
+  server.listen(config.port, host, () => {
+    process.stdout.write(JSON.stringify({ message: "MCP HTTP server started", host, port: config.port }) + "\n");
   });
 }
 
