@@ -37,7 +37,7 @@ export function normalizeApiError(error: unknown): NormalizedApiError {
     return {
       error: true,
       code: "UNEXPECTED_ERROR",
-      message: error.message
+      message: "Unexpected internal error"
     };
   }
 

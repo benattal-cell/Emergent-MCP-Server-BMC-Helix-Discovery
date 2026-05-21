@@ -1,10 +1,10 @@
-import https from "node:https";
 import { AppConfig } from "./config.js";
 import { ApiError } from "./utils/errors.js";
 import { sanitizeObject } from "./utils/sanitize.js";
 
 const DISCOVERY_QUERY_ENDPOINT_TODO = "/api/{version}/QUERY_ENDPOINT_TODO"; // TODO: replace with exact JSON query endpoint from Discovery Swagger.
 const DISCOVERY_SCAN_ENDPOINT_TODO = "/api/{version}/SCAN_ENDPOINT_TODO"; // TODO: replace with exact discovery run/scan endpoint from Discovery Swagger.
+const REQUEST_TIMEOUT_MS = 30000;
 
 export interface QueryResult {
   count: number;
@@ -34,16 +34,15 @@ export class DiscoveryClient {
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.config.timeoutMs);
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
     try {
       const response = await fetch(`${this.config.baseUrl}${path}`, {
         method,
         headers,
         body: body !== undefined ? JSON.stringify(body) : undefined,
-        signal: controller.signal,
-        dispatcher: this.config.verifyTls ? undefined : new https.Agent({ rejectUnauthorized: false }) as never
-      } as RequestInit);
+        signal: controller.signal
+      });
 
       const text = await response.text();
       let parsed: unknown;
@@ -71,7 +70,7 @@ export class DiscoveryClient {
     } catch (error) {
       if (error instanceof ApiError) throw error;
       if (error instanceof Error && error.name === "AbortError") {
-        throw new ApiError(`Request timeout after ${this.config.timeoutMs}ms`, { code: "TIMEOUT" });
+        throw new ApiError(`Request timeout after ${REQUEST_TIMEOUT_MS}ms`, { code: "TIMEOUT" });
       }
       throw new ApiError("Network or transport error while calling Discovery API", {
         code: "NETWORK_ERROR",
@@ -91,12 +90,8 @@ export class DiscoveryClient {
 
   findHosts(params: { nameContains?: string; osContains?: string; limit?: number }): Promise<QueryResult> {
     const conditions: unknown[] = [];
-    if (params.nameContains) {
-      conditions.push(substringCondition("name", params.nameContains));
-    }
-    if (params.osContains) {
-      conditions.push(substringCondition("os", params.osContains));
-    }
+    if (params.nameContains) conditions.push(substringCondition("name", params.nameContains));
+    if (params.osContains) conditions.push(substringCondition("os", params.osContains));
 
     const hostNode = {
       type: "node",
@@ -147,14 +142,7 @@ export class DiscoveryClient {
       show: ["type", "name", "instance", "product_version"].map((name) => ({ type: "attr", name }))
     };
 
-    const rel = {
-      type: "relation",
-      label: "hosted",
-      kind: "HostedSoftware",
-      left: "host",
-      right: "software"
-    };
-
+    const rel = { type: "relation", label: "hosted", kind: "HostedSoftware", left: "host", right: "software" };
     return this.queryJson([hostNode, softwareNode, rel], params.limit ?? 50);
   }
 
@@ -170,23 +158,15 @@ export class DiscoveryClient {
 function substringCondition(attrName: string, value: string): unknown {
   return { type: "substring", left: { type: "attr", name: attrName }, right: value };
 }
-
 function mergeConditions(conditions: unknown[]): unknown {
   if (conditions.length === 0) return undefined;
   if (conditions.length === 1) return conditions[0];
   return { type: "and", conditions };
 }
-
 function normalizeListResult(raw: unknown, limit: number): QueryResult {
-  const items = Array.isArray(raw)
-    ? raw
-    : (raw && typeof raw === "object" && Array.isArray((raw as { results?: unknown[] }).results))
-      ? (raw as { results: unknown[] }).results
-      : [];
-
+  const items = Array.isArray(raw) ? raw : (raw && typeof raw === "object" && Array.isArray((raw as { results?: unknown[] }).results)) ? (raw as { results: unknown[] }).results : [];
   return { count: items.length, limit, items };
 }
-
 function mapStatusToCode(status: number): string {
   if (status === 401) return "UNAUTHORIZED";
   if (status === 403) return "FORBIDDEN";
