@@ -77,6 +77,15 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
 }
 
 async function main(): Promise<void> {
+  // Startup diagnostic: list which required env vars are PRESENT (no values logged).
+  const requiredVars = ["BMC_DISCOVERY_BASE_URL", "MCP_SERVER_API_KEY"] as const;
+  const optionalVars = ["BMC_DISCOVERY_API_VERSION", "BMC_DISCOVERY_TOKEN", "PORT"] as const;
+  const presence = {
+    required: Object.fromEntries(requiredVars.map((k) => [k, Boolean(process.env[k]?.trim())])),
+    optional: Object.fromEntries(optionalVars.map((k) => [k, Boolean(process.env[k]?.trim())]))
+  };
+  process.stdout.write(JSON.stringify({ message: "Env vars presence check", presence }) + "\n");
+
   const config = loadConfig();
   const server = await createHttpServer(config);
   const host = "0.0.0.0";
@@ -85,9 +94,16 @@ async function main(): Promise<void> {
   });
 }
 
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
-  main().catch((error) => {
-    process.stderr.write(`${JSON.stringify(normalizeApiError(error))}\n`);
-    process.exit(1);
-  });
-}
+// Always invoke main() when this file is executed (production entrypoint).
+// The previous ESM entry-point check (`import.meta.url === ...`) was fragile
+// on some hosts (Railway / containers) and could silently skip main().
+main().catch((error) => {
+  // Print BOTH the safe normalized error AND the raw error message to stderr,
+  // so missing/typo'd env var names are visible in deployment logs.
+  // We still NEVER print secret VALUES — only error messages (which reference
+  // variable NAMES, not their contents).
+  const rawMessage = error instanceof Error ? error.message : String(error);
+  process.stderr.write(`[startup-error] ${rawMessage}\n`);
+  process.stderr.write(`${JSON.stringify(normalizeApiError(error))}\n`);
+  process.exit(1);
+});

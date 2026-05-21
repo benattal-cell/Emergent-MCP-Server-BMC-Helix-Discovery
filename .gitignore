@@ -6,3 +6,8 @@ dist/
 *.key
 secrets.json
 coverage/
+.env
+.env.*
+*.env
+credentials.json
+.credentials
