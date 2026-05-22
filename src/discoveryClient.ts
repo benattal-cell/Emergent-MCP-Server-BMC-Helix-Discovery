@@ -2,8 +2,7 @@ import { AppConfig } from "./config.js";
 import { ApiError } from "./utils/errors.js";
 import { sanitizeObject } from "./utils/sanitize.js";
 
-const DISCOVERY_QUERY_ENDPOINT = "/data/search";
-const DISCOVERY_SCAN_ENDPOINT_TODO = "/api/{version}/SCAN_ENDPOINT_TODO"; // TODO: replace with exact discovery run/scan endpoint from Discovery Swagger.
+const DISCOVERY_SCAN_ENDPOINT = "/scan"; // TODO: replace with exact discovery run/scan endpoint path (without /api/{version}).
 const REQUEST_TIMEOUT_MS = 30000;
 
 export interface QueryResult {
@@ -97,7 +96,7 @@ export class DiscoveryClient {
 
   async queryJson(query: unknown, limit = 50): Promise<QueryResult> {
     const queryText = typeof query === "string" ? query : JSON.stringify(query);
-    const path = `${this.versionedPath(DISCOVERY_QUERY_ENDPOINT)}?offset=0&limit=${encodeURIComponent(String(limit))}`;
+    const path = `${this.versionedPath("/data/search")}?offset=0&limit=${encodeURIComponent(String(limit))}`;
     const data = await this.request("POST", path, { query: queryText }, true);
     return normalizeListResult(data, limit);
   }
@@ -197,8 +196,7 @@ export class DiscoveryClient {
     if (!params.confirm) {
       throw new ApiError("Scan rejected: confirm must be true", { code: "SCAN_CONFIRMATION_REQUIRED" });
     }
-    const path = DISCOVERY_SCAN_ENDPOINT_TODO.replace("{version}", this.config.apiVersion);
-    return this.request("POST", path, { target: params.target, label: params.label }, true);
+    return this.request("POST", this.versionedPath(DISCOVERY_SCAN_ENDPOINT), { target: params.target, label: params.label }, true);
   }
 }
 
