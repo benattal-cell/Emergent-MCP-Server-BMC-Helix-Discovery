@@ -2,7 +2,7 @@ import { AppConfig } from "./config.js";
 import { ApiError } from "./utils/errors.js";
 import { sanitizeObject } from "./utils/sanitize.js";
 
-const DISCOVERY_QUERY_ENDPOINT_TODO = "/api/{version}/QUERY_ENDPOINT_TODO"; // TODO: replace with exact JSON query endpoint from Discovery Swagger.
+const DISCOVERY_QUERY_ENDPOINT = "/data/search";
 const DISCOVERY_SCAN_ENDPOINT_TODO = "/api/{version}/SCAN_ENDPOINT_TODO"; // TODO: replace with exact discovery run/scan endpoint from Discovery Swagger.
 const REQUEST_TIMEOUT_MS = 30000;
 
@@ -96,9 +96,9 @@ export class DiscoveryClient {
   }
 
   async queryJson(query: unknown, limit = 50): Promise<QueryResult> {
-    const payload = { query, limit };
-    const path = DISCOVERY_QUERY_ENDPOINT_TODO.replace("{version}", this.config.apiVersion);
-    const data = await this.request("POST", path, payload, true);
+    const queryText = typeof query === "string" ? query : JSON.stringify(query);
+    const path = `${this.versionedPath(DISCOVERY_QUERY_ENDPOINT)}?offset=0&limit=${encodeURIComponent(String(limit))}`;
+    const data = await this.request("POST", path, { query: queryText }, true);
     return normalizeListResult(data, limit);
   }
 
