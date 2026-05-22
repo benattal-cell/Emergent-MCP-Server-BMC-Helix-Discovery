@@ -29,7 +29,7 @@ export function taxonomyTools(client: DiscoveryClient) {
       schema: kindSchema,
       handler: async (input: z.infer<typeof kindSchema>) => client.getTaxonomyNodeKindFieldLists(input.kind)
     },
-    discovery_taxonomy_node_kind_field_list_fields: {
+    discovery_taxonomy_node_fields: {
       schema: z.object({ kind: z.string().min(1), fieldList: z.string().min(1) }).strict(),
       handler: async (input: { kind: string; fieldList: string }) =>
         client.getTaxonomyNodeKindFieldListFields(input.kind, input.fieldList)
@@ -38,7 +38,7 @@ export function taxonomyTools(client: DiscoveryClient) {
       schema: z.object({ includeInfo: z.boolean().default(false) }).strict(),
       handler: async (input: { includeInfo: boolean }) => client.getTaxonomyRelationshipKinds(input.includeInfo)
     },
-    discovery_taxonomy_relationship_kind_details: {
+    discovery_taxonomy_relkind_details: {
       schema: kindSchema,
       handler: async (input: z.infer<typeof kindSchema>) => client.getTaxonomyRelationshipKindDetails(input.kind)
     }
