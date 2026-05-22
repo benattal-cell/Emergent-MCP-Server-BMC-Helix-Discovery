@@ -22,6 +22,49 @@ function getBearerToken(authHeader: string | undefined): string | null {
   return match ? match[1] : null;
 }
 
+
+function decodeBasicAuth(header: string | undefined): { clientId: string; clientSecret: string } | null {
+  if (!header) return null;
+  const m = header.match(/^Basic\s+(.+)$/i);
+  if (!m) return null;
+  try {
+    const decoded = Buffer.from(m[1], "base64").toString("utf8");
+    const idx = decoded.indexOf(":");
+    if (idx < 0) return null;
+    return { clientId: decoded.slice(0, idx), clientSecret: decoded.slice(idx + 1) };
+  } catch {
+    return null;
+  }
+}
+
+function parseFormBody(req: http.IncomingMessage): Promise<Record<string, string>> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let total = 0;
+    req.on("data", (chunk: Buffer) => {
+      total += chunk.length;
+      if (total > MAX_BODY_BYTES) {
+        reject(new Error("Request body too large"));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => {
+      try {
+        const text = Buffer.concat(chunks).toString("utf8");
+        const params = new URLSearchParams(text);
+        const out: Record<string, string> = {};
+        for (const [k, v] of params.entries()) out[k] = v;
+        resolve(out);
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
 function readJsonBody(req: http.IncomingMessage): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
@@ -122,22 +165,55 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
       }
 
       if (req.method === "POST" && normalizedPath === "/oauth/token") {
-        const body = (await readJsonBody(req)) as Record<string, unknown>;
-        const grantType = String(body?.grant_type || "");
-        const clientId = String(body?.client_id || oauth.config.clientId);
-        const clientSecret = String(body?.client_secret || "");
-        if (clientId !== oauth.config.clientId) { res.writeHead(400).end(JSON.stringify({ error: "invalid_client" })); return; }
-        if (clientSecret && clientSecret !== oauth.config.clientSecret) { res.writeHead(401).end(JSON.stringify({ error: "invalid_client" })); return; }
-        if (grantType === "authorization_code") {
-          const code = String(body?.code || "");
-          const rec = oauth.codes.get(code);
-          if (!rec || Date.now() > rec.expiresAt) { res.writeHead(400).end(JSON.stringify({ error: "invalid_grant" })); return; }
-          oauth.codes.delete(code);
+        try {
+          const contentType = (req.headers["content-type"] || "").toLowerCase();
+          const basic = decodeBasicAuth(req.headers.authorization);
+          const body = contentType.includes("application/x-www-form-urlencoded")
+            ? await parseFormBody(req)
+            : (await readJsonBody(req)) as Record<string, unknown>;
+
+          const grantType = String((body as Record<string, unknown>)?.grant_type || "");
+          const bodyClientId = String((body as Record<string, unknown>)?.client_id || "");
+          const bodyClientSecret = String((body as Record<string, unknown>)?.client_secret || "");
+
+          const clientId = basic?.clientId || bodyClientId || oauth.config.clientId;
+          const clientSecret = basic?.clientSecret || bodyClientSecret || "";
+
+          if (!grantType) {
+            res.writeHead(400, { "content-type": "application/json" });
+            res.end(JSON.stringify({ error: "invalid_request", error_description: "missing grant_type" }));
+            return;
+          }
+          if (clientId !== oauth.config.clientId || clientSecret !== oauth.config.clientSecret) {
+            res.writeHead(401, { "content-type": "application/json" });
+            res.end(JSON.stringify({ error: "invalid_client" }));
+            return;
+          }
+
+          if (grantType === "authorization_code") {
+            const code = String((body as Record<string, unknown>)?.code || "");
+            const rec = oauth.codes.get(code);
+            if (!rec || Date.now() > rec.expiresAt) {
+              res.writeHead(400, { "content-type": "application/json" });
+              res.end(JSON.stringify({ error: "invalid_grant" }));
+              return;
+            }
+            oauth.codes.delete(code);
+          } else if (grantType !== "client_credentials") {
+            res.writeHead(400, { "content-type": "application/json" });
+            res.end(JSON.stringify({ error: "unsupported_grant_type" }));
+            return;
+          }
+
+          const accessToken = oauth.issueToken(clientId);
+          res.writeHead(200, { "content-type": "application/json" });
+          res.end(JSON.stringify({ access_token: accessToken, token_type: "Bearer", expires_in: 3600 }));
+          return;
+        } catch {
+          res.writeHead(400, { "content-type": "application/json" });
+          res.end(JSON.stringify({ error: "invalid_request" }));
+          return;
         }
-        const accessToken = oauth.issueToken(clientId);
-        res.writeHead(200, { "content-type": "application/json" });
-        res.end(JSON.stringify({ access_token: accessToken, token_type: "Bearer", expires_in: 3600 }));
-        return;
       }
 
       if (req.method === "GET" && normalizedPath === "/health") {
