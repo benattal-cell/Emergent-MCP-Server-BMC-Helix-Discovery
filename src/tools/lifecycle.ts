@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DiscoveryClient } from "../discoveryClient.js";
 
 const riskWindowDaysDefault = 182;
 
@@ -42,8 +43,34 @@ function buildLifecycleQuery(input: z.infer<typeof lifecycleSchema>): string {
   return `search SoftwareInstance with value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.retirement_date) as retirement_date, value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.end_support_date) as end_support_date, value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.end_ext_support_date) as end_ext_support_date, value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.end_security_support_date) as end_security_support_date where ${buildWhereClause(input)} order by ${riskExpr} show name, key, known_names, type, edition, model, vendor, publisher, product, product_version, urls, failure_reason, default_retirement_date, customer_retirement_date, (retirement_date and formatTime(retirement_date, '%Y-%m-%d')) as 'End of Life', (end_support_date and formatTime(end_support_date, '%Y-%m-%d')) as 'End of Support', (end_security_support_date and formatTime(end_security_support_date, '%Y-%m-%d')) as 'End of Security Support', (end_ext_support_date and formatTime(end_ext_support_date, '%Y-%m-%d')) as 'End of Ext Support', ${riskExpr} as 'Lifecycle Risk', #:HostedSoftware:Host:Host.name as 'Host'`;
 }
 
-export function lifecycleTools() {
+const lifecycleReportSchema = z.object({
+  limit: z.number().int().min(1).max(500).default(100),
+  riskWindowDays: z.number().int().min(1).max(3650).default(riskWindowDaysDefault),
+  onlyAtRisk: z.boolean().default(false)
+}).strict();
+
+function buildGoldenLifecycleQuery(riskWindowDays: number, onlyAtRisk: boolean): string {
+  const base = buildLifecycleQuery({
+    riskWindowDays,
+    includeUrlEncoded: false,
+    onlyAtRisk,
+    hostNameContains: undefined,
+    publisherContains: undefined,
+    productContains: undefined,
+    typeIn: undefined
+  });
+  return base;
+}
+
+export function lifecycleTools(client: DiscoveryClient) {
   return {
+    discovery_lifecycle_report: {
+      schema: lifecycleReportSchema,
+      handler: async (input: z.infer<typeof lifecycleReportSchema>) => {
+        const query = buildGoldenLifecycleQuery(input.riskWindowDays, input.onlyAtRisk);
+        return client.queryJson(query, input.limit);
+      }
+    },
     discovery_build_lifecycle_query: {
       schema: lifecycleSchema,
       handler: async (input: z.infer<typeof lifecycleSchema>) => {

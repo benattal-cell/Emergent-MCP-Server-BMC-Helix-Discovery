@@ -55,7 +55,7 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...taxonomyTools(client),
     ...cveTools(),
     ...graphTools(client),
-    ...lifecycleTools()
+    ...lifecycleTools(client)
   };
 
   for (const [name, def] of Object.entries(tools)) {
