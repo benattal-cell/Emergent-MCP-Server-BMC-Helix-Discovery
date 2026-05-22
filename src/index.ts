@@ -10,6 +10,7 @@ import { hostTools } from "./tools/hosts.js";
 import { taxonomyTools } from "./tools/taxonomy.js";
 import { cveTools } from "./tools/cve.js";
 import { graphTools } from "./tools/graph.js";
+import { lifecycleTools } from "./tools/lifecycle.js";
 
 const MAX_BODY_BYTES = 1_000_000; // 1 MB cap on incoming JSON payloads
 
@@ -53,7 +54,8 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...hostTools(client),
     ...taxonomyTools(client),
     ...cveTools(),
-    ...graphTools(client)
+    ...graphTools(client),
+    ...lifecycleTools()
   };
 
   for (const [name, def] of Object.entries(tools)) {
