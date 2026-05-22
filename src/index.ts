@@ -12,6 +12,7 @@ import { cveTools } from "./tools/cve.js";
 import { graphTools } from "./tools/graph.js";
 import { lifecycleTools } from "./tools/lifecycle.js";
 import { assistantGuideTools } from "./tools/assistantGuide.js";
+import { createOAuthServer } from "./oauth.js";
 
 const MAX_BODY_BYTES = 1_000_000; // 1 MB cap on incoming JSON payloads
 
@@ -76,6 +77,12 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
 
 export async function createHttpServer(config: AppConfig): Promise<http.Server> {
   const client = new DiscoveryClient(config);
+  const issuer = (config.publicBaseUrl || `http://localhost:${config.port}`).replace(/\/$/, "");
+  const oauth = createOAuthServer({
+    issuer,
+    clientId: config.oauthClientId || "chatgpt-mcp-client",
+    clientSecret: config.oauthClientSecret || config.mcpServerApiKey
+  });
 
   return http.createServer(async (req, res) => {
     try {
@@ -89,6 +96,50 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
       const pathOnly = rawUrl.split("?")[0];
       const normalizedPath = pathOnly.replace(/^\/api(?=\/|$)/, "") || "/";
 
+
+      if (req.method === "GET" && normalizedPath === "/.well-known/oauth-authorization-server") {
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(JSON.stringify(oauth.metadata()));
+        return;
+      }
+
+      if (req.method === "GET" && normalizedPath === "/oauth/authorize") {
+        const url = new URL(rawUrl, issuer);
+        const clientId = url.searchParams.get("client_id") || "";
+        const redirectUri = url.searchParams.get("redirect_uri") || "";
+        const state = url.searchParams.get("state") || "";
+        const codeChallenge = url.searchParams.get("code_challenge") || undefined;
+        const codeChallengeMethod = url.searchParams.get("code_challenge_method") || undefined;
+        if (!redirectUri) { res.writeHead(400).end("missing redirect_uri"); return; }
+        if (clientId && clientId !== oauth.config.clientId) { res.writeHead(400).end("invalid client_id"); return; }
+        const code = oauth.createAuthCode(oauth.config.clientId, redirectUri, codeChallenge, codeChallengeMethod || undefined);
+        const target = new URL(redirectUri);
+        target.searchParams.set("code", code);
+        if (state) target.searchParams.set("state", state);
+        res.writeHead(302, { location: target.toString() });
+        res.end();
+        return;
+      }
+
+      if (req.method === "POST" && normalizedPath === "/oauth/token") {
+        const body = (await readJsonBody(req)) as Record<string, unknown>;
+        const grantType = String(body?.grant_type || "");
+        const clientId = String(body?.client_id || oauth.config.clientId);
+        const clientSecret = String(body?.client_secret || "");
+        if (clientId !== oauth.config.clientId) { res.writeHead(400).end(JSON.stringify({ error: "invalid_client" })); return; }
+        if (clientSecret && clientSecret !== oauth.config.clientSecret) { res.writeHead(401).end(JSON.stringify({ error: "invalid_client" })); return; }
+        if (grantType === "authorization_code") {
+          const code = String(body?.code || "");
+          const rec = oauth.codes.get(code);
+          if (!rec || Date.now() > rec.expiresAt) { res.writeHead(400).end(JSON.stringify({ error: "invalid_grant" })); return; }
+          oauth.codes.delete(code);
+        }
+        const accessToken = oauth.issueToken(clientId);
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(JSON.stringify({ access_token: accessToken, token_type: "Bearer", expires_in: 3600 }));
+        return;
+      }
+
       if (req.method === "GET" && normalizedPath === "/health") {
         res.writeHead(200, { "content-type": "application/json" });
         res.end(JSON.stringify({ status: "ok", service: "bmc-helix-discovery-mcp" }));
@@ -101,7 +152,8 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
       ) {
         // Auth check — required on every MCP request.
         const bearer = getBearerToken(req.headers.authorization);
-        if (!bearer || bearer !== config.mcpServerApiKey) {
+        const validBearer = Boolean(bearer) && (bearer === config.mcpServerApiKey || (bearer ? oauth.validateAccessToken(bearer) : false));
+        if (!validBearer) {
           res.writeHead(401, {
             "content-type": "application/json",
             "www-authenticate": "Bearer"
