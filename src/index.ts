@@ -7,7 +7,9 @@ import { normalizeApiError } from "./utils/errors.js";
 import { aboutTools } from "./tools/about.js";
 import { queryTools } from "./tools/query.js";
 import { hostTools } from "./tools/hosts.js";
-import { discoveryRunTools } from "./tools/discoveryRuns.js";
+import { taxonomyTools } from "./tools/taxonomy.js";
+import { cveTools } from "./tools/cve.js";
+import { graphTools } from "./tools/graph.js";
 
 const MAX_BODY_BYTES = 1_000_000; // 1 MB cap on incoming JSON payloads
 
@@ -49,7 +51,9 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...aboutTools(client, config.apiVersion),
     ...queryTools(client),
     ...hostTools(client),
-    ...discoveryRunTools(client)
+    ...taxonomyTools(client),
+    ...cveTools(),
+    ...graphTools(client)
   };
 
   for (const [name, def] of Object.entries(tools)) {

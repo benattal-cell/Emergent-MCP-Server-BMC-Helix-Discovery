@@ -8,6 +8,11 @@ export const queryJsonSchema = z.object({
   limit: z.number().int().min(1).max(500).default(50)
 }).strict();
 
+
+export const topologyServicesSchema = z.object({
+  payload: z.record(z.unknown())
+}).strict();
+
 export const rawGetSchema = z.object({
   path: z.string().min(5).refine((value) => value.startsWith("/api/") && !/^https?:\/\//i.test(value), {
     message: "path must be a relative /api/... path"
@@ -23,6 +28,10 @@ export function queryTools(client: DiscoveryClient) {
     discovery_raw_get: {
       schema: rawGetSchema,
       handler: async (input: z.infer<typeof rawGetSchema>) => client.request("GET", input.path, undefined, !input.path.startsWith("/api/about"))
+    },
+    discovery_topology_services: {
+      schema: topologyServicesSchema,
+      handler: async (input: z.infer<typeof topologyServicesSchema>) => client.getTopologyServices(input.payload)
     }
   };
 }

@@ -81,6 +81,15 @@ export class DiscoveryClient {
     }
   }
 
+  async getNodeGraph(nodeId: string): Promise<unknown> {
+    return this.request("GET", `/data/nodes/${encodeURIComponent(nodeId)}/graph`, undefined, true);
+  }
+
+  async getTopologyServices(payload: unknown): Promise<unknown> {
+    const path = `/topology/services`;
+    return this.request("POST", path, payload, true);
+  }
+
   async queryJson(query: unknown, limit = 50): Promise<QueryResult> {
     const payload = { query, limit };
     const path = DISCOVERY_QUERY_ENDPOINT_TODO.replace("{version}", this.config.apiVersion);
@@ -144,6 +153,39 @@ export class DiscoveryClient {
 
     const rel = { type: "relation", label: "hosted", kind: "HostedSoftware", left: "host", right: "software" };
     return this.queryJson([hostNode, softwareNode, rel], params.limit ?? 50);
+  }
+
+
+  async getTaxonomySections(): Promise<unknown> {
+    return this.request("GET", `/taxonomy/sections`, undefined, true);
+  }
+
+  async getTaxonomyLocales(): Promise<unknown> {
+    return this.request("GET", `/taxonomy/locales`, undefined, true);
+  }
+
+  async getTaxonomyNodeKinds(includeInfo = false): Promise<unknown> {
+    return this.request("GET", includeInfo ? `/taxonomy/nodekinds?format=info` : `/taxonomy/nodekinds`, undefined, true);
+  }
+
+  async getTaxonomyNodeKindDetails(kind: string): Promise<unknown> {
+    return this.request("GET", `/taxonomy/nodekinds/${encodeURIComponent(kind)}`, undefined, true);
+  }
+
+  async getTaxonomyNodeKindFieldLists(kind: string): Promise<unknown> {
+    return this.request("GET", `/taxonomy/nodekinds/${encodeURIComponent(kind)}/fieldlists`, undefined, true);
+  }
+
+  async getTaxonomyNodeKindFieldListFields(kind: string, fieldList: string): Promise<unknown> {
+    return this.request("GET", `/taxonomy/nodekinds/${encodeURIComponent(kind)}/fieldlists/${encodeURIComponent(fieldList)}`, undefined, true);
+  }
+
+  async getTaxonomyRelationshipKinds(includeInfo = false): Promise<unknown> {
+    return this.request("GET", includeInfo ? `/taxonomy/relkinds?format=info` : `/taxonomy/relkinds`, undefined, true);
+  }
+
+  async getTaxonomyRelationshipKindDetails(kind: string): Promise<unknown> {
+    return this.request("GET", `/taxonomy/relkinds/${encodeURIComponent(kind)}`, undefined, true);
   }
 
   async startScan(params: { target: string; label?: string; confirm: boolean }): Promise<unknown> {
