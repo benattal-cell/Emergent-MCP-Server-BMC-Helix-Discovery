@@ -19,6 +19,12 @@ export class DiscoveryClient {
     return this.request("GET", "/api/about", undefined, false);
   }
 
+
+  private versionedPath(path: string): string {
+    const normalized = path.startsWith("/") ? path : `/${path}`;
+    return `/api/${this.config.apiVersion}${normalized}`;
+  }
+
   async request(method: string, path: string, body?: unknown, authRequired = true): Promise<unknown> {
     if (!path.startsWith("/")) {
       throw new ApiError("Path must start with '/'", { code: "INVALID_PATH" });
@@ -82,12 +88,11 @@ export class DiscoveryClient {
   }
 
   async getNodeGraph(nodeId: string): Promise<unknown> {
-    return this.request("GET", `/data/nodes/${encodeURIComponent(nodeId)}/graph`, undefined, true);
+    return this.request("GET", this.versionedPath(`/data/nodes/${encodeURIComponent(nodeId)}/graph`), undefined, true);
   }
 
   async getTopologyServices(payload: unknown): Promise<unknown> {
-    const path = `/topology/services`;
-    return this.request("POST", path, payload, true);
+    return this.request("POST", this.versionedPath(`/topology/services`), payload, true);
   }
 
   async queryJson(query: unknown, limit = 50): Promise<QueryResult> {
@@ -157,35 +162,35 @@ export class DiscoveryClient {
 
 
   async getTaxonomySections(): Promise<unknown> {
-    return this.request("GET", `/taxonomy/sections`, undefined, true);
+    return this.request("GET", this.versionedPath(`/taxonomy/sections`), undefined, true);
   }
 
   async getTaxonomyLocales(): Promise<unknown> {
-    return this.request("GET", `/taxonomy/locales`, undefined, true);
+    return this.request("GET", this.versionedPath(`/taxonomy/locales`), undefined, true);
   }
 
   async getTaxonomyNodeKinds(includeInfo = false): Promise<unknown> {
-    return this.request("GET", includeInfo ? `/taxonomy/nodekinds?format=info` : `/taxonomy/nodekinds`, undefined, true);
+    return this.request("GET", this.versionedPath(includeInfo ? `/taxonomy/nodekinds?format=info` : `/taxonomy/nodekinds`), undefined, true);
   }
 
   async getTaxonomyNodeKindDetails(kind: string): Promise<unknown> {
-    return this.request("GET", `/taxonomy/nodekinds/${encodeURIComponent(kind)}`, undefined, true);
+    return this.request("GET", this.versionedPath(`/taxonomy/nodekinds/${encodeURIComponent(kind)}`), undefined, true);
   }
 
   async getTaxonomyNodeKindFieldLists(kind: string): Promise<unknown> {
-    return this.request("GET", `/taxonomy/nodekinds/${encodeURIComponent(kind)}/fieldlists`, undefined, true);
+    return this.request("GET", this.versionedPath(`/taxonomy/nodekinds/${encodeURIComponent(kind)}/fieldlists`), undefined, true);
   }
 
   async getTaxonomyNodeKindFieldListFields(kind: string, fieldList: string): Promise<unknown> {
-    return this.request("GET", `/taxonomy/nodekinds/${encodeURIComponent(kind)}/fieldlists/${encodeURIComponent(fieldList)}`, undefined, true);
+    return this.request("GET", this.versionedPath(`/taxonomy/nodekinds/${encodeURIComponent(kind)}/fieldlists/${encodeURIComponent(fieldList)}`), undefined, true);
   }
 
   async getTaxonomyRelationshipKinds(includeInfo = false): Promise<unknown> {
-    return this.request("GET", includeInfo ? `/taxonomy/relkinds?format=info` : `/taxonomy/relkinds`, undefined, true);
+    return this.request("GET", this.versionedPath(includeInfo ? `/taxonomy/relkinds?format=info` : `/taxonomy/relkinds`), undefined, true);
   }
 
   async getTaxonomyRelationshipKindDetails(kind: string): Promise<unknown> {
-    return this.request("GET", `/taxonomy/relkinds/${encodeURIComponent(kind)}`, undefined, true);
+    return this.request("GET", this.versionedPath(`/taxonomy/relkinds/${encodeURIComponent(kind)}`), undefined, true);
   }
 
   async startScan(params: { target: string; label?: string; confirm: boolean }): Promise<unknown> {
