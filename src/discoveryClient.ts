@@ -99,12 +99,11 @@ export class DiscoveryClient {
     return this.request("POST", this.versionedPath(`/topology/services`), payload, true);
   }
 
-  async queryJson(query: unknown, limit = 50): Promise<QueryResult> {
+  async queryJson(query: string, limit = 50): Promise<QueryResult> {
     return this.searchData(query, { limit, format: "2d" });
   }
 
-  async searchData(query: unknown, options: SearchOptions = {}): Promise<QueryResult> {
-    const queryText = typeof query === "string" ? query : JSON.stringify(query);
+  async searchData(query: string, options: SearchOptions = {}): Promise<QueryResult> {
     const limit = options.limit ?? 50;
     const params = new URLSearchParams({
       offset: "0",
@@ -114,66 +113,36 @@ export class DiscoveryClient {
       params.set("format", "tree");
     }
     const path = `${this.versionedPath("/data/search")}?${params.toString()}`;
-    const data = await this.request("POST", path, { query: queryText }, true);
+    const data = await this.request("POST", path, { query }, true);
     return normalizeListResult(data, limit);
   }
 
   findHosts(params: { nameContains?: string; osContains?: string; limit?: number }): Promise<QueryResult> {
-    const conditions: unknown[] = [];
-    if (params.nameContains) conditions.push(substringCondition("name", params.nameContains));
-    if (params.osContains) conditions.push(substringCondition("os", params.osContains));
-
-    const hostNode = {
-      type: "node",
-      label: "host",
-      kind: "Host",
-      required: true,
-      condition: mergeConditions(conditions),
-      show: ["name", "os", "type", "key"].map((name) => ({ type: "attr", name }))
-    };
-
-    return this.queryJson([hostNode], params.limit ?? 50);
+    const filters: string[] = [];
+    if (params.nameContains) filters.push(`name matches '(?i).*${escapeDiscoveryLiteral(params.nameContains)}.*'`);
+    if (params.osContains) filters.push(`os matches '(?i).*${escapeDiscoveryLiteral(params.osContains)}.*'`);
+    const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
+    const query = `search Host${where} show name, os, type, key`;
+    return this.queryJson(query, params.limit ?? 50);
   }
 
   findSoftwareInstances(params: { typeContains?: string; nameContains?: string; instanceContains?: string; limit?: number }): Promise<QueryResult> {
-    const conditions: unknown[] = [];
-    if (params.typeContains) conditions.push(substringCondition("type", params.typeContains));
-    if (params.nameContains) conditions.push(substringCondition("name", params.nameContains));
-    if (params.instanceContains) conditions.push(substringCondition("instance", params.instanceContains));
-
-    const node = {
-      type: "node",
-      label: "software",
-      kind: "SoftwareInstance",
-      required: true,
-      condition: mergeConditions(conditions),
-      show: ["type", "name", "instance", "product_version"].map((name) => ({ type: "attr", name }))
-    };
-
-    return this.queryJson([node], params.limit ?? 50);
+    const filters: string[] = [];
+    if (params.typeContains) filters.push(`type matches '(?i).*${escapeDiscoveryLiteral(params.typeContains)}.*'`);
+    if (params.nameContains) filters.push(`name matches '(?i).*${escapeDiscoveryLiteral(params.nameContains)}.*'`);
+    if (params.instanceContains) filters.push(`instance matches '(?i).*${escapeDiscoveryLiteral(params.instanceContains)}.*'`);
+    const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
+    const query = `search SoftwareInstance${where} show type, name, instance, product_version`;
+    return this.queryJson(query, params.limit ?? 50);
   }
 
   findHostSoftware(params: { hostNameContains: string; softwareTypeContains?: string; limit?: number }): Promise<QueryResult> {
-    const hostNode = {
-      type: "node",
-      label: "host",
-      kind: "Host",
-      required: true,
-      condition: substringCondition("name", params.hostNameContains),
-      show: [{ type: "attr", name: "name" }, { type: "attr", name: "key" }]
-    };
-
-    const softwareNode = {
-      type: "node",
-      label: "software",
-      kind: "SoftwareInstance",
-      required: true,
-      condition: params.softwareTypeContains ? substringCondition("type", params.softwareTypeContains) : undefined,
-      show: ["type", "name", "instance", "product_version"].map((name) => ({ type: "attr", name }))
-    };
-
-    const rel = { type: "relation", label: "hosted", kind: "HostedSoftware", left: "host", right: "software" };
-    return this.queryJson([hostNode, softwareNode, rel], params.limit ?? 50);
+    const hostFilter = `#:::Host.name matches '(?i).*${escapeDiscoveryLiteral(params.hostNameContains)}.*'`;
+    const swFilter = params.softwareTypeContains
+      ? ` and type matches '(?i).*${escapeDiscoveryLiteral(params.softwareTypeContains)}.*'`
+      : "";
+    const query = `search SoftwareInstance where ${hostFilter}${swFilter} show type, name, instance, product_version, #:::Host.name, #:::Host.key`;
+    return this.queryJson(query, params.limit ?? 50);
   }
 
 
@@ -217,13 +186,8 @@ export class DiscoveryClient {
   }
 }
 
-function substringCondition(attrName: string, value: string): unknown {
-  return { type: "substring", left: { type: "attr", name: attrName }, right: value };
-}
-function mergeConditions(conditions: unknown[]): unknown {
-  if (conditions.length === 0) return undefined;
-  if (conditions.length === 1) return conditions[0];
-  return { type: "and", conditions };
+function escapeDiscoveryLiteral(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
 function normalizeListResult(raw: unknown, limit: number): QueryResult {
   const items = Array.isArray(raw) ? raw : (raw && typeof raw === "object" && Array.isArray((raw as { results?: unknown[] }).results)) ? (raw as { results: unknown[] }).results : [];
