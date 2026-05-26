@@ -25,8 +25,10 @@ const sections: GuideSection[] = [
     title: "Vulnérabilités CVE/CPE",
     keywords: ["cve", "cpe", "vuln", "vulnerability", "nvd"],
     items: [
+      { tool: "discovery_cve_executive_summary", purpose: "Produire une fiche CVE synthétique (style briefing) et demander si l’utilisateur veut le détail complet.", useCase: "Donner un résumé risque + top impacts business/hosts/versions avant drill-down." },
       { tool: "discovery_get_cve_cpes_from_nvd", purpose: "Récupérer les CPE associés à une CVE depuis NVD.", useCase: "Obtenir les cibles techniques d'une CVE sans saisie manuelle." },
       { tool: "discovery_build_cve_software_query", purpose: "Construire la requête Discovery à partir de CPE.", useCase: "Générer une recherche prête à l’emploi pour identifier les logiciels impactés." }
+      ,{ tool: "discovery_cve_full_inventory_prompt", purpose: "Préparer l’appel qui retourne l’inventaire complet impacté.", useCase: "Si l’utilisateur veut en savoir plus, lancer l’extraction détaillée (table complète)." }
     ]
   },
   {

@@ -47,6 +47,44 @@ async function fetchNvdCpes(cveId: string): Promise<string[]> {
 
 export function cveTools() {
   return {
+    discovery_cve_executive_summary: {
+      schema: z.object({
+        cveId: cveIdSchema,
+        topN: z.number().int().min(1).max(20).default(5),
+        discoveryRows: z.array(z.record(z.unknown())).default([])
+      }).strict(),
+      handler: async (input: { cveId: string; topN: number; discoveryRows: Array<Record<string, unknown>> }) => {
+        const cveId = input.cveId.toUpperCase();
+        const cpes = await fetchNvdCpes(cveId);
+        const dsl = buildDiscoveryDsl(cpes);
+        const rows = input.discoveryRows;
+
+        const topServices = aggregateTop(rows, ["Service Name", "Business Service", "business_service", "service"], input.topN);
+        const topHosts = aggregateTop(rows, ["Host Name", "Host", "host"], input.topN);
+        const topVersions = aggregateTop(rows, ["Full Version", "version", "product_version"], input.topN);
+
+        return {
+          cveHeader: {
+            cveId,
+            riskTitle: "Risks Associated",
+            note: "Template aligned for executive CVE briefing (summary first, details on demand)."
+          },
+          cveSummary: {
+            cpeCount: cpes.length,
+            impactedRowsCount: rows.length,
+            topServices,
+            topHosts,
+            topVersions
+          },
+          discoverySearchPlan: {
+            primaryTool: "discovery_build_cve_software_query",
+            nextExecutionTool: "discovery_search_data",
+            dslQuery: dsl
+          },
+          followUpPrompt: "Do you want the full impacted inventory table (service, host, version, owner, exposure) now?"
+        };
+      }
+    },
     discovery_build_cve_software_query: {
       schema: z.object({ cpeStrings: z.array(cpeSchema).min(1), includeUrlEncoded: z.boolean().default(false) }).strict(),
       handler: async (input: { cpeStrings: string[]; includeUrlEncoded: boolean }) => {
@@ -64,6 +102,36 @@ export function cveTools() {
         const cpes = await fetchNvdCpes(input.cveId.toUpperCase());
         return { cveId: input.cveId.toUpperCase(), cpeCount: cpes.length, cpeStrings: cpes };
       }
+    },
+    discovery_cve_full_inventory_prompt: {
+      schema: z.object({ cveId: cveIdSchema, cpeStrings: z.array(cpeSchema).min(1), limit: z.number().int().min(1).max(500).default(200) }).strict(),
+      handler: async (input: { cveId: string; cpeStrings: string[]; limit: number }) => {
+        const dsl = buildDiscoveryDsl(input.cpeStrings);
+        return {
+          cveId: input.cveId.toUpperCase(),
+          objective: "Return the full impacted inventory dataset for analyst drill-down.",
+          runWithTool: "discovery_search_data",
+          recommendedInput: {
+            query: dsl,
+            limit: input.limit
+          },
+          expectedColumns: ["Type", "Full Version", "Host Name", "Service Name", "Business Owner"]
+        };
+      }
     }
   };
+}
+
+function aggregateTop(rows: Array<Record<string, unknown>>, candidateKeys: string[], topN: number): Array<{ value: string; count: number }> {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const key = candidateKeys.find((k) => typeof row[k] === "string" && String(row[k]).trim() !== "");
+    if (!key) continue;
+    const value = String(row[key]).trim();
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN)
+    .map(([value, count]) => ({ value, count }));
 }
