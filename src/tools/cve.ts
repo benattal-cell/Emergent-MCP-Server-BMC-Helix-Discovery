@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { AppConfig } from "../config.js";
 
 const languageSchema = z.enum(["fr", "en"]).optional();
 
@@ -17,8 +18,14 @@ function buildDiscoveryDsl(cpes: string[]): string {
   return `search SoftwareInstance where ${where} show type, version, #:::Host.name, #:::BusinessService.name processwith show type as 'Type', version as 'Full Version', #:::Host.name as 'Host Name', #:::BusinessService.name as 'Service Name', #RunningSoftware:HostedSoftware:Host:Host.#OwnedItem:Ownership:BusinessOwner:Person.name as 'Business Owner'`;
 }
 
-async function fetchNvdCpes(cveId: string): Promise<string[]> {
-  const res = await fetch(`https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${encodeURIComponent(cveId)}`);
+async function fetchNvdCpes(cveId: string, nvdApiKey?: string): Promise<string[]> {
+  const headers: Record<string, string> = {};
+  if (nvdApiKey) {
+    headers.apiKey = nvdApiKey;
+  }
+  const res = await fetch(`https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${encodeURIComponent(cveId)}`, {
+    headers
+  });
   if (!res.ok) {
     throw new Error(`NVD request failed: HTTP ${res.status}`);
   }
@@ -47,7 +54,7 @@ async function fetchNvdCpes(cveId: string): Promise<string[]> {
   return Array.from(out);
 }
 
-export function cveTools() {
+export function cveTools(config: Pick<AppConfig, "nvdApiKey">) {
   return {
     discovery_cve_executive_summary: {
       schema: z.object({
@@ -61,7 +68,7 @@ export function cveTools() {
         const lang = resolveLanguage(input.language, input.question);
         const t = i18n(lang);
         const cveId = input.cveId.toUpperCase();
-        const cpes = await fetchNvdCpes(cveId);
+        const cpes = await fetchNvdCpes(cveId, config.nvdApiKey);
         const dsl = buildDiscoveryDsl(cpes);
         const rows = input.discoveryRows;
 
@@ -105,7 +112,7 @@ export function cveTools() {
     discovery_get_cve_cpes_from_nvd: {
       schema: z.object({ cveId: cveIdSchema }).strict(),
       handler: async (input: { cveId: string }) => {
-        const cpes = await fetchNvdCpes(input.cveId.toUpperCase());
+        const cpes = await fetchNvdCpes(input.cveId.toUpperCase(), config.nvdApiKey);
         return { cveId: input.cveId.toUpperCase(), cpeCount: cpes.length, cpeStrings: cpes };
       }
     },

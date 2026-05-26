@@ -98,7 +98,7 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...queryTools(client),
     ...hostTools(client),
     ...taxonomyTools(client),
-    ...cveTools(),
+    ...cveTools(config),
     ...graphTools(client),
     ...lifecycleTools(client),
     ...assistantGuideTools()
