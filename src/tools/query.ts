@@ -8,15 +8,14 @@ export const queryJsonSchema = z.object({
   limit: z.number().int().min(1).max(500).default(50)
 }).strict();
 
+export const queryTreeSchema = z.object({
+  query: jsonInput,
+  limit: z.number().int().min(1).max(500).default(50)
+}).strict();
+
 
 export const topologyServicesSchema = z.object({
   payload: z.record(z.unknown())
-}).strict();
-
-export const rawGetSchema = z.object({
-  path: z.string().min(5).refine((value) => value.startsWith("/api/") && !/^https?:\/\//i.test(value), {
-    message: "path must be a relative /api/... path"
-  })
 }).strict();
 
 export function queryTools(client: DiscoveryClient) {
@@ -25,18 +24,9 @@ export function queryTools(client: DiscoveryClient) {
       schema: queryJsonSchema,
       handler: async (input: z.infer<typeof queryJsonSchema>) => client.queryJson(input.query, input.limit)
     },
-    discovery_api_get_debug: {
-      schema: rawGetSchema,
-      handler: async (input: z.infer<typeof rawGetSchema>) => client.request("GET", input.path, undefined, !input.path.startsWith("/api/about"))
-    },
-    // Legacy aliases kept for backward compatibility
-    discovery_query_json: {
-      schema: queryJsonSchema,
-      handler: async (input: z.infer<typeof queryJsonSchema>) => client.queryJson(input.query, input.limit)
-    },
-    discovery_raw_get: {
-      schema: rawGetSchema,
-      handler: async (input: z.infer<typeof rawGetSchema>) => client.request("GET", input.path, undefined, !input.path.startsWith("/api/about"))
+    discovery_search_tree_data: {
+      schema: queryTreeSchema,
+      handler: async (input: z.infer<typeof queryTreeSchema>) => client.searchData(input.query, { limit: input.limit, format: "tree" })
     },
     discovery_topology_services: {
       schema: topologyServicesSchema,

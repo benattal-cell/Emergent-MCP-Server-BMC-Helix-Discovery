@@ -11,6 +11,11 @@ export interface QueryResult {
   items: unknown[];
 }
 
+interface SearchOptions {
+  limit?: number;
+  format?: "2d" | "tree";
+}
+
 export class DiscoveryClient {
   constructor(private readonly config: AppConfig) {}
 
@@ -95,8 +100,20 @@ export class DiscoveryClient {
   }
 
   async queryJson(query: unknown, limit = 50): Promise<QueryResult> {
+    return this.searchData(query, { limit, format: "2d" });
+  }
+
+  async searchData(query: unknown, options: SearchOptions = {}): Promise<QueryResult> {
     const queryText = typeof query === "string" ? query : JSON.stringify(query);
-    const path = `${this.versionedPath("/data/search")}?offset=0&limit=${encodeURIComponent(String(limit))}`;
+    const limit = options.limit ?? 50;
+    const params = new URLSearchParams({
+      offset: "0",
+      limit: String(limit)
+    });
+    if (options.format === "tree") {
+      params.set("format", "tree");
+    }
+    const path = `${this.versionedPath("/data/search")}?${params.toString()}`;
     const data = await this.request("POST", path, { query: queryText }, true);
     return normalizeListResult(data, limit);
   }
