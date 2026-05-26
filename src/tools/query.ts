@@ -21,6 +21,15 @@ export const rawGetSchema = z.object({
 
 export function queryTools(client: DiscoveryClient) {
   return {
+    discovery_search_data: {
+      schema: queryJsonSchema,
+      handler: async (input: z.infer<typeof queryJsonSchema>) => client.queryJson(input.query, input.limit)
+    },
+    discovery_api_get_debug: {
+      schema: rawGetSchema,
+      handler: async (input: z.infer<typeof rawGetSchema>) => client.request("GET", input.path, undefined, !input.path.startsWith("/api/about"))
+    },
+    // Legacy aliases kept for backward compatibility
     discovery_query_json: {
       schema: queryJsonSchema,
       handler: async (input: z.infer<typeof queryJsonSchema>) => client.queryJson(input.query, input.limit)
