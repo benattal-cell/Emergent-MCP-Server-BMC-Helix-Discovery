@@ -2,7 +2,8 @@ import { z } from "zod";
 
 const guideSchema = z.object({
   request: z.string().min(1),
-  maxUseCases: z.number().int().min(1).max(12).default(5)
+  maxUseCases: z.number().int().min(1).max(12).default(5),
+  language: z.enum(["fr", "en"]).optional()
 }).strict();
 
 type GuideItem = { tool: string; purpose: string; useCase: string };
@@ -49,27 +50,75 @@ function pickSections(request: string): GuideSection[] {
   return matched.length > 0 ? matched : sections;
 }
 
+function resolveLanguage(language: "fr" | "en" | undefined, request: string): "fr" | "en" {
+  if (language) return language;
+  const q = request.toLowerCase();
+  if (/\b(bonjour|merci|que|quoi|comment|fin de support|vuln|requête|outil)\b/.test(q)) return "fr";
+  return "en";
+}
+
 export function assistantGuideTools() {
   return {
     discovery_tool_guide: {
       schema: guideSchema,
       handler: async (input: z.infer<typeof guideSchema>) => {
         const selected = pickSections(input.request);
+        const language = resolveLanguage(input.language, input.request);
         const lines: string[] = [];
-        lines.push(`Demande comprise: ${input.request}`);
-        lines.push("Je me limite aux capacités MCP pertinentes pour cette demande.");
+        if (language === "fr") {
+          lines.push(`Demande comprise: ${input.request}`);
+          lines.push("Je me limite aux capacités MCP pertinentes pour cette demande.");
+        } else {
+          lines.push(`Understood request: ${input.request}`);
+          lines.push("I am limiting guidance to the MCP capabilities relevant to this request.");
+        }
         for (const section of selected) {
           lines.push(`\n## ${section.title}`);
           for (const item of section.items.slice(0, input.maxUseCases)) {
-            lines.push(`- ${item.tool}: ${item.purpose} Exemple: ${item.useCase}`);
+            lines.push(language === "fr"
+              ? `- ${item.tool}: ${item.purpose} Exemple: ${item.useCase}`
+              : `- ${item.tool}: ${translatePurpose(item.purpose)} Example: ${translateUseCase(item.useCase)}`);
           }
         }
         return {
           request: input.request,
+          language,
           matchedSections: selected.map((s) => s.id),
           guidance: lines.join("\n")
         };
       }
     }
   };
+}
+
+function translatePurpose(text: string): string {
+  const map: Record<string, string> = {
+    "Exécuter un rapport lifecycle standardisé.": "Run a standardized lifecycle report.",
+    "Générer une requête lifecycle flexible filtrable.": "Build a flexible, filterable lifecycle query.",
+    "Trouver rapidement des instances logicielles.": "Quickly find software instances.",
+    "Produire une fiche CVE synthétique (style briefing) et demander si l’utilisateur veut le détail complet.": "Produce a CVE executive summary and ask whether full details are needed.",
+    "Récupérer les CPE associés à une CVE depuis NVD.": "Fetch CPEs associated with a CVE from NVD.",
+    "Construire la requête Discovery à partir de CPE.": "Build the Discovery query from CPE strings.",
+    "Préparer l’appel qui retourne l’inventaire complet impacté.": "Prepare the call that returns the full impacted inventory.",
+    "Lister les types de nœuds disponibles.": "List available node kinds.",
+    "Lister les champs d’un kind.": "List fields for a node kind.",
+    "Détailler un type de relation.": "Show details for a relationship kind."
+  };
+  return map[text] ?? text;
+}
+
+function translateUseCase(text: string): string {
+  const map: Record<string, string> = {
+    "Lister les logiciels proches ou au-delà de EOS/EOSS/EOES/EOL.": "List software close to, or beyond, EOS/EOSS/EOES/EOL.",
+    "Filtrer par publisher/produit/hôte et adapter la fenêtre de risque.": "Filter by publisher/product/host and tune the risk window.",
+    "Pré-cibler un type/version avant analyse lifecycle.": "Pre-target a type/version before lifecycle analysis.",
+    "Donner un résumé risque + top impacts business/hosts/versions avant drill-down.": "Provide risk summary + top business/host/version impacts before drill-down.",
+    "Obtenir les cibles techniques d'une CVE sans saisie manuelle.": "Get CVE technical targets without manual data entry.",
+    "Générer une recherche prête à l’emploi pour identifier les logiciels impactés.": "Generate a ready-to-run search to identify impacted software.",
+    "Si l’utilisateur veut en savoir plus, lancer l’extraction détaillée (table complète).": "If the user wants more details, run the detailed extraction (full table).",
+    "Savoir quels kinds sont exploitables dans les requêtes.": "Determine which kinds can be used in queries.",
+    "Identifier le nom exact d’un attribut avant une query.": "Identify exact attribute names before running a query.",
+    "Valider les relations à utiliser entre Host et Software.": "Validate relationships to use between Host and Software."
+  };
+  return map[text] ?? text;
 }

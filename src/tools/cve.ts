@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const languageSchema = z.enum(["fr", "en"]).optional();
+
 const cpeSchema = z.string().min(1).refine((v) => v.startsWith("cpe:2.3:"), {
   message: "CPE must start with cpe:2.3:"
 });
@@ -51,9 +53,13 @@ export function cveTools() {
       schema: z.object({
         cveId: cveIdSchema,
         topN: z.number().int().min(1).max(20).default(5),
-        discoveryRows: z.array(z.record(z.unknown())).default([])
+        discoveryRows: z.array(z.record(z.unknown())).default([]),
+        language: languageSchema,
+        question: z.string().optional()
       }).strict(),
-      handler: async (input: { cveId: string; topN: number; discoveryRows: Array<Record<string, unknown>> }) => {
+      handler: async (input: { cveId: string; topN: number; discoveryRows: Array<Record<string, unknown>>; language?: "fr" | "en"; question?: string }) => {
+        const lang = resolveLanguage(input.language, input.question);
+        const t = i18n(lang);
         const cveId = input.cveId.toUpperCase();
         const cpes = await fetchNvdCpes(cveId);
         const dsl = buildDiscoveryDsl(cpes);
@@ -66,8 +72,8 @@ export function cveTools() {
         return {
           cveHeader: {
             cveId,
-            riskTitle: "Risks Associated",
-            note: "Template aligned for executive CVE briefing (summary first, details on demand)."
+            riskTitle: t.riskTitle,
+            note: t.summaryNote
           },
           cveSummary: {
             cpeCount: cpes.length,
@@ -81,7 +87,7 @@ export function cveTools() {
             nextExecutionTool: "discovery_search_data",
             dslQuery: dsl
           },
-          followUpPrompt: "Do you want the full impacted inventory table (service, host, version, owner, exposure) now?"
+          followUpPrompt: t.followUpPrompt
         };
       }
     },
@@ -104,21 +110,49 @@ export function cveTools() {
       }
     },
     discovery_cve_full_inventory_prompt: {
-      schema: z.object({ cveId: cveIdSchema, cpeStrings: z.array(cpeSchema).min(1), limit: z.number().int().min(1).max(500).default(200) }).strict(),
-      handler: async (input: { cveId: string; cpeStrings: string[]; limit: number }) => {
+      schema: z.object({ cveId: cveIdSchema, cpeStrings: z.array(cpeSchema).min(1), limit: z.number().int().min(1).max(500).default(200), language: languageSchema, question: z.string().optional() }).strict(),
+      handler: async (input: { cveId: string; cpeStrings: string[]; limit: number; language?: "fr" | "en"; question?: string }) => {
+        const lang = resolveLanguage(input.language, input.question);
+        const t = i18n(lang);
         const dsl = buildDiscoveryDsl(input.cpeStrings);
         return {
           cveId: input.cveId.toUpperCase(),
-          objective: "Return the full impacted inventory dataset for analyst drill-down.",
+          objective: t.fullInventoryObjective,
           runWithTool: "discovery_search_data",
           recommendedInput: {
             query: dsl,
             limit: input.limit
           },
-          expectedColumns: ["Type", "Full Version", "Host Name", "Service Name", "Business Owner"]
+          expectedColumns: t.expectedColumns
         };
       }
     }
+  };
+}
+
+function resolveLanguage(language?: "fr" | "en", question?: string): "fr" | "en" {
+  if (language) return language;
+  const q = (question ?? "").toLowerCase();
+  if (/\b(bonjour|merci|risque|service|version|vulnérabilit|voulez-vous|inventaire)\b/.test(q)) return "fr";
+  return "en";
+}
+
+function i18n(language: "fr" | "en") {
+  if (language === "fr") {
+    return {
+      riskTitle: "Risques associés",
+      summaryNote: "Template aligné pour un briefing CVE exécutif (résumé d'abord, détails sur demande).",
+      followUpPrompt: "Voulez-vous maintenant le tableau complet des actifs impactés (service, hôte, version, owner, exposition) ?",
+      fullInventoryObjective: "Retourner l'inventaire complet impacté pour une analyse détaillée.",
+      expectedColumns: ["Type", "Version complète", "Nom hôte", "Nom service", "Business Owner"]
+    };
+  }
+  return {
+    riskTitle: "Risks Associated",
+    summaryNote: "Template aligned for executive CVE briefing (summary first, details on demand).",
+    followUpPrompt: "Do you want the full impacted inventory table (service, host, version, owner, exposure) now?",
+    fullInventoryObjective: "Return the full impacted inventory dataset for analyst drill-down.",
+    expectedColumns: ["Type", "Full Version", "Host Name", "Service Name", "Business Owner"]
   };
 }
 
