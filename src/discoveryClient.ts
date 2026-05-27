@@ -126,13 +126,11 @@ export class DiscoveryClient {
     const filters: string[] = [];
     const applied: Record<string, unknown> = {};
     if (params.nameContains) {
-      // `*` matches against ALL attributes of the kind — covers name, hostname,
-      // dns_name, fqdn, known_dns_names, aliases, etc. in a single predicate.
-      filters.push(`* matches '${escapeDiscoveryLiteral(params.nameContains)}'`);
+      filters.push(`* has subword "${escapeDiscoveryDoubleQuoted(params.nameContains)}"`);
       applied.nameContains = params.nameContains;
     }
     if (params.osContains) {
-      filters.push(`os matches '(?i).*${escapeDiscoveryLiteral(params.osContains)}.*'`);
+      filters.push(`os has subword "${escapeDiscoveryDoubleQuoted(params.osContains)}"`);
       applied.osContains = params.osContains;
     }
     const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
@@ -144,15 +142,15 @@ export class DiscoveryClient {
     const filters: string[] = [];
     const applied: Record<string, unknown> = {};
     if (params.typeContains) {
-      filters.push(`type matches '(?i).*${escapeDiscoveryLiteral(params.typeContains)}.*'`);
+      filters.push(`type has subword "${escapeDiscoveryDoubleQuoted(params.typeContains)}"`);
       applied.typeContains = params.typeContains;
     }
     if (params.nameContains) {
-      filters.push(`name matches '(?i).*${escapeDiscoveryLiteral(params.nameContains)}.*'`);
+      filters.push(`name has subword "${escapeDiscoveryDoubleQuoted(params.nameContains)}"`);
       applied.nameContains = params.nameContains;
     }
     if (params.instanceContains) {
-      filters.push(`instance matches '(?i).*${escapeDiscoveryLiteral(params.instanceContains)}.*'`);
+      filters.push(`instance has subword "${escapeDiscoveryDoubleQuoted(params.instanceContains)}"`);
       applied.instanceContains = params.instanceContains;
     }
     const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
@@ -161,10 +159,10 @@ export class DiscoveryClient {
   }
 
   findHostSoftware(params: { hostNameContains: string; softwareTypeContains?: string; limit?: number }): Promise<FlatQueryResult> {
-    const needle = escapeDiscoveryLiteral(params.hostNameContains);
-    const hostFilter = `#:::Host.* matches '(?i).*${needle}.*'`;
+    const hostNeedle = escapeDiscoveryDoubleQuoted(params.hostNameContains);
+    const hostFilter = `(#:::Host.name has subword "${hostNeedle}" or #:::Host.hostname has subword "${hostNeedle}" or #:::Host.dns_name has subword "${hostNeedle}")`;
     const swFilter = params.softwareTypeContains
-      ? ` and type matches '(?i).*${escapeDiscoveryLiteral(params.softwareTypeContains)}.*'`
+      ? ` and type has subword "${escapeDiscoveryDoubleQuoted(params.softwareTypeContains)}"`
       : "";
     const query = `search SoftwareInstance where ${hostFilter}${swFilter} show type, name, instance, product_version, #:::Host.name, #:::Host.hostname, #:::Host.key`;
     const applied: Record<string, unknown> = { hostNameContains: params.hostNameContains };
@@ -214,6 +212,10 @@ export class DiscoveryClient {
 
 function escapeDiscoveryLiteral(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+function escapeDiscoveryDoubleQuoted(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
 function mapStatusToCode(status: number): string {
