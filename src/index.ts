@@ -14,14 +14,13 @@ import { lifecycleTools } from "./tools/lifecycle.js";
 import { assistantGuideTools } from "./tools/assistantGuide.js";
 import { createOAuthServer } from "./oauth.js";
 
-const MAX_BODY_BYTES = 1_000_000; // 1 MB cap on incoming JSON payloads
+const MAX_BODY_BYTES = 1_000_000;
 
 function getBearerToken(authHeader: string | undefined): string | null {
   if (!authHeader) return null;
   const match = authHeader.match(/^Bearer\s+(.+)$/i);
   return match ? match[1] : null;
 }
-
 
 function decodeBasicAuth(header: string | undefined): { clientId: string; clientSecret: string } | null {
   if (!header) return null;
@@ -92,7 +91,7 @@ function readJsonBody(req: http.IncomingMessage): Promise<unknown> {
 }
 
 function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
-  const mcpServer = new McpServer({ name: "bmc-helix-discovery-mcp", version: "0.3.0" });
+  const mcpServer = new McpServer({ name: "bmc-helix-discovery-mcp", version: "0.4.0" });
   const tools = {
     ...aboutTools(client, config.apiVersion),
     ...queryTools(client),
@@ -105,15 +104,26 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
   };
 
   for (const [name, def] of Object.entries(tools)) {
-    mcpServer.tool(name, def.schema.shape ? def.schema.shape : {}, async (input: unknown) => {
-      try {
-        const parsed = def.schema.parse(input ?? {});
-        const result = await def.handler(parsed as never);
-        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-      } catch (error) {
-        return { content: [{ type: "text", text: JSON.stringify(normalizeApiError(error), null, 2) }], isError: true };
+    const toolDef = def as { schema: { parse: (value: unknown) => unknown; shape?: Record<string, unknown> }; handler: (input: never) => Promise<unknown>; description?: string };
+    const inputSchemaShape = toolDef.schema && (toolDef.schema as { shape?: unknown }).shape
+      ? (toolDef.schema as { shape: Record<string, unknown> }).shape
+      : {};
+    mcpServer.registerTool(
+      name,
+      {
+        description: toolDef.description ?? `MCP tool: ${name}`,
+        inputSchema: inputSchemaShape as Record<string, never>
+      },
+      async (input: unknown) => {
+        try {
+          const parsed = toolDef.schema.parse(input ?? {});
+          const result = await toolDef.handler(parsed as never);
+          return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+        } catch (error) {
+          return { content: [{ type: "text", text: JSON.stringify(normalizeApiError(error), null, 2) }], isError: true };
+        }
       }
-    });
+    );
   }
   return mcpServer;
 }
@@ -133,12 +143,9 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
         res.writeHead(400).end("Bad Request");
         return;
       }
-      // Normalize path: strip optional /api prefix (used by Emergent preview routing)
-      // so /health and /api/health both work; /mcp and /api/mcp both work.
       const rawUrl = req.url;
       const pathOnly = rawUrl.split("?")[0];
       const normalizedPath = pathOnly.replace(/^\/api(?=\/|$)/, "") || "/";
-
 
       if (req.method === "GET" && normalizedPath === "/.well-known/oauth-authorization-server") {
         res.writeHead(200, { "content-type": "application/json" });
@@ -226,7 +233,6 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
         normalizedPath === "/mcp" &&
         (req.method === "POST" || req.method === "GET" || req.method === "DELETE")
       ) {
-        // Auth check — required on every MCP request.
         const bearer = getBearerToken(req.headers.authorization);
         const validBearer = Boolean(bearer) && (bearer === config.mcpServerApiKey || (bearer ? oauth.validateAccessToken(bearer) : false));
         if (!validBearer) {
@@ -238,34 +244,19 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
           return;
         }
 
-        // Stateless mode: build a fresh McpServer + transport per request.
-        // This is the officially recommended pattern when sessionIdGenerator is undefined.
-        // It avoids state leakage between concurrent clients and request-ID collisions.
         const mcpServer = buildMcpServer(client, config);
         const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
 
-        // Ensure cleanup when the client disconnects or the response finishes.
         const cleanup = (): void => {
-          try {
-            transport.close();
-          } catch {
-            /* ignore */
-          }
-          try {
-            mcpServer.close();
-          } catch {
-            /* ignore */
-          }
+          try { transport.close(); } catch { /* ignore */ }
+          try { mcpServer.close(); } catch { /* ignore */ }
         };
         res.on("close", cleanup);
 
         await mcpServer.connect(transport);
 
-        // Rewrite req.url so the transport sees /mcp regardless of /api prefix
         req.url = normalizedPath + (rawUrl.includes("?") ? rawUrl.substring(rawUrl.indexOf("?")) : "");
 
-        // For POST, parse JSON body first and pass it to handleRequest.
-        // For GET/DELETE there is no body.
         if (req.method === "POST") {
           let body: unknown;
           try {
@@ -291,27 +282,21 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
       res.writeHead(404, { "content-type": "application/json" });
       res.end(JSON.stringify({ error: true, code: "NOT_FOUND", message: "Route not found" }));
     } catch (error) {
-      // Last-resort safety net. Never leak details.
       if (!res.headersSent) {
         res.writeHead(500, { "content-type": "application/json" });
       }
       try {
         res.end(JSON.stringify(normalizeApiError(error)));
       } catch {
-        try {
-          res.end();
-        } catch {
-          /* ignore */
-        }
+        try { res.end(); } catch { /* ignore */ }
       }
     }
   });
 }
 
 async function main(): Promise<void> {
-  // Startup diagnostic: list which required env vars are PRESENT (no values logged).
   const requiredVars = ["BMC_DISCOVERY_BASE_URL", "MCP_SERVER_API_KEY"] as const;
-  const optionalVars = ["BMC_DISCOVERY_API_VERSION", "BMC_DISCOVERY_TOKEN", "PORT"] as const;
+  const optionalVars = ["BMC_DISCOVERY_API_VERSION", "BMC_DISCOVERY_TOKEN", "PORT", "OAUTH_CLIENT_ID", "OAUTH_CLIENT_SECRET", "NVD_API_KEY", "PUBLIC_BASE_URL"] as const;
   const presence = {
     required: Object.fromEntries(requiredVars.map((k) => [k, Boolean(process.env[k]?.trim())])),
     optional: Object.fromEntries(optionalVars.map((k) => [k, Boolean(process.env[k]?.trim())]))
@@ -328,7 +313,6 @@ async function main(): Promise<void> {
   });
 }
 
-// Always invoke main() when this file is executed (production entrypoint).
 main().catch((error) => {
   const rawMessage = error instanceof Error ? error.message : String(error);
   process.stderr.write(`[startup-error] ${rawMessage}\n`);
