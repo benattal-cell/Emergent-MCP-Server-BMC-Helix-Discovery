@@ -1,19 +1,16 @@
 import { AppConfig } from "./config.js";
 import { ApiError } from "./utils/errors.js";
 import { sanitizeObject } from "./utils/sanitize.js";
+import { flattenDiscoveryQueryResult, type FlatQueryResult } from "./utils/flatten.js";
 
-const DISCOVERY_SCAN_ENDPOINT = "/scan"; // TODO: replace with exact discovery run/scan endpoint path (without /api/{version}).
+const DISCOVERY_SCAN_ENDPOINT = "/scan";
 const REQUEST_TIMEOUT_MS = 30000;
-
-export interface QueryResult {
-  count: number;
-  limit: number;
-  items: unknown[];
-}
 
 interface SearchOptions {
   limit?: number;
   format?: "2d" | "tree";
+  entityLabel?: string;
+  appliedFilters?: Record<string, unknown>;
 }
 
 export class DiscoveryClient {
@@ -22,7 +19,6 @@ export class DiscoveryClient {
   async getAbout(): Promise<unknown> {
     return this.request("GET", "/api/about", undefined, false);
   }
-
 
   private versionedPath(path: string): string {
     const normalized = path.startsWith("/") ? path : `/${path}`;
@@ -99,11 +95,11 @@ export class DiscoveryClient {
     return this.request("POST", this.versionedPath(`/topology/services`), payload, true);
   }
 
-  async queryJson(query: string, limit = 50): Promise<QueryResult> {
-    return this.searchData(query, { limit, format: "2d" });
+  async queryJson(query: string, limit = 50, options: { entityLabel?: string; appliedFilters?: Record<string, unknown> } = {}): Promise<FlatQueryResult> {
+    return this.searchData(query, { limit, format: "2d", ...options });
   }
 
-  async searchData(query: string, options: SearchOptions = {}): Promise<QueryResult> {
+  async searchData(query: string, options: SearchOptions = {}): Promise<FlatQueryResult> {
     const limit = options.limit ?? 50;
     const params = new URLSearchParams({
       offset: "0",
@@ -114,37 +110,58 @@ export class DiscoveryClient {
     }
     const path = `${this.versionedPath("/data/search")}?${params.toString()}`;
     const data = await this.request("POST", path, { query }, true);
-    return normalizeListResult(data, limit);
+    return flattenDiscoveryQueryResult(data, {
+      entityLabel: options.entityLabel,
+      appliedFilters: options.appliedFilters
+    });
   }
 
-  findHosts(params: { nameContains?: string; osContains?: string; limit?: number }): Promise<QueryResult> {
+  findHosts(params: { nameContains?: string; osContains?: string; limit?: number }): Promise<FlatQueryResult> {
     const filters: string[] = [];
-    if (params.nameContains) filters.push(`name matches '(?i).*${escapeDiscoveryLiteral(params.nameContains)}.*'`);
-    if (params.osContains) filters.push(`os matches '(?i).*${escapeDiscoveryLiteral(params.osContains)}.*'`);
+    const applied: Record<string, unknown> = {};
+    if (params.nameContains) {
+      filters.push(`name matches '(?i).*${escapeDiscoveryLiteral(params.nameContains)}.*'`);
+      applied.nameContains = params.nameContains;
+    }
+    if (params.osContains) {
+      filters.push(`os matches '(?i).*${escapeDiscoveryLiteral(params.osContains)}.*'`);
+      applied.osContains = params.osContains;
+    }
     const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
     const query = `search Host${where} show name, os, type, key`;
-    return this.queryJson(query, params.limit ?? 50);
+    return this.queryJson(query, params.limit ?? 50, { entityLabel: "hôtes", appliedFilters: applied });
   }
 
-  findSoftwareInstances(params: { typeContains?: string; nameContains?: string; instanceContains?: string; limit?: number }): Promise<QueryResult> {
+  findSoftwareInstances(params: { typeContains?: string; nameContains?: string; instanceContains?: string; limit?: number }): Promise<FlatQueryResult> {
     const filters: string[] = [];
-    if (params.typeContains) filters.push(`type matches '(?i).*${escapeDiscoveryLiteral(params.typeContains)}.*'`);
-    if (params.nameContains) filters.push(`name matches '(?i).*${escapeDiscoveryLiteral(params.nameContains)}.*'`);
-    if (params.instanceContains) filters.push(`instance matches '(?i).*${escapeDiscoveryLiteral(params.instanceContains)}.*'`);
+    const applied: Record<string, unknown> = {};
+    if (params.typeContains) {
+      filters.push(`type matches '(?i).*${escapeDiscoveryLiteral(params.typeContains)}.*'`);
+      applied.typeContains = params.typeContains;
+    }
+    if (params.nameContains) {
+      filters.push(`name matches '(?i).*${escapeDiscoveryLiteral(params.nameContains)}.*'`);
+      applied.nameContains = params.nameContains;
+    }
+    if (params.instanceContains) {
+      filters.push(`instance matches '(?i).*${escapeDiscoveryLiteral(params.instanceContains)}.*'`);
+      applied.instanceContains = params.instanceContains;
+    }
     const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
     const query = `search SoftwareInstance${where} show type, name, instance, product_version`;
-    return this.queryJson(query, params.limit ?? 50);
+    return this.queryJson(query, params.limit ?? 50, { entityLabel: "instances logicielles", appliedFilters: applied });
   }
 
-  findHostSoftware(params: { hostNameContains: string; softwareTypeContains?: string; limit?: number }): Promise<QueryResult> {
+  findHostSoftware(params: { hostNameContains: string; softwareTypeContains?: string; limit?: number }): Promise<FlatQueryResult> {
     const hostFilter = `#:::Host.name matches '(?i).*${escapeDiscoveryLiteral(params.hostNameContains)}.*'`;
     const swFilter = params.softwareTypeContains
       ? ` and type matches '(?i).*${escapeDiscoveryLiteral(params.softwareTypeContains)}.*'`
       : "";
     const query = `search SoftwareInstance where ${hostFilter}${swFilter} show type, name, instance, product_version, #:::Host.name, #:::Host.key`;
-    return this.queryJson(query, params.limit ?? 50);
+    const applied: Record<string, unknown> = { hostNameContains: params.hostNameContains };
+    if (params.softwareTypeContains) applied.softwareTypeContains = params.softwareTypeContains;
+    return this.queryJson(query, params.limit ?? 50, { entityLabel: "logiciels sur l'hôte", appliedFilters: applied });
   }
-
 
   async getTaxonomySections(): Promise<unknown> {
     return this.request("GET", this.versionedPath(`/taxonomy/sections`), undefined, true);
@@ -189,10 +206,7 @@ export class DiscoveryClient {
 function escapeDiscoveryLiteral(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
-function normalizeListResult(raw: unknown, limit: number): QueryResult {
-  const items = Array.isArray(raw) ? raw : (raw && typeof raw === "object" && Array.isArray((raw as { results?: unknown[] }).results)) ? (raw as { results: unknown[] }).results : [];
-  return { count: items.length, limit, items };
-}
+
 function mapStatusToCode(status: number): string {
   if (status === 401) return "UNAUTHORIZED";
   if (status === 403) return "FORBIDDEN";
