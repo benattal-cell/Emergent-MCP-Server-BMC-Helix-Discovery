@@ -34,10 +34,7 @@ function summarizeGraph(raw: unknown): unknown {
   }
 
   return {
-    counts: {
-      nodes: nodes.length,
-      relations: edges.length
-    },
+    counts: { nodes: nodes.length, relations: edges.length },
     nodeKinds,
     relationKinds,
     cmdbView: {
@@ -52,10 +49,12 @@ function summarizeGraph(raw: unknown): unknown {
 export function graphTools(client: DiscoveryClient) {
   return {
     discovery_get_node_graph: {
+      description: "Get the dependency graph around a specific node (by nodeId): all directly-connected nodes and the relationships between them. Use this when the user asks 'what depends on X?', 'what's connected to X?', 'show the topology around X'. The nodeId must come from a previous search (e.g. discovery_find_hosts returns a 'key' field that's the nodeId).",
       schema: nodeIdSchema,
       handler: async (input: z.infer<typeof nodeIdSchema>) => client.getNodeGraph(input.nodeId)
     },
     discovery_summarize_node_graph_cmdb: {
+      description: "Take the raw graph output of discovery_get_node_graph and summarize it CMDB-style: total CI count, top CI classes, top relationship types. Use this right after discovery_get_node_graph when the raw graph is too verbose for the user.",
       schema: z.object({ graph: z.unknown() }).strict(),
       handler: async (input: { graph: unknown }) => summarizeGraph(input.graph)
     }
