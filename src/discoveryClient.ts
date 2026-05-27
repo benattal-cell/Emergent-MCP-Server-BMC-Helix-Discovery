@@ -126,7 +126,9 @@ export class DiscoveryClient {
     const filters: string[] = [];
     const applied: Record<string, unknown> = {};
     if (params.nameContains) {
-      filters.push(`name matches '(?i).*${escapeDiscoveryLiteral(params.nameContains)}.*'`);
+      // `*` matches against ALL attributes of the kind — covers name, hostname,
+      // dns_name, fqdn, known_dns_names, aliases, etc. in a single predicate.
+      filters.push(`* matches '(?i).*${escapeDiscoveryLiteral(params.nameContains)}.*'`);
       applied.nameContains = params.nameContains;
     }
     if (params.osContains) {
@@ -134,7 +136,7 @@ export class DiscoveryClient {
       applied.osContains = params.osContains;
     }
     const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
-    const query = `search Host${where} show #id as id, name, os, type, key`;
+    const query = `search Host${where} show name, hostname, dns_name, os, type, key, #id as 'id'`;
     return this.queryJson(query, params.limit ?? 50, { entityLabel: "hôtes", appliedFilters: applied });
   }
 
@@ -159,11 +161,12 @@ export class DiscoveryClient {
   }
 
   findHostSoftware(params: { hostNameContains: string; softwareTypeContains?: string; limit?: number }): Promise<FlatQueryResult> {
-    const hostFilter = `#:::Host.name matches '(?i).*${escapeDiscoveryLiteral(params.hostNameContains)}.*'`;
+    const needle = escapeDiscoveryLiteral(params.hostNameContains);
+    const hostFilter = `#:::Host.* matches '(?i).*${needle}.*'`;
     const swFilter = params.softwareTypeContains
       ? ` and type matches '(?i).*${escapeDiscoveryLiteral(params.softwareTypeContains)}.*'`
       : "";
-    const query = `search SoftwareInstance where ${hostFilter}${swFilter} show type, name, instance, product_version, #:::Host.name, #:::Host.key`;
+    const query = `search SoftwareInstance where ${hostFilter}${swFilter} show type, name, instance, product_version, #:::Host.name, #:::Host.hostname, #:::Host.key`;
     const applied: Record<string, unknown> = { hostNameContains: params.hostNameContains };
     if (params.softwareTypeContains) applied.softwareTypeContains = params.softwareTypeContains;
     return this.queryJson(query, params.limit ?? 50, { entityLabel: "logiciels sur l'hôte", appliedFilters: applied });
