@@ -128,7 +128,7 @@ export class DiscoveryClient {
     if (params.nameContains) {
       // `*` matches against ALL attributes of the kind — covers name, hostname,
       // dns_name, fqdn, known_dns_names, aliases, etc. in a single predicate.
-      filters.push(`* matches '(?i).*${escapeDiscoveryLiteral(params.nameContains)}.*'`);
+      filters.push(`* matches '${escapeDiscoveryLiteral(params.nameContains)}'`);
       applied.nameContains = params.nameContains;
     }
     if (params.osContains) {
