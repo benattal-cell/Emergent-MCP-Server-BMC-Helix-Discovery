@@ -2,6 +2,7 @@ import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
 
 const riskWindowDaysDefault = 182;
+const DAY_IN_NANOS = 864000000000;
 
 const softwareTypeEnum = z.enum(["software", "OS", "hardware"]);
 
@@ -30,15 +31,14 @@ function esc(value: string): string {
 }
 
 function buildWhereClause(input: z.infer<typeof lifecycleSchema>): string {
-  const hasDates = "(@retirement_date or @end_support_date or @end_ext_support_date or @end_security_support_date)";
+  const hasDates = "(@retirement_date or @end_support_date or @end_security_support_date or @end_ext_support_date)";
   const filters: string[] = [hasDates];
 
   if (input.hostNameContains) filters.push(`#:HostedSoftware:Host:Host.name matches '${esc(input.hostNameContains)}'`);
   if (input.publisherContains) filters.push(`publisher matches '${esc(input.publisherContains)}'`);
   if (input.productContains) filters.push(`product matches '${esc(input.productContains)}'`);
   if (input.typeIn && input.typeIn.length > 0) {
-    const t = input.typeIn.map((v) => `type = '${v}'`).join(" or ");
-    filters.push(`(${t})`);
+    filters.push(`(${input.typeIn.map((v) => `type = '${v}'`).join(" or ")})`);
   }
 
   if (input.onlyAtRisk) {
@@ -49,10 +49,46 @@ function buildWhereClause(input: z.infer<typeof lifecycleSchema>): string {
 }
 
 function buildLifecycleQuery(input: z.infer<typeof lifecycleSchema>): string {
-  const windowNanos = input.riskWindowDays * 864000000000;
-  const riskExpr = `(@end_ext_support_date and (@end_ext_support_date < currentTime() and 'EOES Exceeded') or @end_security_support_date and (@end_security_support_date < currentTime() and 'EOSS Exceeded') or @end_support_date and (@end_support_date < currentTime() and 'EOS Exceeded') or @retirement_date and (@retirement_date < currentTime() and 'EOL Exceeded') or (@retirement_date and (@retirement_date < currentTime() + ${windowNanos} and 'EOL less than ${input.riskWindowDays} days away') or @end_support_date and (@end_support_date < currentTime() + ${windowNanos} and 'EOS less than ${input.riskWindowDays} days away') or @end_security_support_date and (@end_security_support_date < currentTime() + ${windowNanos} and 'EOSS less than ${input.riskWindowDays} days away') or @end_ext_support_date and (@end_ext_support_date < currentTime() + ${windowNanos} and 'EOES less than ${input.riskWindowDays} days away')) or (@retirement_date and 'EOL more than ${input.riskWindowDays} days away' or @end_support_date and 'EOS more than ${input.riskWindowDays} days away' or @end_security_support_date and 'EOSS more than ${input.riskWindowDays} days away' or @end_ext_support_date and 'EOES more than ${input.riskWindowDays} days away'))`;
+  const windowNanos = input.riskWindowDays * DAY_IN_NANOS;
+  const orderRiskExpr = `(
+    @end_ext_support_date and (@end_ext_support_date < currentTime() and '01 - EOES Exceeded')
+    or @end_security_support_date and (@end_security_support_date < currentTime() and '02 - EOSS Exceeded')
+    or @end_support_date and (@end_support_date < currentTime() and '03 - EOS Exceeded')
+    or @retirement_date and (@retirement_date < currentTime() and '04 - EOL Exceeded')
+    or (
+      @end_ext_support_date and (@end_ext_support_date < currentTime() + ${windowNanos} and '05 - EOES less than ${input.riskWindowDays} days away')
+      or @end_security_support_date and (@end_security_support_date < currentTime() + ${windowNanos} and '06 - EOSS less than ${input.riskWindowDays} days away')
+      or @end_support_date and (@end_support_date < currentTime() + ${windowNanos} and '07 - EOS less than ${input.riskWindowDays} days away')
+      or @retirement_date and (@retirement_date < currentTime() + ${windowNanos} and '08 - EOL less than ${input.riskWindowDays} days away')
+    )
+    or (
+      @end_ext_support_date and '09 - EOES more than ${input.riskWindowDays} days away'
+      or @end_security_support_date and '10 - EOSS more than ${input.riskWindowDays} days away'
+      or @end_support_date and '11 - EOS more than ${input.riskWindowDays} days away'
+      or @retirement_date and '12 - EOL more than ${input.riskWindowDays} days away'
+    )
+  )`;
 
-  return `search SoftwareInstance with value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.retirement_date) as retirement_date, value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.end_support_date) as end_support_date, value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.end_ext_support_date) as end_ext_support_date, value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.end_security_support_date) as end_security_support_date where ${buildWhereClause(input)} order by ${riskExpr} show name, key, known_names, type, edition, model, vendor, publisher, product, product_version, urls, failure_reason, default_retirement_date, customer_retirement_date, (retirement_date and formatTime(retirement_date, '%Y-%m-%d')) as 'End of Life', (end_support_date and formatTime(end_support_date, '%Y-%m-%d')) as 'End of Support', (end_security_support_date and formatTime(end_security_support_date, '%Y-%m-%d')) as 'End of Security Support', (end_ext_support_date and formatTime(end_ext_support_date, '%Y-%m-%d')) as 'End of Ext Support', ${riskExpr} as 'Lifecycle Risk', #:HostedSoftware:Host:Host.name as 'Host'`;
+  const displayRiskExpr = `(
+    @end_ext_support_date and (@end_ext_support_date < currentTime() and 'EOES Exceeded')
+    or @end_security_support_date and (@end_security_support_date < currentTime() and 'EOSS Exceeded')
+    or @end_support_date and (@end_support_date < currentTime() and 'EOS Exceeded')
+    or @retirement_date and (@retirement_date < currentTime() and 'EOL Exceeded')
+    or (
+      @end_ext_support_date and (@end_ext_support_date < currentTime() + ${windowNanos} and 'EOES less than ${input.riskWindowDays} days away')
+      or @end_security_support_date and (@end_security_support_date < currentTime() + ${windowNanos} and 'EOSS less than ${input.riskWindowDays} days away')
+      or @end_support_date and (@end_support_date < currentTime() + ${windowNanos} and 'EOS less than ${input.riskWindowDays} days away')
+      or @retirement_date and (@retirement_date < currentTime() + ${windowNanos} and 'EOL less than ${input.riskWindowDays} days away')
+    )
+    or (
+      @end_ext_support_date and 'EOES more than ${input.riskWindowDays} days away'
+      or @end_security_support_date and 'EOSS more than ${input.riskWindowDays} days away'
+      or @end_support_date and 'EOS more than ${input.riskWindowDays} days away'
+      or @retirement_date and 'EOL more than ${input.riskWindowDays} days away'
+    )
+  )`;
+
+  return `search SoftwareInstance with value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.retirement_date) as retirement_date, value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.end_support_date) as end_support_date, value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.end_security_support_date) as end_security_support_date, value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.end_ext_support_date) as end_ext_support_date, value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.publisher) as support_publisher where ${buildWhereClause(input)} order by ${orderRiskExpr} show name as 'Software Instance', type as 'Type', publisher as 'SI Publisher', product as 'Product', edition as 'Edition', product_version as 'Product Version', full_version as 'Full Version', @support_publisher as 'Support Detail Publisher', (@retirement_date and formatTime(@retirement_date, '%Y-%m-%d')) as 'End of Life', (@end_support_date and formatTime(@end_support_date, '%Y-%m-%d')) as 'End of Support', (@end_security_support_date and formatTime(@end_security_support_date, '%Y-%m-%d')) as 'End of Security Support', (@end_ext_support_date and formatTime(@end_ext_support_date, '%Y-%m-%d')) as 'End of Ext Support', ${displayRiskExpr} as 'Lifecycle Risk', #RunningSoftware:HostedSoftware:Host:Host.name as 'Host', #ClusteredSoftware:HostedSoftware:Host:Host.name as 'Cluster Hosts', #AggregateSoftware:HostedSoftware:Host:Host.name as 'Aggregate Hosts'`;
 }
 
 function appliedFiltersFor(input: z.infer<typeof lifecycleReportSchema>): Record<string, unknown> {
