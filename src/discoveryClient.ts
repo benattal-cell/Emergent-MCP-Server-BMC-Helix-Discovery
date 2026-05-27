@@ -8,7 +8,7 @@ const REQUEST_TIMEOUT_MS = 30000;
 
 interface SearchOptions {
   limit?: number;
-  format?: "2d" | "tree";
+  format?: "object" | "tree";
   entityLabel?: string;
   appliedFilters?: Record<string, unknown>;
 }
@@ -102,23 +102,23 @@ export class DiscoveryClient {
   }
 
   async queryJson(query: string, limit = 50, options: { entityLabel?: string; appliedFilters?: Record<string, unknown> } = {}): Promise<FlatQueryResult> {
-    return this.searchData(query, { limit, format: "2d", ...options });
+    return this.searchData(query, { limit, format: "object", ...options });
   }
 
   async searchData(query: string, options: SearchOptions = {}): Promise<FlatQueryResult> {
     const limit = options.limit ?? 50;
+    const format = options.format === "tree" ? "tree" : "object";
     const params = new URLSearchParams({
       offset: "0",
-      limit: String(limit)
+      limit: String(limit),
+      format
     });
-    if (options.format === "tree") {
-      params.set("format", "tree");
-    }
     const path = `${this.versionedPath("/data/search")}?${params.toString()}`;
     const data = await this.request("POST", path, { query }, true);
     return flattenDiscoveryQueryResult(data, {
       entityLabel: options.entityLabel,
-      appliedFilters: options.appliedFilters
+      appliedFilters: options.appliedFilters,
+      format
     });
   }
 

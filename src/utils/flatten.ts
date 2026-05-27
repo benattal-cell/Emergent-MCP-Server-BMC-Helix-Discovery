@@ -5,6 +5,7 @@ export interface FlatQueryResult {
   appliedFilters?: Record<string, unknown>;
   kind?: string;
   headings?: string[];
+  format?: "object" | "tree";
   rows: Array<Record<string, unknown>>;
 }
 
@@ -14,12 +15,6 @@ interface DiscoverySearchResultBlock {
   offset?: number;
   headings?: string[];
   results?: unknown[];
-}
-
-interface DiscoveryEnvelope {
-  count?: number;
-  limit?: number;
-  items?: unknown[];
 }
 
 function toRecord(value: unknown): Record<string, unknown> | undefined {
@@ -62,27 +57,45 @@ function arrayRowsToObjects(headings: string[], rows: unknown[]): Array<Record<s
  */
 export function flattenDiscoveryQueryResult(
   raw: unknown,
-  options: { entityLabel?: string; appliedFilters?: Record<string, unknown> } = {}
+  options: { entityLabel?: string; appliedFilters?: Record<string, unknown>; format?: "object" | "tree" } = {}
 ): FlatQueryResult {
-  const envelope = toRecord(raw) as DiscoveryEnvelope | undefined;
-  const items = Array.isArray(envelope?.items) ? envelope!.items! : [];
-  const firstBlock = items.find(isResultBlock);
+  const format = options.format ?? "object";
+
+  let blocks: unknown[];
+  if (Array.isArray(raw)) {
+    blocks = raw;
+  } else {
+    const envelope = toRecord(raw);
+    blocks = Array.isArray(envelope?.items) ? envelope.items : [];
+  }
+  const firstBlock = blocks.find(isResultBlock);
 
   if (!firstBlock) {
+    const summary = blocks.length === 0
+      ? "0 résultat trouvé (réponse Discovery vide ou format inattendu)."
+      : "0 résultat trouvé.";
     return {
-      summary: "0 résultat trouvé.",
+      summary,
       totalCount: 0,
       returnedCount: 0,
       appliedFilters: options.appliedFilters,
+      format,
       rows: []
     };
   }
 
   const headings = Array.isArray(firstBlock.headings) ? firstBlock.headings : [];
   const rawRows = Array.isArray(firstBlock.results) ? firstBlock.results : [];
-  const rows = headings.length > 0 ? arrayRowsToObjects(headings, rawRows) : rawRows.map((r) =>
-    r && typeof r === "object" ? (r as Record<string, unknown>) : { value: r }
-  );
+  let rows: Array<Record<string, unknown>>;
+  if (format === "tree") {
+    rows = rawRows.map((r) =>
+      r && typeof r === "object" ? (r as Record<string, unknown>) : { value: r }
+    );
+  } else {
+    rows = headings.length > 0 ? arrayRowsToObjects(headings, rawRows) : rawRows.map((r) =>
+      r && typeof r === "object" ? (r as Record<string, unknown>) : { value: r }
+    );
+  }
 
   const totalCount = typeof firstBlock.count === "number" ? firstBlock.count : rows.length;
   const returnedCount = rows.length;
@@ -92,10 +105,11 @@ export function flattenDiscoveryQueryResult(
   const filtersDesc = options.appliedFilters && Object.keys(options.appliedFilters).length > 0
     ? ` (filtres: ${Object.entries(options.appliedFilters).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(", ")})`
     : "";
+  const formatNote = format === "tree" ? " [format=tree, résultats hiérarchiques]" : "";
   const truncated = returnedCount < totalCount;
   const summary = truncated
-    ? `${totalCount} ${label} correspondants en base${filtersDesc}, ${returnedCount} retournés (résultats tronqués).`
-    : `${totalCount} ${label} correspondants en base${filtersDesc}.`;
+    ? `${totalCount} ${label} correspondants en base${filtersDesc}, ${returnedCount} retournés (résultats tronqués)${formatNote}.`
+    : `${totalCount} ${label} correspondants en base${filtersDesc}${formatNote}.`;
 
   return {
     summary,
@@ -104,6 +118,7 @@ export function flattenDiscoveryQueryResult(
     appliedFilters: options.appliedFilters,
     kind,
     headings: headings.length > 0 ? headings : undefined,
+    format,
     rows
   };
 }
