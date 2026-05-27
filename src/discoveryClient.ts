@@ -87,8 +87,14 @@ export class DiscoveryClient {
     }
   }
 
-  async getNodeGraph(nodeId: string): Promise<unknown> {
-    return this.request("GET", this.versionedPath(`/data/nodes/${encodeURIComponent(nodeId)}/graph`), undefined, true);
+  async getNodeGraph(nodeId: string, params: Record<string, string | number | boolean | undefined> = {}): Promise<unknown> {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) {
+      if (v === undefined) continue;
+      q.set(k, String(v));
+    }
+    const suffix = q.toString() ? `?${q.toString()}` : "";
+    return this.request("GET", this.versionedPath(`/data/nodes/${encodeURIComponent(nodeId)}/graph${suffix}`), undefined, true);
   }
 
   async getTopologyServices(payload: unknown): Promise<unknown> {
@@ -128,7 +134,7 @@ export class DiscoveryClient {
       applied.osContains = params.osContains;
     }
     const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
-    const query = `search Host${where} show name, os, type, key`;
+    const query = `search Host${where} show #id as id, name, os, type, key`;
     return this.queryJson(query, params.limit ?? 50, { entityLabel: "hôtes", appliedFilters: applied });
   }
 
