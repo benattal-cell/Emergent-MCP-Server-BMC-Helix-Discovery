@@ -12,6 +12,10 @@ import { cveTools } from "./tools/cve.js";
 import { graphTools } from "./tools/graph.js";
 import { lifecycleTools } from "./tools/lifecycle.js";
 import { assistantGuideTools } from "./tools/assistantGuide.js";
+import { dependencyMapTools } from "./tools/dependencyMap.js";
+import { dependencyScopeTools } from "./tools/dependencyScope.js";
+import { lifecycleVisualTools } from "./tools/visualLifecycle.js";
+import { hostCardTools } from "./tools/visualHostCard.js";
 import { createOAuthServer } from "./oauth.js";
 
 const MAX_BODY_BYTES = 1_000_000;
@@ -100,11 +104,15 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...cveTools(config),
     ...graphTools(client),
     ...lifecycleTools(client),
-    ...assistantGuideTools()
+    ...assistantGuideTools(),
+    ...hostCardTools(client),
+    ...lifecycleVisualTools(client),
+    ...dependencyScopeTools(client),
+    ...dependencyMapTools(client)
   };
 
   for (const [name, def] of Object.entries(tools)) {
-    const toolDef = def as { schema: { parse: (value: unknown) => unknown; shape?: Record<string, unknown> }; handler: (input: never) => Promise<unknown>; description?: string };
+    const toolDef = def as { schema: { parse: (value: unknown) => unknown; shape?: Record<string, unknown> }; handler: (input: never) => Promise<unknown>; description?: string; isVisual?: boolean };
     const inputSchemaShape = toolDef.schema && (toolDef.schema as { shape?: unknown }).shape
       ? (toolDef.schema as { shape: Record<string, unknown> }).shape
       : {};
@@ -118,6 +126,12 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
         try {
           const parsed = toolDef.schema.parse(input ?? {});
           const result = await toolDef.handler(parsed as never);
+
+          // Visual tools already return { content: [...] } in MCP shape.
+          if (toolDef.isVisual && result && typeof result === "object" && Array.isArray((result as { content?: unknown }).content)) {
+            return result as never;
+          }
+
           return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
         } catch (error) {
           return { content: [{ type: "text", text: JSON.stringify(normalizeApiError(error), null, 2) }], isError: true };

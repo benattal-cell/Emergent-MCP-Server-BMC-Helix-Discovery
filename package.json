@@ -23,7 +23,9 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "dotenv": "^16.5.0",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "@hpcc-js/wasm-graphviz": "^1.21.2",
+    "@resvg/resvg-js": "^2.6.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",
