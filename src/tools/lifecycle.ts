@@ -50,7 +50,7 @@ const lifecycleReportSchema = z.object({
 }).strict();
 
 function buildGoldenLifecycleQuery(riskWindowDays: number, onlyAtRisk: boolean): string {
-  const base = buildLifecycleQuery({
+  return buildLifecycleQuery({
     riskWindowDays,
     includeUrlEncoded: false,
     onlyAtRisk,
@@ -59,12 +59,12 @@ function buildGoldenLifecycleQuery(riskWindowDays: number, onlyAtRisk: boolean):
     productContains: undefined,
     typeIn: undefined
   });
-  return base;
 }
 
 export function lifecycleTools(client: DiscoveryClient) {
   return {
     discovery_lifecycle_report: {
+      description: "Run the standard end-of-life/end-of-support report. Returns software/OS with their EOL, EOS, EOSS, EOES dates AND a 'Lifecycle Risk' label (e.g. 'EOS Exceeded', 'EOL less than 182 days away'). Use this when the user asks 'what software is end-of-life?', 'what is going out of support soon?', 'show obsolete software'. Set onlyAtRisk=true to filter to only items already past a support date.",
       schema: lifecycleReportSchema,
       handler: async (input: z.infer<typeof lifecycleReportSchema>) => {
         const query = buildGoldenLifecycleQuery(input.riskWindowDays, input.onlyAtRisk);
@@ -72,6 +72,7 @@ export function lifecycleTools(client: DiscoveryClient) {
       }
     },
     discovery_build_lifecycle_query: {
+      description: "Build a customizable lifecycle DSL query with filters on publisher, product, host, or type. Returns the DSL string ready to be passed to discovery_search_data. Use this when discovery_lifecycle_report is too broad and the user wants to scope by a specific vendor (e.g. 'Microsoft only', 'just Oracle products', 'only on PROD hosts').",
       schema: lifecycleSchema,
       handler: async (input: z.infer<typeof lifecycleSchema>) => {
         const dslQuery = buildLifecycleQuery(input);
