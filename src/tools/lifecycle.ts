@@ -3,14 +3,26 @@ import { DiscoveryClient } from "../discoveryClient.js";
 
 const riskWindowDaysDefault = 182;
 
+const softwareTypeEnum = z.enum(["software", "OS", "hardware"]);
+
 const lifecycleSchema = z.object({
   riskWindowDays: z.number().int().min(1).max(3650).default(riskWindowDaysDefault),
   includeUrlEncoded: z.boolean().default(false),
   hostNameContains: z.string().min(1).optional(),
   publisherContains: z.string().min(1).optional(),
   productContains: z.string().min(1).optional(),
-  typeIn: z.array(z.enum(["software", "OS", "hardware"])).min(1).optional(),
+  typeIn: z.array(softwareTypeEnum).min(1).optional(),
   onlyAtRisk: z.boolean().default(false)
+}).strict();
+
+const lifecycleReportSchema = z.object({
+  limit: z.number().int().min(1).max(500).default(100),
+  riskWindowDays: z.number().int().min(1).max(3650).default(riskWindowDaysDefault),
+  onlyAtRisk: z.boolean().default(false),
+  hostNameContains: z.string().min(1).optional(),
+  publisherContains: z.string().min(1).optional(),
+  productContains: z.string().min(1).optional(),
+  typeIn: z.array(softwareTypeEnum).min(1).optional()
 }).strict();
 
 function esc(value: string): string {
@@ -43,36 +55,41 @@ function buildLifecycleQuery(input: z.infer<typeof lifecycleSchema>): string {
   return `search SoftwareInstance with value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.retirement_date) as retirement_date, value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.end_support_date) as end_support_date, value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.end_ext_support_date) as end_ext_support_date, value(#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.end_security_support_date) as end_security_support_date where ${buildWhereClause(input)} order by ${riskExpr} show name, key, known_names, type, edition, model, vendor, publisher, product, product_version, urls, failure_reason, default_retirement_date, customer_retirement_date, (retirement_date and formatTime(retirement_date, '%Y-%m-%d')) as 'End of Life', (end_support_date and formatTime(end_support_date, '%Y-%m-%d')) as 'End of Support', (end_security_support_date and formatTime(end_security_support_date, '%Y-%m-%d')) as 'End of Security Support', (end_ext_support_date and formatTime(end_ext_support_date, '%Y-%m-%d')) as 'End of Ext Support', ${riskExpr} as 'Lifecycle Risk', #:HostedSoftware:Host:Host.name as 'Host'`;
 }
 
-const lifecycleReportSchema = z.object({
-  limit: z.number().int().min(1).max(500).default(100),
-  riskWindowDays: z.number().int().min(1).max(3650).default(riskWindowDaysDefault),
-  onlyAtRisk: z.boolean().default(false)
-}).strict();
-
-function buildGoldenLifecycleQuery(riskWindowDays: number, onlyAtRisk: boolean): string {
-  return buildLifecycleQuery({
-    riskWindowDays,
-    includeUrlEncoded: false,
-    onlyAtRisk,
-    hostNameContains: undefined,
-    publisherContains: undefined,
-    productContains: undefined,
-    typeIn: undefined
-  });
+function appliedFiltersFor(input: z.infer<typeof lifecycleReportSchema>): Record<string, unknown> {
+  const applied: Record<string, unknown> = {
+    riskWindowDays: input.riskWindowDays,
+    onlyAtRisk: input.onlyAtRisk
+  };
+  if (input.hostNameContains) applied.hostNameContains = input.hostNameContains;
+  if (input.publisherContains) applied.publisherContains = input.publisherContains;
+  if (input.productContains) applied.productContains = input.productContains;
+  if (input.typeIn) applied.typeIn = input.typeIn;
+  return applied;
 }
 
 export function lifecycleTools(client: DiscoveryClient) {
   return {
     discovery_lifecycle_report: {
-      description: "Run the standard end-of-life/end-of-support report. Returns software/OS with their EOL, EOS, EOSS, EOES dates AND a 'Lifecycle Risk' label (e.g. 'EOS Exceeded', 'EOL less than 182 days away'). Use this when the user asks 'what software is end-of-life?', 'what is going out of support soon?', 'show obsolete software'. Set onlyAtRisk=true to filter to only items already past a support date.",
+      description: "Run the end-of-life/end-of-support report. Returns software/OS with their EOL, EOS, EOSS, EOES dates AND a 'Lifecycle Risk' label (e.g. 'EOS Exceeded', 'EOL less than 182 days away'). USE THIS DIRECTLY (do not chain build_lifecycle_query + search_data) when the user asks 'what software is end-of-life?', 'what is going out of support soon?', 'show obsolete software'. ALWAYS pass `publisherContains` when the user mentions a vendor (Microsoft, Oracle, Adobe, IBM, ...). ALWAYS pass `productContains` when the user mentions a specific product (Windows Server, SQL Server, JBoss, ...). Set `onlyAtRisk=true` to filter to items already past a support date. Response includes a `summary` field with the headline count, then `rows` with the data.",
       schema: lifecycleReportSchema,
       handler: async (input: z.infer<typeof lifecycleReportSchema>) => {
-        const query = buildGoldenLifecycleQuery(input.riskWindowDays, input.onlyAtRisk);
-        return client.queryJson(query, input.limit);
+        const query = buildLifecycleQuery({
+          riskWindowDays: input.riskWindowDays,
+          includeUrlEncoded: false,
+          onlyAtRisk: input.onlyAtRisk,
+          hostNameContains: input.hostNameContains,
+          publisherContains: input.publisherContains,
+          productContains: input.productContains,
+          typeIn: input.typeIn
+        });
+        return client.queryJson(query, input.limit, {
+          entityLabel: "logiciels avec dates de cycle de vie",
+          appliedFilters: appliedFiltersFor(input)
+        });
       }
     },
     discovery_build_lifecycle_query: {
-      description: "Build a customizable lifecycle DSL query with filters on publisher, product, host, or type. Returns the DSL string ready to be passed to discovery_search_data. Use this when discovery_lifecycle_report is too broad and the user wants to scope by a specific vendor (e.g. 'Microsoft only', 'just Oracle products', 'only on PROD hosts').",
+      description: "ADVANCED. Build a customizable lifecycle DSL query without executing it. Returns the DSL string ready to be passed to discovery_search_data. PREFER `discovery_lifecycle_report` for normal use cases — it now accepts the same filters AND executes the query in one call. Use this build tool only when you need to inspect or transform the DSL before running it.",
       schema: lifecycleSchema,
       handler: async (input: z.infer<typeof lifecycleSchema>) => {
         const dslQuery = buildLifecycleQuery(input);
