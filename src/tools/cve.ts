@@ -57,6 +57,7 @@ async function fetchNvdCpes(cveId: string, nvdApiKey?: string): Promise<string[]
 export function cveTools(config: Pick<AppConfig, "nvdApiKey">) {
   return {
     discovery_cve_executive_summary: {
+      description: "Produce an EXECUTIVE-style summary for a CVE: number of impacted assets, top business services / hosts / versions, and a follow-up prompt asking if the user wants the full impacted inventory. Use this FIRST when the user asks 'are we exposed to CVE-XXXX-YYYY?' or 'what's the impact of CVE-XXXX-YYYY?'. Requires the CVE ID. Optionally pass already-fetched Discovery rows to compute aggregates; otherwise pass discoveryRows=[].",
       schema: z.object({
         cveId: cveIdSchema,
         topN: z.number().int().min(1).max(20).default(5),
@@ -77,28 +78,15 @@ export function cveTools(config: Pick<AppConfig, "nvdApiKey">) {
         const topVersions = aggregateTop(rows, ["Full Version", "version", "product_version"], input.topN);
 
         return {
-          cveHeader: {
-            cveId,
-            riskTitle: t.riskTitle,
-            note: t.summaryNote
-          },
-          cveSummary: {
-            cpeCount: cpes.length,
-            impactedRowsCount: rows.length,
-            topServices,
-            topHosts,
-            topVersions
-          },
-          discoverySearchPlan: {
-            primaryTool: "discovery_build_cve_software_query",
-            nextExecutionTool: "discovery_search_data",
-            dslQuery: dsl
-          },
+          cveHeader: { cveId, riskTitle: t.riskTitle, note: t.summaryNote },
+          cveSummary: { cpeCount: cpes.length, impactedRowsCount: rows.length, topServices, topHosts, topVersions },
+          discoverySearchPlan: { primaryTool: "discovery_build_cve_software_query", nextExecutionTool: "discovery_search_data", dslQuery: dsl },
           followUpPrompt: t.followUpPrompt
         };
       }
     },
     discovery_build_cve_software_query: {
+      description: "Build the Discovery DSL query that finds software instances matching a list of CPEs. Use this AFTER getting CPEs from discovery_get_cve_cpes_from_nvd, to construct the query that will be passed to discovery_search_data. Returns the ready-to-run DSL string.",
       schema: z.object({ cpeStrings: z.array(cpeSchema).min(1), includeUrlEncoded: z.boolean().default(false) }).strict(),
       handler: async (input: { cpeStrings: string[]; includeUrlEncoded: boolean }) => {
         const dsl = buildDiscoveryDsl(input.cpeStrings);
@@ -110,6 +98,7 @@ export function cveTools(config: Pick<AppConfig, "nvdApiKey">) {
       }
     },
     discovery_get_cve_cpes_from_nvd: {
+      description: "Fetch the official CPE (Common Platform Enumeration) strings associated with a CVE from the NIST NVD database. Use this when you need to know precisely which products and versions are affected by a CVE. The CPEs returned are the technical fingerprints that match against Discovery's cpe_string_23 attribute.",
       schema: z.object({ cveId: cveIdSchema }).strict(),
       handler: async (input: { cveId: string }) => {
         const cpes = await fetchNvdCpes(input.cveId.toUpperCase(), config.nvdApiKey);
@@ -117,6 +106,7 @@ export function cveTools(config: Pick<AppConfig, "nvdApiKey">) {
       }
     },
     discovery_cve_full_inventory_prompt: {
+      description: "Prepare the full impacted-inventory call. Use this AFTER discovery_cve_executive_summary if the user said yes to seeing the full impacted inventory (every host, version, service, owner). Returns a recommendedInput ready to pass to discovery_search_data.",
       schema: z.object({ cveId: cveIdSchema, cpeStrings: z.array(cpeSchema).min(1), limit: z.number().int().min(1).max(500).default(200), language: languageSchema, question: z.string().optional() }).strict(),
       handler: async (input: { cveId: string; cpeStrings: string[]; limit: number; language?: "fr" | "en"; question?: string }) => {
         const lang = resolveLanguage(input.language, input.question);
@@ -126,10 +116,7 @@ export function cveTools(config: Pick<AppConfig, "nvdApiKey">) {
           cveId: input.cveId.toUpperCase(),
           objective: t.fullInventoryObjective,
           runWithTool: "discovery_search_data",
-          recommendedInput: {
-            query: dsl,
-            limit: input.limit
-          },
+          recommendedInput: { query: dsl, limit: input.limit },
           expectedColumns: t.expectedColumns
         };
       }
