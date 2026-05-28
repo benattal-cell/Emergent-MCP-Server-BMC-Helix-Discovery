@@ -27,16 +27,19 @@ const lifecycleReportSchema = z.object({
 }).strict();
 
 function esc(value: string): string {
-  return value.replace(/'/g, "\\'");
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
 function buildWhereClause(input: z.infer<typeof lifecycleSchema>): string {
   const hasDates = "(@retirement_date or @end_support_date or @end_security_support_date or @end_ext_support_date)";
   const filters: string[] = [hasDates];
 
-  if (input.hostNameContains) filters.push(`#:HostedSoftware:Host:Host.name matches '${esc(input.hostNameContains)}'`);
-  if (input.publisherContains) filters.push(`publisher matches '${esc(input.publisherContains)}'`);
-  if (input.productContains) filters.push(`product matches '${esc(input.productContains)}'`);
+  if (input.hostNameContains) {
+    const needle = esc(input.hostNameContains);
+    filters.push(`nodecount(traverse RunningSoftware:HostedSoftware:Host:Host where name has subword "${needle}" or hostname has subword "${needle}" or dns_name has subword "${needle}") > 0`);
+  }
+  if (input.publisherContains) filters.push(`publisher has subword "${esc(input.publisherContains)}"`);
+  if (input.productContains) filters.push(`product has subword "${esc(input.productContains)}"`);
   if (input.typeIn && input.typeIn.length > 0) {
     filters.push(`(${input.typeIn.map((v) => `type = '${v}'`).join(" or ")})`);
   }
@@ -48,7 +51,7 @@ function buildWhereClause(input: z.infer<typeof lifecycleSchema>): string {
   return filters.join(" and ");
 }
 
-function buildLifecycleQuery(input: z.infer<typeof lifecycleSchema>): string {
+export function buildLifecycleQuery(input: z.infer<typeof lifecycleSchema>): string {
   const windowNanos = input.riskWindowDays * DAY_IN_NANOS;
   const orderRiskExpr = `(
     @end_ext_support_date and (@end_ext_support_date < currentTime() and '01 - EOES Exceeded')
