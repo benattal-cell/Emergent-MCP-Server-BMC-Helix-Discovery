@@ -4,7 +4,7 @@ import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
 import { renderForceLayoutSvg, type PositionedEdge, type PositionedNode } from "../svg/forceLayoutRenderer.js";
 import { renderVisual } from "../svg/renderer.js";
-import { buildCytoscapeHtml } from "../visual/cytoscapeResource.js";
+import { buildInteractiveHtml } from "../svg/interactiveGraph.js";
 
 export const dependencyMapSchema = z.object({
   target: z.string().min(1),
@@ -103,7 +103,7 @@ function layout(nodes: GraphNode[], edges: GraphEdge[], options: z.infer<typeof 
 export function dependencyMapTools(client: DiscoveryClient) {
   return {
     discovery_dependency_map: {
-      description: "Render dependency map with server-side ForceAtlas2 layout. Returns structuredContent + SVG/PNG fallback + Cytoscape HTML resource.",
+      description: "Render a dependency map around a Discovery node. Returns multiple representations in the same response: a PNG image (base64), an SVG resource, and a self-contained interactive HTML resource (Cytoscape embedded inline, no external CDN). If your client supports inline image rendering, render the PNG. If your client supports file artifacts or downloadable resources, present the HTML resource as a downloadable file the user can open in a browser for an interactive view. Do NOT attempt to summarize the raw HTML — it is meant for rendering, not reading.",
       schema: dependencyMapSchema,
       handler: async (input: z.infer<typeof dependencyMapSchema>) => {
         let focusId = input.target;
@@ -129,13 +129,18 @@ export function dependencyMapTools(client: DiscoveryClient) {
           counts: { nodes: positionedNodes.length, edges: edges.length, kinds }
         });
         const svg = renderForceLayoutSvg({ nodes: positionedNodes, edges: positionedEdges, width: 1600, height: 900, title: `Dependency map · ${focusName}` });
-        const html = buildCytoscapeHtml({ nodes: positionedNodes, edges, title: `Dependency map · ${focusName}` });
+        const html = buildInteractiveHtml(positionedNodes, edges, { title: `Dependency map · ${focusName}` });
         return renderVisual(svg, {
           name: `depmap_${focusName.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase()}_d${input.depth}`,
           textSummary: `Dependency map for '${focusName}': ${positionedNodes.length} nodes, ${edges.length} edges${positionedNodes.length >= input.maxNodes ? " (truncated)" : ""}. Layout=ForceAtlas2, iterations=${input.iterations}.`,
           pngWidth: 1600,
           structuredContent,
-          extraResources: [{ uri: `mcp://discovery-visual/depmap_${focusName.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase()}_d${input.depth}.cytoscape.html`, mimeType: "text/html", text: html }]
+          ...(html ? {
+            interactiveHtml: {
+              html,
+              resourceName: `depmap_${focusName.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase()}_d${input.depth}.cytoscape`
+            }
+          } : {})
         });
       },
       isVisual: true as const

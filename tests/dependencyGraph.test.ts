@@ -34,15 +34,26 @@ describe("discovery_dependency_scope", () => {
 });
 
 describe("discovery_dependency_map", () => {
-  it("returns image + 2 resources + text + structuredContent", async () => {
+  it("returns image, svg resource, html resource, then text", async () => {
     const client = fakeClient(sampleGraph);
     const tools = dependencyMapTools(client);
     const result = await tools.discovery_dependency_map.handler({ target: "PROD-WEB-01", depth: 1, maxNodes: 60, iterations: 120, linLog: false, gravity: 1, scalingRatio: 10 });
     expect(result.content).toHaveLength(4);
     expect(result.content[0].type).toBe("image");
-    const resources = result.content.filter((c) => c.type === "resource") as Array<{ type: "resource"; resource: { mimeType: string } }>;
-    expect(resources.map((r) => r.resource.mimeType).sort()).toEqual(["image/svg+xml", "text/html"]);
+    expect(result.content[1].type).toBe("resource");
+    expect((result.content[1] as { type: "resource"; resource: { mimeType: string } }).resource.mimeType).toBe("image/svg+xml");
+    expect(result.content[2].type).toBe("resource");
+    const htmlResource = result.content[2] as { type: "resource"; resource: { mimeType: string; text: string } };
+    expect(htmlResource.resource.mimeType).toBe("text/html");
     expect(result.content[3].type).toBe("text");
+
+    const html = htmlResource.resource.text.toLowerCase();
+    expect(html).toContain("cytoscape");
+    expect(html).not.toContain("unpkg.com");
+    expect(html).not.toContain("jsdelivr");
+    expect(html).not.toContain("cdnjs");
+    expect(html).not.toContain("googleapis");
+
     const sc = (result as { structuredContent: { nodes: Array<{ x: number; y: number }> } }).structuredContent;
     expect(sc.nodes.length).toBeGreaterThan(0);
     sc.nodes.forEach((n) => { expect(Number.isFinite(n.x)).toBe(true); expect(Number.isFinite(n.y)).toBe(true); });

@@ -12,8 +12,8 @@ export interface RenderOptions {
   name: string;
   pngWidth?: number;
   textSummary?: string;
-  extraResources?: Array<{ uri: string; mimeType: string; text: string }>;
   structuredContent?: unknown;
+  interactiveHtml?: { html: string; resourceName: string };
 }
 
 export interface RenderedVisual {
@@ -41,8 +41,16 @@ export function renderVisual(svg: string, options: RenderOptions): RenderedVisua
   const content: VisualContentBlock[] = [];
   if (pngBase64) content.push({ type: "image", data: pngBase64, mimeType: "image/png" });
   content.push({ type: "resource", resource: { uri: resourceUri, mimeType: "image/svg+xml", text: svg } });
-  for (const resource of options.extraResources ?? []) {
-    content.push({ type: "resource", resource });
+
+  if (options.interactiveHtml) {
+    content.push({
+      type: "resource",
+      resource: {
+        uri: `mcp://discovery-visual/${options.interactiveHtml.resourceName}.html`,
+        mimeType: "text/html",
+        text: options.interactiveHtml.html
+      }
+    });
   }
 
   if (options.textSummary || rasterError) {

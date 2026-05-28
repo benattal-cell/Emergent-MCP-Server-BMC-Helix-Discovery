@@ -43,6 +43,15 @@ const sections: GuideSection[] = [
     ]
   },
   {
+    id: "dependency",
+    title: "Dépendances / Topologie",
+    keywords: ["dependency", "dépendance", "dependances", "topology", "topologie", "graph", "graphe", "map", "carte", "connected", "depends on", "impact", "blast radius"],
+    items: [
+      { tool: "discovery_dependency_scope", purpose: "Probe léger à appeler EN PREMIER pour estimer la taille du graphe avant rendu.", useCase: "Avant le rendu, évaluer nodes/relations pour choisir depth et éviter une carte trop dense." },
+      { tool: "discovery_dependency_map", purpose: "Rendre une carte multi-représentation (PNG + SVG + HTML interactif autoportant). Si le client supporte les fichiers téléchargeables, il DOIT proposer le HTML interactif via le mécanisme natif (ex: present_files).", useCase: "Pour une analyse d'impact ou blast radius, afficher le PNG/SVG inline et proposer systématiquement le HTML interactif en téléchargement si possible." }
+    ]
+  },
+  {
     id: "taxonomy",
     title: "Exploration taxonomy Discovery",
     keywords: ["taxonomy", "nodekind", "fieldlist", "relkind", "model", "modèle", "schema"],
@@ -70,13 +79,15 @@ function resolveLanguage(language: "fr" | "en" | undefined, request: string): "f
 const GLOBAL_RULES_FR = [
   "RÈGLE 1: N'invente JAMAIS du DSL Discovery (search/show). Utilise les outils paramétrés ci-dessous.",
   "RÈGLE 2: Si l'utilisateur mentionne un éditeur (Microsoft, Oracle...) ou un produit (Windows Server, JBoss...), passe-le DIRECTEMENT en paramètre `publisherContains` / `productContains` à `discovery_lifecycle_report`. Pas d'enchaînement.",
-  "RÈGLE 3: La réponse de chaque outil contient un champ `summary` avec le chiffre clé. Cite-le textuellement avant tout détail."
+  "RÈGLE 3: La réponse de chaque outil contient un champ `summary` avec le chiffre clé. Cite-le textuellement avant tout détail.",
+  "RÈGLE 4: Pour les outils retournant plusieurs représentations (ex: discovery_dependency_map), choisis la représentation la plus riche que ton client supporte. Le HTML interactif est autoportant — propose-le en téléchargement si possible."
 ];
 
 const GLOBAL_RULES_EN = [
   "RULE 1: NEVER invent Discovery DSL (search/show). Use the parameterized tools listed below.",
   "RULE 2: If the user mentions a vendor (Microsoft, Oracle...) or a product (Windows Server, JBoss...), pass it DIRECTLY as `publisherContains` / `productContains` to `discovery_lifecycle_report`. No chaining.",
-  "RULE 3: Every tool response includes a `summary` field with the headline count. Quote it verbatim before any detail."
+  "RULE 3: Every tool response includes a `summary` field with the headline count. Quote it verbatim before any detail.",
+  "RULE 4: For tools returning multiple representations (e.g. discovery_dependency_map), choose the richest representation your client supports. The interactive HTML is self-contained — offer it as a downloadable artifact when possible."
 ];
 
 export function assistantGuideTools() {
@@ -138,7 +149,9 @@ function translatePurpose(text: string): string {
     "Lister les logiciels installés sur un hôte donné.": "List software installed on a given host.",
     "Lister les types de nœuds disponibles.": "List available node kinds.",
     "Lister les champs d'un kind.": "List fields for a node kind.",
-    "Détailler un type de relation.": "Show details for a relationship kind."
+    "Détailler un type de relation.": "Show details for a relationship kind.",
+    "Probe léger à appeler EN PREMIER pour estimer la taille du graphe avant rendu.": "Lightweight probe to call FIRST to estimate graph size before rendering.",
+    "Rendre une carte multi-représentation (PNG + SVG + HTML interactif autoportant). Si le client supporte les fichiers téléchargeables, il DOIT proposer le HTML interactif via le mécanisme natif (ex: present_files).": "Render a multi-representation map (PNG + SVG + self-contained interactive HTML). If the client supports downloadable files, it MUST offer the interactive HTML through the native mechanism (e.g. present_files).",
   };
   return map[text] ?? text;
 }
@@ -157,7 +170,9 @@ function translateUseCase(text: string): string {
     "Que tourne-t-il sur SAP-PROD-01 ?": "What's running on SAP-PROD-01?",
     "Savoir quels kinds sont exploitables dans les requêtes.": "Determine which kinds can be used in queries.",
     "Identifier le nom exact d'un attribut avant une query.": "Identify exact attribute names before running a query.",
-    "Valider les relations à utiliser entre Host et Software.": "Validate relationships to use between Host and Software."
+    "Valider les relations à utiliser entre Host et Software.": "Validate relationships to use between Host and Software.",
+    "Avant le rendu, évaluer nodes/relations pour choisir depth et éviter une carte trop dense.": "Before rendering, evaluate nodes/relationships to choose depth and avoid an overly dense map.",
+    "Pour une analyse d'impact ou blast radius, afficher le PNG/SVG inline et proposer systématiquement le HTML interactif en téléchargement si possible.": "For impact/blast-radius analysis, render PNG/SVG inline and always offer the interactive HTML as a downloadable artifact when possible.",
   };
   return map[text] ?? text;
 }
