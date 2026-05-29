@@ -190,6 +190,13 @@ const sections: GuideSection[] = [
         useCaseEn: "For impact/blast-radius analysis, render PNG/SVG inline and always offer the interactive HTML as a downloadable artifact when possible."
       },
       {
+        tool: "discovery_service_architecture",
+        purpose: "Générer un schéma d'architecture hiérarchical style dossier (D3 tree, rectangles, Bézier) depuis un nœud racine BusinessApplication ou Host. Plus lisible que dependency_map pour les services avec une structure arborescente claire.",
+        useCase: "Quand l'utilisateur demande 'montre-moi l'architecture de [service]' ou 'schéma du service X' → préférer ce tool à dependency_map. Si le graphe a beaucoup de relations croisées (multi-parent), signaler à l'utilisateur que certains nœuds ont été dupliqués.",
+        purposeEn: "Generate a hierarchical folder-style architecture diagram (D3 tree, rectangles, Bézier links) from a root BusinessApplication or Host node. More readable than dependency_map for services with a clear tree structure.",
+        useCaseEn: "When the user asks 'show me the architecture of [service]' or 'service X diagram', prefer this tool over dependency_map. If the graph has many cross-links (multi-parent), tell the user some nodes were duplicated."
+      },
+      {
         tool: "discovery_get_node_graph",
         purpose: "Récupérer le graphe brut autour d'un nodeId Discovery.",
         useCase: "Quand on a déjà un nodeId et qu'on veut inspecter les relations sans rendu visuel.",
