@@ -137,7 +137,7 @@ html,body{margin:0;height:100%;font-family:Arial,Helvetica,sans-serif;background
 <script>${d3Script}</script><script>
 const PAYLOAD=${payload};
 function color(kind){let h=0;for(let i=0;i<kind.length;i++)h=(h*33+kind.charCodeAt(i))>>>0;return 'hsl('+(h%360)+',62%,48%)'}
-function measure(name){return Math.max(120, Math.min(280, String(name||'').length*7+24))}
+function measure(name){return Math.max(120, String(name||'').length*7+24)}
 function setTipRows(d){const rows=[["Type",d.data.type],["Port",d.data.port],["Vendor",d.data.publisher],["Duplicate",d.data.duplicateOf?'duplicated from '+d.data.duplicateOf:null]].filter(([,v])=>v!==undefined&&v!==null&&String(v).trim()!==''); const extra=document.querySelector('#tip .tip-extra'); extra.innerHTML=''; rows.forEach(([label,value])=>{const row=document.createElement('div');row.className='tip-row';const l=document.createElement('span');l.className='tip-label';l.textContent=label+' :';const v=document.createElement('span');v.textContent=String(value);row.appendChild(l);row.appendChild(v);extra.appendChild(row);});}
 if(window.__D3_BUNDLE_MISSING__||typeof d3==='undefined'){document.getElementById('missing').style.display='block'}else{
 const root=d3.hierarchy(PAYLOAD.tree);const width=Math.max(1000,(PAYLOAD.leafCount||1)*220);const height=Math.max(620,(PAYLOAD.maxDepth+1)*130+160);const svg=d3.select('#chart').attr('viewBox',[0,0,width,height]);const g=svg.append('g');

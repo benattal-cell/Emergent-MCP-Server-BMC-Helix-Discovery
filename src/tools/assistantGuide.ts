@@ -192,7 +192,7 @@ const sections: GuideSection[] = [
       {
         tool: "discovery_service_architecture",
         purpose: "Générer un schéma d'architecture hiérarchical style dossier (D3 tree, rectangles, Bézier) depuis un nœud racine BusinessApplication ou Host. Plus lisible que dependency_map pour les services avec une structure arborescente claire.",
-        useCase: "Quand l'utilisateur demande 'montre-moi l'architecture de [service]' ou 'schéma du service X' → préférer ce tool à dependency_map. Si le graphe a beaucoup de relations croisées (multi-parent), signaler à l'utilisateur que certains nœuds ont été dupliqués.",
+        useCase: `Passer serviceName="Jira" — le tool résout automatiquement tous les nœuds correspondants et génère un schéma par résultat. Pour éviter l'explosion du graphe sur les gros services, passer kindFilter=["BusinessService","BusinessApplicationInstance","Host","SoftwareInstance"]. Toujours commencer par depth=2 ; augmenter si le résultat est trop pauvre.`,
         purposeEn: "Generate a hierarchical folder-style architecture diagram (D3 tree, rectangles, Bézier links) from a root BusinessApplication or Host node. More readable than dependency_map for services with a clear tree structure.",
         useCaseEn: "When the user asks 'show me the architecture of [service]' or 'service X diagram', prefer this tool over dependency_map. If the graph has many cross-links (multi-parent), tell the user some nodes were duplicated."
       },
