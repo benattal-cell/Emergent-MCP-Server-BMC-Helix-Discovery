@@ -60,14 +60,17 @@ function parseCsv(csv: string): CsvRecord[] {
 }
 
 function parseNumber(value: string, field: string): number {
-  const normalized = value.trim().replace(/\s+/g, "").replace(",", ".");
+  const trimmed = value.trim();
+  const isPercent = trimmed.endsWith("%");
+  const normalized = trimmed.replace(/%$/, "").replace(/\s+/g, "").replace(",", ".");
   const parsed = Number(normalized);
   if (!Number.isFinite(parsed)) throw new Error(`Invalid numeric value for ${field}: ${value}`);
-  return parsed;
+  return isPercent ? parsed / 100 : parsed;
 }
 
 function parseFrequency(value: string): CostFrequency {
-  if (value === "Mensuel" || value === "Annuel" || value === "One-shot" || value === "Inclus") return value;
+  if (value === "Mensuel" || value === "Annuel" || value === "Inclus") return value;
+  if (value.startsWith("One-shot")) return "One-shot";
   throw new Error(`Invalid Fréquence value: ${value}`);
 }
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { ItCostRow } from "./dataLoader.js";
-import { componentScore, findBestComponent } from "./fuzzy.js";
+import { componentScore, findBestComponent, tokenize } from "./fuzzy.js";
 import { estimateRowCost } from "./estimate.js";
 
 export const compareAlternativesSchema = z.object({
@@ -20,11 +20,13 @@ export interface AlternativeComparison {
 }
 
 function comparableRows(rows: ItCostRow[], workloadType: string, current?: ItCostRow): ItCostRow[] {
+  const requiredSpecTokens = tokenize(workloadType).filter((token) => /^(\d+vcpu|\d+gb)$/.test(token));
   const scored = rows.map((row) => ({ row, score: componentScore(workloadType, row) }));
   const preferredSubcategory = current?.["Sous-catégorie"];
   const threshold = preferredSubcategory ? 0.12 : 0.2;
   const filtered = scored.filter(({ row, score }) => {
-    if (preferredSubcategory && row["Sous-catégorie"] !== preferredSubcategory) return false;
+    const rowTokens = new Set(tokenize(row["Composant"]));
+    if (requiredSpecTokens.length > 0 && !requiredSpecTokens.every((token) => rowTokens.has(token))) return false;
     if (preferredSubcategory && row["Sous-catégorie"] === preferredSubcategory) return score > 0.05;
     return score >= threshold;
   });

@@ -13,10 +13,10 @@ describe("IT cost tools", () => {
   });
 
   it("normalizes annual costs to monthly", () => {
-    const result = estimateCost(rows, { component: "Oracle Database Enterprise Edition", quantity: 2, horizon: "monthly", scenario: "all" });
+    const result = estimateCost(rows, { component: "Oracle Database Enterprise Edition (par Processeur)", quantity: 2, horizon: "monthly", scenario: "all" });
     expect("error" in result).toBe(false);
     if ("error" in result) return;
-    expect(result.costs.median).toBe(2000);
+    expect(result.costs.median).toBe(7917);
   });
 
   it("annualizes one-shot costs over five years", () => {
@@ -45,20 +45,20 @@ describe("IT cost tools", () => {
   });
 
   it("compares VM 4vCPU 16Go alternatives", () => {
-    const result = compareAlternatives(rows, { workload_type: "VM 4vCPU 16Go", quantity: 100, current_solution: "VMware 4 vCPU 16 Go" });
+    const result = compareAlternatives(rows, { workload_type: "VM 4vCPU 16Go", quantity: 100, current_solution: "VM 4 vCPU / 16 Go RAM / 100 Go disk" });
     expect(result.alternatives.length).toBeGreaterThanOrEqual(3);
-    expect(result.alternatives.map((a) => a.component).join("\n")).toContain("VMware");
-    expect(result.alternatives.map((a) => a.component).join("\n")).toContain("AWS");
-    expect(result.alternatives.map((a) => a.component).join("\n")).toContain("Azure");
+    expect(result.alternatives.map((a) => a.component).join("\n")).toContain("EC2 m5.xlarge");
+    expect(result.alternatives.map((a) => a.component).join("\n")).toContain("D4s v5");
+    expect(result.alternatives.map((a) => a.component).join("\n")).toContain("n2-standard-4");
   });
 
   it("computes positive savings when an alternative is cheaper than current", () => {
-    const result = compareAlternatives(rows, { workload_type: "VM 4vCPU 16Go", quantity: 100, current_solution: "VMware vSphere" });
+    const result = compareAlternatives(rows, { workload_type: "VM 4vCPU 16Go", quantity: 100, current_solution: "VM 4 vCPU / 16 Go RAM / 100 Go disk" });
     expect(result.savings_vs_current?.some((s) => s.annual_savings_median > 0)).toBe(true);
   });
 
   it("applies category and query filters with AND logic", () => {
-    const result = searchItCosts(rows, { category: "CLOUD AWS", query: "m5.xlarge", limit: 10 });
+    const result = searchItCosts(rows, { category: "CLOUD AWS", subcategory: "Compute", query: "m5.xlarge", limit: 10 });
     expect(result).toHaveLength(1);
     expect(result[0]["Catégorie"]).toBe("CLOUD AWS");
     expect(result[0]["Composant"]).toContain("m5.xlarge");

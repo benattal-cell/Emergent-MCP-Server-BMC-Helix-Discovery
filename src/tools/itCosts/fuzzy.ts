@@ -5,6 +5,8 @@ export function normalizeText(value: string): string {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
+    .replace(/(\d+)\s*vcpu\b/g, "$1vcpu")
+    .replace(/(\d+)\s*(go|gb)\b/g, "$1gb")
     .replace(/go\b/g, "gb")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();

@@ -1,19 +1,76 @@
 Catégorie,Sous-catégorie,Composant,Unité de mesure,Coût unitaire min (€),Coût unitaire médian (€),Coût unitaire max (€),Devise,Fréquence,Notes / Hypothèses,Source / Référence,Date de mise à jour
-INFRA VIRTUALISÉE,Compute,"VMware vSphere VM 4 vCPU / 16 Go RAM",VM/mois,320,375,430,EUR,Mensuel,"TCO estimatif VMware on-prem incluant hyperviseur, support, exploitation et stockage standard",Benchmark Value Review,2025-01
-CLOUD AWS,Compute,"AWS EC2 m5.xlarge (4 vCPU / 16 Go RAM)",Instance/mois,110,140,170,EUR,Mensuel,"On-demand pricing EU (Paris). Reserved 1 an ~40% moins cher",AWS Public Pricing,2025-01
-CLOUD AZURE,Compute,"Azure D4s v5 (4 vCPU / 16 Go RAM)",Instance/mois,95,125,155,EUR,Mensuel,"Pay-as-you-go Europe West. Reserved 1 an ~35% moins cher",Azure Public Pricing,2025-01
-CLOUD GCP,Compute,"Google Cloud n2-standard-4 (4 vCPU / 16 Go RAM)",Instance/mois,100,130,160,EUR,Mensuel,"On-demand Belgium/Europe region estimate",Google Cloud Pricing,2025-01
-INFRA VIRTUALISÉE,Compute,"Nutanix AHV VM 4 vCPU / 16 Go RAM",VM/mois,240,300,360,EUR,Mensuel,"TCO estimatif hyperconvergé incluant support et exploitation",Benchmark Value Review,2025-01
-LICENCE ORACLE,Base de données,"Oracle Database Enterprise Edition",Core/an,9500,12000,14500,EUR,Annuel,"Licence + support annuel estimatif par core processeur",Oracle Price List Benchmark,2025-01
-CLOUD AWS,Base de données,"Amazon RDS Oracle Enterprise Edition",Core/mois,700,900,1100,EUR,Mensuel,"Inclut coût service managé hors licence BYOL selon scénario",AWS Public Pricing,2025-01
-CLOUD AZURE,Base de données,"Azure SQL Managed Instance Business Critical",Core/mois,420,520,650,EUR,Mensuel,"Prix indicatif vCore Europe hors réservations",Azure Public Pricing,2025-01
-OPEN SOURCE,Base de données,"PostgreSQL Enterprise Support",Instance/an,2500,4000,6500,EUR,Annuel,"Support entreprise et exploitation hors infrastructure",Market Benchmark,2025-01
-LICENCE MICROSOFT,OS,"Windows Server Datacenter",Core/an,180,240,320,EUR,Annuel,"Software Assurance annualisée estimative par core",Microsoft Licensing Benchmark,2025-01
-LICENCE MICROSOFT,Bureautique,"Microsoft 365 E3",Utilisateur/mois,28,34,40,EUR,Mensuel,"Prix public tenant entreprise hors remises volume",Microsoft Public Pricing,2025-01
-LICENCE MICROSOFT,Bureautique,"Microsoft 365 F3",Utilisateur/mois,7,9,11,EUR,Mensuel,"Profil terrain/frontline worker",Microsoft Public Pricing,2025-01
-SAAS,Bureautique,"Google Workspace Business Plus",Utilisateur/mois,15,18,22,EUR,Mensuel,"Prix public indicatif Europe",Google Workspace Pricing,2025-01
-MIDDLEWARE,Middleware,"Red Hat JBoss EAP",Core/an,900,1200,1600,EUR,Annuel,"Souscription annuelle par core",Red Hat Pricing Benchmark,2025-01
-MIDDLEWARE,Middleware,"Apache Tomcat Support Enterprise",Instance/an,600,1000,1500,EUR,Annuel,"Support tiers entreprise hors coût infrastructure",Market Benchmark,2025-01
-STOCKAGE,Stockage,"SAN Fibre Channel Tier 1",To/an,900,1200,1600,EUR,Annuel,"Stockage primaire haute performance avec support",Storage Benchmark,2025-01
-STOCKAGE,Stockage,"Object Storage S3 Standard",To/mois,18,23,30,EUR,Mensuel,"Stockage objet standard hors requêtes et egress",AWS Public Pricing,2025-01
-BACKUP,Sauvegarde,"Backup entreprise VM",VM/mois,18,28,45,EUR,Mensuel,"Sauvegarde standard avec rétention 30 jours",Backup Benchmark,2025-01
+CLOUD AWS,Compute,EC2 t3.medium (2 vCPU / 4 Go RAM),Instance/mois,25,35,45,EUR,Mensuel,On-demand pricing EU (Paris). Réservé 1 an ~40% moins cher,AWS Public Pricing,2025-01
+CLOUD AWS,Compute,EC2 m5.xlarge (4 vCPU / 16 Go RAM),Instance/mois,110,140,170,EUR,Mensuel,On-demand pricing EU (Paris),AWS Public Pricing,2025-01
+CLOUD AWS,Compute,EC2 m5.4xlarge (16 vCPU / 64 Go RAM),Instance/mois,420,520,620,EUR,Mensuel,On-demand pricing EU (Paris),AWS Public Pricing,2025-01
+CLOUD AWS,Compute,EC2 r5.2xlarge (8 vCPU / 64 Go RAM) - Memory Optimized,Instance/mois,280,360,440,EUR,Mensuel,Workloads base de données / SAP,AWS Public Pricing,2025-01
+CLOUD AWS,Stockage,S3 Standard,Go/mois,0.021,0.023,0.025,EUR,Mensuel,Par Go stocké. Prix dégressif >50 To,AWS Public Pricing,2025-01
+CLOUD AWS,Stockage,EBS gp3 (SSD),Go/mois,0.07,0.08,0.09,EUR,Mensuel,Volume bloc attaché EC2,AWS Public Pricing,2025-01
+CLOUD AWS,Stockage,EBS io1 (SSD haute perf),Go/mois,0.11,0.125,0.14,EUR,Mensuel,IOPS provisionnées pour DB critiques,AWS Public Pricing,2025-01
+CLOUD AWS,Réseau,Data Transfer OUT (Internet),Go/mois,0.07,0.085,0.09,EUR,Mensuel,Premiers 10 To/mois. Gratuit intra-région,AWS Public Pricing,2025-01
+CLOUD AWS,Base de données,RDS MySQL / PostgreSQL db.t3.medium,Instance/mois,55,70,85,EUR,Mensuel,Multi-AZ x2. Licence incluse,AWS Public Pricing,2025-01
+CLOUD AWS,Base de données,RDS Oracle SE2 db.m5.xlarge,Instance/mois,800,1100,1400,EUR,Mensuel,Licence Oracle incluse (BYOL ~30% moins),AWS Public Pricing,2025-01
+CLOUD AWS,Gestion / Support,AWS Business Support,% dépenses/mois,3%,5%,7%,EUR,Mensuel,Min 100$/mois. Taux dégressif,AWS Public Pricing,2025-01
+CLOUD AZURE,Compute,B2s (2 vCPU / 4 Go RAM),Instance/mois,30,38,46,EUR,Mensuel,On-demand. Région France Central,Azure Public Pricing,2025-01
+CLOUD AZURE,Compute,D4s v5 (4 vCPU / 16 Go RAM),Instance/mois,120,150,180,EUR,Mensuel,On-demand. Reserved 1 an ~35% moins,Azure Public Pricing,2025-01
+CLOUD AZURE,Compute,D16s v5 (16 vCPU / 64 Go RAM),Instance/mois,450,560,670,EUR,Mensuel,On-demand France Central,Azure Public Pricing,2025-01
+CLOUD AZURE,Compute,E8s v5 (8 vCPU / 64 Go RAM) - Memory Opt,Instance/mois,300,380,460,EUR,Mensuel,Workloads SAP / grandes DB,Azure Public Pricing,2025-01
+CLOUD AZURE,Stockage,Blob Storage Cool,Go/mois,0.01,0.012,0.015,EUR,Mensuel,Archives / backup. Hot tier x3,Azure Public Pricing,2025-01
+CLOUD AZURE,Stockage,Managed Disk Premium SSD (P10 128Go),Disque/mois,15,18,22,EUR,Mensuel,Attaché VM. Latence <1ms,Azure Public Pricing,2025-01
+CLOUD AZURE,Base de données,Azure SQL Database General Purpose 4 vCores,Instance/mois,350,480,610,EUR,Mensuel,Licence incluse. Hybrid Benefit -40%,Azure Public Pricing,2025-01
+CLOUD AZURE,Gestion / Support,Azure Developer Support,Forfait/mois,25,29,29,EUR,Mensuel,Tarif fixe Microsoft,Azure Public Pricing,2025-01
+CLOUD GCP,Compute,e2-standard-2 (2 vCPU / 8 Go RAM),Instance/mois,45,55,65,EUR,Mensuel,On-demand europe-west9 (Paris),GCP Public Pricing,2025-01
+CLOUD GCP,Compute,n2-standard-4 (4 vCPU / 16 Go RAM),Instance/mois,115,145,175,EUR,Mensuel,On-demand. CUD 1 an -37%,GCP Public Pricing,2025-01
+CLOUD GCP,Stockage,Cloud Storage Standard,Go/mois,0.02,0.023,0.026,EUR,Mensuel,Multi-région Europe,GCP Public Pricing,2025-01
+INFRA VIRTUALISÉE,Hyperviseur VMware,VMware vSphere Essentials Plus (3 hôtes),Licence/an,3500,4500,5500,EUR,Annuel,Jusqu'à 3 hôtes / 6 sockets. Broadcom post-acquisition,Gartner / Broadcom Pricing 2024,2024-12
+INFRA VIRTUALISÉE,Hyperviseur VMware,VMware vSphere Enterprise Plus (par socket),Licence/an,1200,1500,1900,EUR,Annuel,Per socket. Support inclus 1 an,Gartner / Broadcom Pricing 2024,2024-12
+INFRA VIRTUALISÉE,Hyperviseur VMware,VMware vCenter Server Standard,Licence/an,3500,4200,5000,EUR,Annuel,Gestion centralisée. 1 instance,Gartner / Broadcom Pricing 2024,2024-12
+INFRA VIRTUALISÉE,Hyperviseur VMware,VMware vSAN (par socket),Licence/an,1800,2200,2800,EUR,Annuel,Stockage hyper-convergé,Gartner / Broadcom Pricing 2024,2024-12
+INFRA VIRTUALISÉE,VM standard (coût infra alloué),VM 2 vCPU / 4 Go RAM / 50 Go disk,VM/mois,40,65,90,EUR,Mensuel,Coût refacturé interne : amort. matériel + vmware + ops,Analyse benchmark interne,2024-06
+INFRA VIRTUALISÉE,VM standard (coût infra alloué),VM 4 vCPU / 16 Go RAM / 100 Go disk,VM/mois,100,150,200,EUR,Mensuel,Inclut part VMware / stockage SAN / ops,Analyse benchmark interne,2024-06
+INFRA VIRTUALISÉE,VM standard (coût infra alloué),VM 8 vCPU / 32 Go RAM / 200 Go disk,VM/mois,200,290,380,EUR,Mensuel,Inclut part VMware / stockage SAN / ops,Analyse benchmark interne,2024-06
+INFRA VIRTUALISÉE,Hyperviseur Microsoft,Windows Server Datacenter (par 2 cores),Licence perpétuelle,700,800,950,EUR,One-shot + SA,Droit de virtualisation illimité sur l'hôte,Microsoft MSRP 2024,2024-12
+INFRA VIRTUALISÉE,Hyperviseur Microsoft,Hyper-V inclus dans WS Datacenter,Licence/an,0,0,0,EUR,Inclus,Hyper-V gratuit avec Windows Server Datacenter,Microsoft,2024-12
+INFRA VIRTUALISÉE,Stockage SAN,SAN SSD (par To utile / an),To/an,800,1200,1800,EUR,Annuel,Amortissement 5 ans + maintenance + opex. Pure Storage / NetApp level,Gartner IT Benchmarks 2024,2024-06
+INFRA VIRTUALISÉE,Stockage SAN,SAN HDD (par To utile / an),To/an,250,400,600,EUR,Annuel,Amortissement 5 ans + maintenance + opex,Gartner IT Benchmarks 2024,2024-06
+INFRA VIRTUALISÉE,Réseau,Switch 10G top-of-rack (par port / an),Port/an,30,50,80,EUR,Annuel,Amortissement 5 ans. Cisco / Aruba,Gartner IT Benchmarks 2024,2024-06
+INFRA PHYSIQUE,Serveur,Serveur rack 1U dual-socket (entrée de gamme),Serveur/an,1200,1800,2500,EUR,Annuel,Amort. 5 ans. Ex: Dell R650xs / HP DL360 config base,Dell / HPE List Price 2024,2024-09
+INFRA PHYSIQUE,Serveur,Serveur rack 2U dual-socket (mid-range),Serveur/an,2500,4000,6000,EUR,Annuel,Amort. 5 ans. Config 512 Go RAM / SSD NVMe,Dell / HPE List Price 2024,2024-09
+INFRA PHYSIQUE,Serveur,Serveur rack 4U GPU / HPC,Serveur/an,8000,15000,25000,EUR,Annuel,Amort. 5 ans. 4x GPU A100/H100,Dell / HPE List Price 2024,2024-09
+INFRA PHYSIQUE,Serveur,Maintenance constructeur (ProSupport / HPE Care),% du matériel/an,8%,12%,16%,EUR,Annuel,Après garantie. NBD ou 4h selon SLA,Dell / HPE,2024-09
+INFRA PHYSIQUE,Stockage,NAS entreprise (par To brut / an),To/an,150,250,400,EUR,Annuel,Amort. 5 ans. NetApp / Dell EMC Unity,Gartner IT Benchmarks 2024,2024-06
+INFRA PHYSIQUE,Stockage,All-Flash Array (par To utile / an),To/an,500,900,1500,EUR,Annuel,Amort. 5 ans. Pure Storage / NetApp AFF,Gartner IT Benchmarks 2024,2024-06
+INFRA PHYSIQUE,Stockage,Bande LTO-9 (par To archivé / an),To/an,10,18,30,EUR,Annuel,Média + lecteur amort. Backup long terme,Gartner IT Benchmarks 2024,2024-06
+INFRA PHYSIQUE,Réseau,Switch 1G 48 ports (par port / an),Port/an,5,8,12,EUR,Annuel,Amort. 5 ans. Cisco Catalyst / Aruba,Gartner IT Benchmarks 2024,2024-06
+INFRA PHYSIQUE,Réseau,Switch 10G 48 ports (par port / an),Port/an,15,25,40,EUR,Annuel,Amort. 5 ans,Gartner IT Benchmarks 2024,2024-06
+INFRA PHYSIQUE,Réseau,Firewall entreprise (par an),Pare-feu/an,3000,7000,15000,EUR,Annuel,Amort. 5 ans + subscription IPS/AV. Palo Alto / Fortinet,Gartner IT Benchmarks 2024,2024-06
+INFRA PHYSIQUE,Datacenter,Rack space en datacenter tiers (colocation),U/mois,25,40,70,EUR,Mensuel,Par unité rack (U). Inclut énergie / refroidissement,Uptime Institute / IDC 2024,2024-06
+INFRA PHYSIQUE,Datacenter,Rack full 42U en colocation,Rack/mois,800,1400,2200,EUR,Mensuel,Full rack avec énergie 3-5 kW,Uptime Institute / IDC 2024,2024-06
+INFRA PHYSIQUE,Datacenter,Energie datacenter interne (PUE 1.5),kWh/mois,0.08,0.12,0.18,EUR,Mensuel,Par kWh consommé par les équipements IT,Tarifs électricité FR industriel 2024,2024-06
+LICENCE ORACLE,Base de données,Oracle Database Enterprise Edition (par Named User),Utilisateur/an,350,450,600,EUR,Annuel,Minimum 25 Named Users par processeur,Oracle GSAL 2024,2024-01
+LICENCE ORACLE,Base de données,Oracle Database Enterprise Edition (par Processeur),Processeur/an,38000,47500,55000,EUR,Annuel,Facteur core : 0.5 Intel/AMD. Base liste,Oracle GSAL 2024,2024-01
+LICENCE ORACLE,Base de données,Oracle Database Standard Edition 2 (par socket),Socket/an,7000,8500,10000,EUR,Annuel,Max 2 sockets / 16 threads par instance,Oracle GSAL 2024,2024-01
+LICENCE ORACLE,Base de données,Oracle Database (Support annuel / an),% du prix licences,18%,22%,22%,EUR,Annuel,Obligatoire. Base : 22% du net (liste - remise),Oracle GSAL 2024,2024-01
+LICENCE ORACLE,Middleware,Oracle WebLogic Server EE (par processeur),Processeur/an,18000,22000,27000,EUR,Annuel,Application server Java EE,Oracle GSAL 2024,2024-01
+LICENCE ORACLE,Middleware,Oracle SOA Suite (par processeur),Processeur/an,18000,22000,28000,EUR,Annuel,Intégration / ESB,Oracle GSAL 2024,2024-01
+LICENCE ORACLE,Middleware,Oracle GoldenGate (par processeur),Processeur/an,12000,17000,22000,EUR,Annuel,Réplication temps réel,Oracle GSAL 2024,2024-01
+LICENCE ORACLE,Java,Java SE (par employé / an),Utilisateur/an,12,15,15,EUR,Annuel,Post Jan 2023. Facturation employé. Oracle NTUA,Oracle Java Licensing 2024,2024-01
+LICENCE ORACLE,Java,Java SE (par processeur serveur / an),Processeur/an,250,300,350,EUR,Annuel,Alternative à l'abonnement par employé,Oracle Java Licensing 2024,2024-01
+LICENCE ORACLE,Cloud OCI,OCI Compute VM.Standard.E4.Flex (1 OCPU / 8 Go),Instance/mois,30,40,55,EUR,Mensuel,Flexible. BYOL Oracle DB = réduction 80%,Oracle OCI Pricing 2024,2024-01
+LICENCE ORACLE,Autre,Oracle Analytics Cloud (par utilisateur / mois),Utilisateur/mois,16,20,25,EUR,Mensuel,Professional edition,Oracle GSAL 2024,2024-01
+LICENCE MICROSOFT,Systèmes,Windows Server Standard (par 2 cores),Licence perpétuelle,80,95,110,EUR,One-shot + SA,Inclut 2 VM. Open NL. SA optionnel,Microsoft MSRP / Gartner 2024,2024-01
+LICENCE MICROSOFT,Systèmes,Windows Server Datacenter (par 2 cores),Licence perpétuelle,400,450,520,EUR,Annuel,VM illimitées sur l'hôte,Microsoft MSRP / Gartner 2024,2024-01
+LICENCE MICROSOFT,Systèmes,Windows Server CAL (par utilisateur),CAL/an,30,38,45,EUR,Annuel,Pour accéder à WS depuis client,Microsoft MSRP / Gartner 2024,2024-01
+LICENCE MICROSOFT,Base de données,SQL Server Standard (par core),Licence perpétuelle,1400,1700,2000,EUR,One-shot,2 cores min par proc. Open NL,Microsoft MSRP / Gartner 2024,2024-01
+LICENCE MICROSOFT,Base de données,SQL Server Enterprise (par core),Licence perpétuelle,5200,6200,7200,EUR,Annuel,2 cores min par proc. Open NL,Microsoft MSRP / Gartner 2024,2024-01
+LICENCE MICROSOFT,Base de données,SQL Server CAL (par utilisateur),CAL/an,180,210,250,EUR,Annuel,Alternative per-core pour petits périmètres,Microsoft MSRP / Gartner 2024,2024-01
+LICENCE MICROSOFT,Base de données,Software Assurance SQL Server (% du prix licence),% licence/an,25%,25%,25%,EUR,Annuel,Droits de migration / downgrade / HADR,Microsoft MSRP,2024-01
+LICENCE MICROSOFT,Productivité,Microsoft 365 Business Basic (par utilisateur),Utilisateur/mois,5.1,5.1,5.1,EUR,Mensuel,Teams + Exchange + OneDrive 1To. Web apps only,Microsoft NCE 2024,2024-06
+LICENCE MICROSOFT,Productivité,Microsoft 365 Business Standard (par utilisateur),Utilisateur/mois,10.5,10.5,10.5,EUR,Mensuel,Idem + Office desktop apps,Microsoft NCE 2024,2024-06
+LICENCE MICROSOFT,Productivité,Microsoft 365 E3 (par utilisateur),Utilisateur/mois,32,36,40,EUR,Mensuel,Teams + Office + EMS E3 + Windows E3,Microsoft NCE 2024,2024-06
+LICENCE MICROSOFT,Productivité,Microsoft 365 E5 (par utilisateur),Utilisateur/mois,54,57,62,EUR,Mensuel,E3 + Defender + Purview + Power BI Pro,Microsoft NCE 2024,2024-06
+LICENCE MICROSOFT,Identité,Azure Active Directory P1 (par utilisateur),Utilisateur/mois,4.5,6,7,EUR,Mensuel,MFA / Conditional Access / SSPR,Microsoft NCE 2024,2024-06
+LICENCE MICROSOFT,Identité,Azure Active Directory P2 (par utilisateur),Utilisateur/mois,8,9,10,EUR,Mensuel,P1 + PIM + Identity Protection,Microsoft NCE 2024,2024-06
+LICENCE MICROSOFT,Endpoint,Microsoft Intune (par utilisateur),Utilisateur/mois,6,8,10,EUR,Mensuel,MDM / MAM. Inclus dans M365 E3+,Microsoft NCE 2024,2024-06
+LICENCE MICROSOFT,Sécurité,Microsoft Defender for Endpoint P2 (par utilisateur),Utilisateur/mois,4.5,5.2,6,EUR,Mensuel,EDR + Threat hunting. Inclus dans M365 E5,Microsoft NCE 2024,2024-06
+LICENCE MICROSOFT,Développement,Visual Studio Enterprise (par utilisateur),Utilisateur/an,2600,2900,3200,EUR,Annuel,Inclut MSDN / Azure DevOps,Microsoft MSRP 2024,2024-06
+LICENCE MICROSOFT,Développement,Azure DevOps (par utilisateur actif),Utilisateur/mois,5,6,7,EUR,Mensuel,Basic plan. Premier utilisateur gratuit,Microsoft NCE 2024,2024-06
