@@ -101,18 +101,17 @@ export class DiscoveryClient {
     return this.request("POST", this.versionedPath(`/topology/services`), payload, true);
   }
 
-  async queryJson(query: string, limit = 50, options: { entityLabel?: string; appliedFilters?: Record<string, unknown> } = {}): Promise<FlatQueryResult> {
-    return this.searchData(query, { limit, format: "object", ...options });
+  async queryJson(query: string, limit?: number, options: { entityLabel?: string; appliedFilters?: Record<string, unknown> } = {}): Promise<FlatQueryResult> {
+    return this.searchData(query, { ...(limit === undefined ? {} : { limit }), format: "object", ...options });
   }
 
   async searchData(query: string, options: SearchOptions = {}): Promise<FlatQueryResult> {
-    const limit = options.limit ?? 50;
     const format = options.format === "tree" ? "tree" : "object";
     const params = new URLSearchParams({
       offset: "0",
-      limit: String(limit),
       format
     });
+    if (options.limit !== undefined) params.set("limit", String(options.limit));
     const path = `${this.versionedPath("/data/search")}?${params.toString()}`;
     const data = await this.request("POST", path, { query }, true);
     return flattenDiscoveryQueryResult(data, {

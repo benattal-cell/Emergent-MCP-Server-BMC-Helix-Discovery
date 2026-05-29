@@ -3,13 +3,11 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { ApiError } from "../utils/errors.js";
 
 export const queryJsonSchema = z.object({
-  query: z.string().min(1),
-  limit: z.number().int().min(1).max(500).default(50)
+  query: z.string().min(1)
 }).strict();
 
 export const queryTreeSchema = z.object({
-  query: z.string().min(1),
-  limit: z.number().int().min(1).max(500).default(50)
+  query: z.string().min(1)
 }).strict();
 
 export const dslExamplesSchema = z.object({
@@ -69,7 +67,9 @@ const SEARCH_DATA_DESCRIPTION = [
   "Conditions: =, !=, <, >, MATCHES (regex), HAS SUBSTRING, HAS SUBWORD,",
   "            IS DEFINED, IN [...], NOT, AND, OR.",
   "",
-  "Avoid unconstrained `SEARCH *` \u2014 performance impact.",
+  "No artificial row limit is applied by this tool. Scope broad queries with WHERE,",
+  "LOOKUP, TRAVERSE or explicit kinds. Avoid unconstrained `SEARCH * SHOW *` \u2014",
+  "that is the one pattern likely to create very large responses.",
   "",
   "\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550",
   "TRAVERSALS \u2014 the core feature",
@@ -493,7 +493,7 @@ export function queryTools(client: DiscoveryClient) {
       schema: queryJsonSchema,
       handler: async (input: z.infer<typeof queryJsonSchema>) => {
         try {
-          return await client.queryJson(input.query, input.limit, { entityLabel: "résultats", appliedFilters: {} });
+          return await client.queryJson(input.query, undefined, { entityLabel: "résultats", appliedFilters: {} });
         } catch (error) {
           if (error instanceof ApiError && error.status === 400) {
             const originalMessage = extractDiscoveryErrorMessage(error);
@@ -514,7 +514,7 @@ export function queryTools(client: DiscoveryClient) {
     discovery_search_tree_data: {
       description: "ADVANCED FALLBACK. Same as discovery_search_data but returns results in tree (hierarchical) format instead of flat. Use only when nested parent-child results are explicitly required in one shot. For most use cases use discovery_search_data with the flat format, or better, a specialized tool.",
       schema: queryTreeSchema,
-      handler: async (input: z.infer<typeof queryTreeSchema>) => client.searchData(input.query, { limit: input.limit, format: "tree", entityLabel: "résultats hiérarchiques", appliedFilters: {} })
+      handler: async (input: z.infer<typeof queryTreeSchema>) => client.searchData(input.query, { format: "tree", entityLabel: "résultats hiérarchiques", appliedFilters: {} })
     },
     discovery_dsl_examples: {
       description: "Return curated, static BMC Discovery DSL examples for a topic. Use this as a companion to discovery_search_data when drafting raw DSL queries. No Discovery API call is made.",

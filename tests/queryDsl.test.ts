@@ -48,7 +48,7 @@ describe("DSL helper ergonomics", () => {
     } as never;
     const tool = queryTools(client).discovery_search_data;
 
-    const result = await tool.handler({ query, limit: 50 });
+    const result = await tool.handler({ query });
 
     expect(result).toMatchObject({
       error: true,
@@ -58,5 +58,6 @@ describe("DSL helper ergonomics", () => {
       submitted_query: query
     });
     expect((result as { hint: string | null }).hint).toContain("NODECOUNT");
+    expect(client.queryJson).toHaveBeenCalledWith(query, undefined, { entityLabel: "résultats", appliedFilters: {} });
   });
 });
