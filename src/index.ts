@@ -14,7 +14,6 @@ import { lifecycleTools } from "./tools/lifecycle.js";
 import { assistantGuideTools } from "./tools/assistantGuide.js";
 import { dependencyMapTools } from "./tools/dependencyMap.js";
 import { dependencyScopeTools } from "./tools/dependencyScope.js";
-import { lifecycleVisualTools } from "./tools/visualLifecycle.js";
 import { hostCardTools } from "./tools/visualHostCard.js";
 import { orphansTools } from "./tools/orphans.js";
 import { itCostTools } from "./tools/itCosts/index.js";
@@ -108,7 +107,6 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...lifecycleTools(client),
     ...assistantGuideTools(),
     ...hostCardTools(client),
-    ...lifecycleVisualTools(client),
     ...dependencyScopeTools(client),
     ...dependencyMapTools(client),
     ...orphansTools(client),

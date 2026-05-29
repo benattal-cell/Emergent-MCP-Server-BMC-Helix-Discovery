@@ -94,13 +94,6 @@ const sections: GuideSection[] = [
         useCase: "Rare : seulement si on doit modifier la requête avant exécution.",
         purposeEn: "ADVANCED. Build the DSL string without executing it, only for inspection.",
         useCaseEn: "Rare: only when the query must be modified before execution."
-      },
-      {
-        tool: "discovery_lifecycle_visual",
-        purpose: "Rendre un tableau de bord visuel lifecycle quand l'utilisateur veut une synthèse graphique.",
-        useCase: "Pour une présentation ou un premier aperçu visuel des éléments lifecycle retournés.",
-        purposeEn: "Render a lifecycle visual dashboard when the user wants a graphical summary.",
-        useCaseEn: "For a presentation or first visual overview of returned lifecycle items."
       }
     ]
   },
