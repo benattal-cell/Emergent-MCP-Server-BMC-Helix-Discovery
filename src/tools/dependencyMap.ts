@@ -129,7 +129,11 @@ export function dependencyMapTools(client: DiscoveryClient) {
           counts: { nodes: positionedNodes.length, edges: edges.length, kinds }
         });
         const svg = renderForceLayoutSvg({ nodes: positionedNodes, edges: positionedEdges, width: 1600, height: 900, title: `Dependency map · ${focusName}` });
-        const html = buildInteractiveHtml(positionedNodes, edges, { title: `Dependency map · ${focusName}` });
+        const html = buildInteractiveHtml(positionedNodes, edges, {
+          title: `Dependency map · ${focusName}`,
+          focusId,
+          layout: "concentric"
+        });
         return renderVisual(svg, {
           name: `depmap_${focusName.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase()}_d${input.depth}`,
           textSummary: `Dependency map for '${focusName}': ${positionedNodes.length} nodes, ${edges.length} edges${positionedNodes.length >= input.maxNodes ? " (truncated)" : ""}. Layout=ForceAtlas2, iterations=${input.iterations}.`,
