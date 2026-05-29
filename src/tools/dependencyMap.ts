@@ -30,15 +30,27 @@ const structuredContentSchema = z.object({
   focus: z.object({ id: z.string(), name: z.string() }),
   layout: z.object({ algorithm: z.literal("forceatlas2"), iterations: z.number(), settings: z.record(z.unknown()) }),
   interactiveLayout: z.enum(["concentric", "hierarchical", "cose"]),
-  nodes: z.array(z.object({ id: z.string(), kind: z.string(), name: z.string(), x: z.number(), y: z.number(), degree: z.number() })),
+  nodes: z.array(z.object({ id: z.string(), kind: z.string(), name: z.string(), x: z.number(), y: z.number(), degree: z.number(), type: z.string().optional(), port: z.string().optional(), publisher: z.string().optional() })),
   edges: z.array(z.object({ from: z.string(), to: z.string(), kind: z.string() })),
   truncated: z.boolean(),
   counts: z.object({ nodes: z.number(), edges: z.number(), kinds: z.record(z.number()) })
 });
 
-interface GraphNode { id: string; kind: string; name: string }
+interface GraphNode { id: string; kind: string; name: string; type?: string; port?: string; publisher?: string }
 interface GraphEdge { from: string; to: string; kind: string }
 const looksLikeNodeId = (v: string) => v.length >= 16 && !/\s/.test(v) && /^[A-Za-z0-9+/=_\-]+$/.test(v);
+
+function formatOptionalAttribute(value: unknown): string | undefined {
+  if (typeof value === "string") return value.trim() === "" ? undefined : value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) {
+    const items = value
+      .map((item) => (typeof item === "string" || typeof item === "number" || typeof item === "boolean" ? String(item) : undefined))
+      .filter((item): item is string => item !== undefined && item.trim() !== "");
+    return items.length > 0 ? items.join(", ") : undefined;
+  }
+  return undefined;
+}
 
 async function walkGraph(client: DiscoveryClient, focusId: string, depth: number, maxNodes: number, kindFilter?: string[]) {
   const nodes = new Map<string, GraphNode>();
@@ -62,7 +74,10 @@ async function walkGraph(client: DiscoveryClient, focusId: string, depth: number
         if (kindFilter && kindFilter.length > 0 && nid !== focusId && !kindFilter.includes(kind)) continue;
         if (!nodes.has(nid) && nodes.size < maxNodes) {
           const name = typeof n.name === "string" ? n.name : (typeof n.short_name === "string" ? n.short_name : nid);
-          nodes.set(nid, { id: nid, kind, name });
+          const type = formatOptionalAttribute(n.type);
+          const port = formatOptionalAttribute(n.port) ?? formatOptionalAttribute(n.listening_ports);
+          const publisher = formatOptionalAttribute(n.publisher) ?? formatOptionalAttribute(n.vendor);
+          nodes.set(nid, { id: nid, kind, name, ...(type ? { type } : {}), ...(port ? { port } : {}), ...(publisher ? { publisher } : {}) });
           if (d < depth && nid !== id) next.push(nid);
         }
       }
@@ -103,7 +118,17 @@ function layout(nodes: GraphNode[], edges: GraphEdge[], options: z.infer<typeof 
       linLogMode: options.linLog
     }
   });
-  const coords = g.mapNodes((id, attrs) => ({ id, kind: String(attrs.kind), name: String(attrs.name), x: Number(attrs.x), y: Number(attrs.y), degree: g.degree(id) }));
+  const coords = g.mapNodes((id, attrs) => ({
+    id,
+    kind: String(attrs.kind),
+    name: String(attrs.name),
+    x: Number(attrs.x),
+    y: Number(attrs.y),
+    degree: g.degree(id),
+    ...(typeof attrs.type === "string" ? { type: attrs.type } : {}),
+    ...(typeof attrs.port === "string" ? { port: attrs.port } : {}),
+    ...(typeof attrs.publisher === "string" ? { publisher: attrs.publisher } : {})
+  }));
   const xs = coords.map((n) => n.x), ys = coords.map((n) => n.y);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
   const w = 1600, h = 900, margin = 40;

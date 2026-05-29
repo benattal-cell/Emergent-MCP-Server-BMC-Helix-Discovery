@@ -1,7 +1,7 @@
 import { svgEscape, svgTruncate } from "./renderer.js";
 import { theme } from "./theme.js";
 
-export interface PositionedNode { id: string; kind: string; name: string; x: number; y: number; degree: number }
+export interface PositionedNode { id: string; kind: string; name: string; x: number; y: number; degree: number; type?: string; port?: string; publisher?: string }
 export interface PositionedEdge { from: string; to: string; kind: string }
 
 function color(kind: string): string {

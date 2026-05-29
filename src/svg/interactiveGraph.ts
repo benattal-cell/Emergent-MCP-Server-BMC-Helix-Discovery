@@ -4,6 +4,9 @@ export interface InteractiveNode {
   id: string;
   kind: string;
   name: string;
+  type?: string;
+  port?: string;
+  publisher?: string;
 }
 
 export interface InteractiveEdge {
@@ -96,6 +99,8 @@ html,body{margin:0;height:100%;font-family:Arial,Helvetica,sans-serif;background
 #tip{position:fixed;z-index:4;pointer-events:none;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:4px;font-size:11px;box-shadow:var(--shadow);max-width:280px;display:none}
 #tip .tip-kind{color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em}
 #tip .tip-name{font-weight:600;word-break:break-word}
+#tip .tip-row{margin-top:3px;word-break:break-word}
+#tip .tip-label{color:var(--text-muted);display:inline-block;min-width:42px}
 </style></head><body>
 <div id="cy"></div>
 
@@ -121,7 +126,7 @@ html,body{margin:0;height:100%;font-family:Arial,Helvetica,sans-serif;background
   <div class="panel-body"><svg id="mm-svg" viewBox="0 0 220 140" preserveAspectRatio="none"></svg></div>
 </div>
 
-<div id="tip"><div class="tip-kind"></div><div class="tip-name"></div></div>
+<div id="tip"><div class="tip-kind"></div><div class="tip-name"></div><div class="tip-extra"></div></div>
 
 <script>${cytoscapeJsSource}</script>
 <script>
@@ -162,6 +167,9 @@ const elements = [
       id: n.id,
       label: n.name,
       kind: n.kind,
+      type: n.type,
+      port: n.port,
+      publisher: n.publisher,
       color: color(n.kind),
       icon: ICON_URIS[mapKindToIcon(n.kind)],
       isFocus: focusId && n.id === focusId
@@ -359,9 +367,31 @@ q.addEventListener("input", () => {
 const tip = document.getElementById("tip");
 const tipKind = tip.querySelector(".tip-kind");
 const tipName = tip.querySelector(".tip-name");
+const tipExtra = tip.querySelector(".tip-extra");
+function setTipRows(node){
+  const rows = [
+    ["Type", node.data("type")],
+    ["Port", node.data("port")],
+    ["Vendor", node.data("publisher")]
+  ].filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== "");
+  tipExtra.innerHTML = "";
+  rows.forEach(([label, value]) => {
+    const row = document.createElement("div");
+    row.className = "tip-row";
+    const labelEl = document.createElement("span");
+    labelEl.className = "tip-label";
+    labelEl.textContent = label + " :";
+    const valueEl = document.createElement("span");
+    valueEl.textContent = String(value);
+    row.appendChild(labelEl);
+    row.appendChild(valueEl);
+    tipExtra.appendChild(row);
+  });
+}
 cy.on("mouseover", "node", (ev) => {
   tipKind.textContent = ev.target.data("kind");
   tipName.textContent = ev.target.data("label");
+  setTipRows(ev.target);
   tip.style.display = "block";
 });
 cy.on("mouseout", "node", () => { tip.style.display = "none"; });
