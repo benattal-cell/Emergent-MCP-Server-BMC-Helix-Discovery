@@ -96,3 +96,73 @@ Exemple conceptuel (client compatible MCP distant):
   }
 }
 ```
+
+## `discovery_find_orphans` examples
+
+`discovery_find_orphans` is a neutral governance tool: it builds and runs a Discovery DSL query using the filters you provide. It does **not** apply hidden noise presets.
+
+### Rationalization scan — databases with no application client
+
+Use explicit noise filters only after reviewing them for your environment:
+
+```json
+{
+  "target_kind": "SoftwareInstance",
+  "target_filter": { "type_matches": "(?i)Database Server$" },
+  "inbound_relation": {
+    "kind": "ObservedCommunication",
+    "source_kind": "SoftwareInstance"
+  },
+  "noise_filters": {
+    "exclude_source_type_patterns": [
+      "(?i)Management Agent",
+      "(?i)Cluster Server",
+      "(?i)NetWorker"
+    ],
+    "exclude_self_kind": true
+  }
+}
+```
+
+### Audit scan — show all inbound relationships
+
+Leave `noise_filters` empty and include active rows:
+
+```json
+{
+  "target_kind": "SoftwareInstance",
+  "target_filter": { "type_matches": "(?i)Database Server$" },
+  "inbound_relation": {
+    "kind": "ObservedCommunication",
+    "source_kind": "SoftwareInstance"
+  },
+  "include_active": true
+}
+```
+
+### Hosts hosting no software (orphan hardware)
+
+```json
+{
+  "target_kind": "Host",
+  "inbound_relation": {
+    "kind": "HostedSoftware",
+    "source_kind": "SoftwareInstance",
+    "direction": "out"
+  }
+}
+```
+
+### LoadBalancerPool with no backend
+
+Pick the backend relationship and source kind from your Discovery taxonomy first:
+
+```json
+{
+  "target_kind": "LoadBalancerPool",
+  "inbound_relation": {
+    "kind": "BackendPool",
+    "source_kind": "SoftwareInstance"
+  }
+}
+```
