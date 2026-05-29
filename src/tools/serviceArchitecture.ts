@@ -56,8 +56,8 @@ function rowString(row: Record<string, unknown>, keys: string[]): string | undef
 async function resolveServiceRoots(client: DiscoveryClient, serviceName: string): Promise<Array<{ id: string; name: string }>> {
   const needle = escapeDiscoveryDoubleQuoted(serviceName);
   const queries = [
-    `SEARCH BusinessService WHERE name HAS SUBWORD "${needle}" SHOW name, #id ORDER BY name`,
-    `SEARCH BusinessApplicationInstance WHERE name HAS SUBWORD "${needle}" SHOW name, #id ORDER BY name`
+    `SEARCH BusinessService WHERE name HAS SUBWORD "${needle}" SHOW name, #id`,
+    `SEARCH BusinessApplicationInstance WHERE name HAS SUBWORD "${needle}" SHOW name, #id`
   ];
 
   for (const query of queries) {

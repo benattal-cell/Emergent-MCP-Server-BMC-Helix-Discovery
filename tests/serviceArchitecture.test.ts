@@ -66,7 +66,7 @@ describe("discovery_service_architecture", () => {
     });
 
     expect(client.searchData).toHaveBeenCalledWith(
-      'SEARCH BusinessService WHERE name HAS SUBWORD "Jira" SHOW name, #id ORDER BY name',
+      'SEARCH BusinessService WHERE name HAS SUBWORD "Jira" SHOW name, #id',
       { entityLabel: "services", appliedFilters: { serviceName: "Jira" } }
     );
     expect(Array.isArray(result)).toBe(true);
