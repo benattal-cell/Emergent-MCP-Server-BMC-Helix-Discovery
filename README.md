@@ -97,6 +97,17 @@ Exemple conceptuel (client compatible MCP distant):
 }
 ```
 
+## Discovery DSL authoring helpers
+
+`discovery_search_data` is the advanced fallback for raw BMC Discovery DSL. Its tool description now acts as the primary in-tool DSL reference: clause ordering, traversal syntax, key expressions, `NODECOUNT`, named traversals, string literals, canonical examples, and common recovery hints are documented directly where MCP clients select the tool. Prefer specialized tools first, then use `discovery_search_data` only when a raw DSL query is really needed.
+
+Use these companion tools before executing raw DSL:
+
+- `discovery_dsl_examples`: returns static curated query snippets for topics such as `traversal`, `communication`, `lifecycle`, `containment`, `cluster`, `host_software`, `database`, `counting`, `named_traversal`, and `lookup`.
+- `discovery_validate_query`: performs a local pre-flight check for common mistakes (`count(traverse ...)`, `LOOKUP` with `WHERE`, and clause ordering issues) without calling Discovery.
+
+When Discovery returns a 400 DSL syntax error through `discovery_search_data`, the response includes the original message, a contextual hint when a known pattern matches, and the submitted query for debugging.
+
 ## `discovery_find_orphans` examples
 
 `discovery_find_orphans` is a neutral governance tool: it builds and runs a Discovery DSL query using the filters you provide. It does **not** apply hidden noise presets.
