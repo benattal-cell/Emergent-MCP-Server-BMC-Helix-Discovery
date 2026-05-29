@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareAlternatives, estimateCost, searchItCosts } from "../src/tools/itCosts/index.js";
+import { compareAlternatives, estimateCost, estimateRowCost, searchItCosts } from "../src/tools/itCosts/index.js";
 import { loadItCostRows } from "../src/tools/itCosts/dataLoader.js";
 
 const rows = loadItCostRows();
@@ -20,9 +20,20 @@ describe("IT cost tools", () => {
   });
 
   it("annualizes one-shot costs over five years", () => {
-    const result = estimateCost(rows, { component: "Migration VM vers cloud", quantity: 10, horizon: "annual", scenario: "all" });
-    expect("error" in result).toBe(false);
-    if ("error" in result) return;
+    const result = estimateRowCost({
+      "Catégorie": "TEST",
+      "Sous-catégorie": "One-shot",
+      "Composant": "Setup ponctuel de référence",
+      "Unité de mesure": "Projet",
+      "Coût unitaire min (€)": 600,
+      "Coût unitaire médian (€)": 1000,
+      "Coût unitaire max (€)": 1600,
+      "Devise": "EUR",
+      "Fréquence": "One-shot",
+      "Notes / Hypothèses": "Fixture de test hors catalogue.",
+      "Source / Référence": "Unit Test",
+      "Date de mise à jour": "2025-01"
+    }, 10, "annual");
     expect(result.costs.median).toBe(2000);
   });
 

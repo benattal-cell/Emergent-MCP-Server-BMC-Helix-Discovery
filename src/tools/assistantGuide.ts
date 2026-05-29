@@ -21,7 +21,7 @@ const sections: GuideSection[] = [
     id: "it_costs",
     title: "Coûts IT / Value Review",
     titleEn: "IT costs / Value Review",
-    keywords: ["cost", "coût", "cout", "costs", "saving", "savings", "économie", "economies", "value review", "business case", "tco", "roi", "azure", "aws", "vmware", "licence", "license", "rightsizing", "migration"],
+    keywords: ["cost", "coût", "cout", "costs", "saving", "savings", "économie", "economies", "value review", "business case", "tco", "roi", "azure", "aws", "vmware", "licence", "license", "rightsizing"],
     items: [
       {
         tool: "list_categories",
@@ -33,9 +33,9 @@ const sections: GuideSection[] = [
       {
         tool: "search_it_costs",
         purpose: "Rechercher des composants de coût par texte, catégorie et sous-catégorie.",
-        useCase: "Trouver les lignes de référence pour VM 4 vCPU/16 Go, Oracle, Microsoft 365, stockage ou migration.",
+        useCase: "Trouver les lignes de référence pour VM 4 vCPU/16 Go, Oracle, Microsoft 365 ou stockage.",
         purposeEn: "Search cost components by text, category, and subcategory.",
-        useCaseEn: "Find reference rows for 4 vCPU/16 GB VMs, Oracle, Microsoft 365, storage, or migration."
+        useCaseEn: "Find reference rows for 4 vCPU/16 GB VMs, Oracle, Microsoft 365, or storage."
       },
       {
         tool: "estimate_cost",

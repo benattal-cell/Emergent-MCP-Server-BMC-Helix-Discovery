@@ -16,6 +16,4 @@ MIDDLEWARE,Middleware,"Red Hat JBoss EAP",Core/an,900,1200,1600,EUR,Annuel,"Sous
 MIDDLEWARE,Middleware,"Apache Tomcat Support Enterprise",Instance/an,600,1000,1500,EUR,Annuel,"Support tiers entreprise hors coût infrastructure",Market Benchmark,2025-01
 STOCKAGE,Stockage,"SAN Fibre Channel Tier 1",To/an,900,1200,1600,EUR,Annuel,"Stockage primaire haute performance avec support",Storage Benchmark,2025-01
 STOCKAGE,Stockage,"Object Storage S3 Standard",To/mois,18,23,30,EUR,Mensuel,"Stockage objet standard hors requêtes et egress",AWS Public Pricing,2025-01
-SERVICES,Migration,"Migration VM vers cloud",VM,600,1000,1600,EUR,One-shot,"Factory migration par VM simple à moyenne complexité",Service Benchmark,2025-01
-SERVICES,Migration,"Assessment Value Review",Projet,0,0,0,EUR,Inclus,"Inclus dans l'accompagnement avant-projet",Internal Benchmark,2025-01
 BACKUP,Sauvegarde,"Backup entreprise VM",VM/mois,18,28,45,EUR,Mensuel,"Sauvegarde standard avec rétention 30 jours",Backup Benchmark,2025-01
