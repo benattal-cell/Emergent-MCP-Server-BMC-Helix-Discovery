@@ -180,7 +180,12 @@ const cy = cytoscape({
     { selector: "node", style: {
       "background-color": "data(color)",
       "background-image": "data(icon)",
-      "background-fit": "contain",
+      "background-fit": "none",
+      "background-width": "58%",
+      "background-height": "58%",
+      "background-position-x": "50%",
+      "background-position-y": "50%",
+      "background-repeat": "no-repeat",
       "background-clip": "node",
       "background-image-opacity": 1,
       "width": 38, "height": 38,
