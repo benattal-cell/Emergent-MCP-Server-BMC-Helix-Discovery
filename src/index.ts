@@ -17,6 +17,7 @@ import { dependencyScopeTools } from "./tools/dependencyScope.js";
 import { lifecycleVisualTools } from "./tools/visualLifecycle.js";
 import { hostCardTools } from "./tools/visualHostCard.js";
 import { orphansTools } from "./tools/orphans.js";
+import { itCostTools } from "./tools/itCosts/index.js";
 import { createOAuthServer } from "./oauth.js";
 
 const MAX_BODY_BYTES = 1_000_000;
@@ -110,7 +111,8 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...lifecycleVisualTools(client),
     ...dependencyScopeTools(client),
     ...dependencyMapTools(client),
-    ...orphansTools(client)
+    ...orphansTools(client),
+    ...itCostTools()
   };
 
   for (const [name, def] of Object.entries(tools)) {

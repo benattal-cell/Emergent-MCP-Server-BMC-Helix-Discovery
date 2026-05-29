@@ -1,0 +1,21 @@
+Catégorie,Sous-catégorie,Composant,Unité de mesure,Coût unitaire min (€),Coût unitaire médian (€),Coût unitaire max (€),Devise,Fréquence,Notes / Hypothèses,Source / Référence,Date de mise à jour
+INFRA VIRTUALISÉE,Compute,"VMware vSphere VM 4 vCPU / 16 Go RAM",VM/mois,320,375,430,EUR,Mensuel,"TCO estimatif VMware on-prem incluant hyperviseur, support, exploitation et stockage standard",Benchmark Value Review,2025-01
+CLOUD AWS,Compute,"AWS EC2 m5.xlarge (4 vCPU / 16 Go RAM)",Instance/mois,110,140,170,EUR,Mensuel,"On-demand pricing EU (Paris). Reserved 1 an ~40% moins cher",AWS Public Pricing,2025-01
+CLOUD AZURE,Compute,"Azure D4s v5 (4 vCPU / 16 Go RAM)",Instance/mois,95,125,155,EUR,Mensuel,"Pay-as-you-go Europe West. Reserved 1 an ~35% moins cher",Azure Public Pricing,2025-01
+CLOUD GCP,Compute,"Google Cloud n2-standard-4 (4 vCPU / 16 Go RAM)",Instance/mois,100,130,160,EUR,Mensuel,"On-demand Belgium/Europe region estimate",Google Cloud Pricing,2025-01
+INFRA VIRTUALISÉE,Compute,"Nutanix AHV VM 4 vCPU / 16 Go RAM",VM/mois,240,300,360,EUR,Mensuel,"TCO estimatif hyperconvergé incluant support et exploitation",Benchmark Value Review,2025-01
+LICENCE ORACLE,Base de données,"Oracle Database Enterprise Edition",Core/an,9500,12000,14500,EUR,Annuel,"Licence + support annuel estimatif par core processeur",Oracle Price List Benchmark,2025-01
+CLOUD AWS,Base de données,"Amazon RDS Oracle Enterprise Edition",Core/mois,700,900,1100,EUR,Mensuel,"Inclut coût service managé hors licence BYOL selon scénario",AWS Public Pricing,2025-01
+CLOUD AZURE,Base de données,"Azure SQL Managed Instance Business Critical",Core/mois,420,520,650,EUR,Mensuel,"Prix indicatif vCore Europe hors réservations",Azure Public Pricing,2025-01
+OPEN SOURCE,Base de données,"PostgreSQL Enterprise Support",Instance/an,2500,4000,6500,EUR,Annuel,"Support entreprise et exploitation hors infrastructure",Market Benchmark,2025-01
+LICENCE MICROSOFT,OS,"Windows Server Datacenter",Core/an,180,240,320,EUR,Annuel,"Software Assurance annualisée estimative par core",Microsoft Licensing Benchmark,2025-01
+LICENCE MICROSOFT,Bureautique,"Microsoft 365 E3",Utilisateur/mois,28,34,40,EUR,Mensuel,"Prix public tenant entreprise hors remises volume",Microsoft Public Pricing,2025-01
+LICENCE MICROSOFT,Bureautique,"Microsoft 365 F3",Utilisateur/mois,7,9,11,EUR,Mensuel,"Profil terrain/frontline worker",Microsoft Public Pricing,2025-01
+SAAS,Bureautique,"Google Workspace Business Plus",Utilisateur/mois,15,18,22,EUR,Mensuel,"Prix public indicatif Europe",Google Workspace Pricing,2025-01
+MIDDLEWARE,Middleware,"Red Hat JBoss EAP",Core/an,900,1200,1600,EUR,Annuel,"Souscription annuelle par core",Red Hat Pricing Benchmark,2025-01
+MIDDLEWARE,Middleware,"Apache Tomcat Support Enterprise",Instance/an,600,1000,1500,EUR,Annuel,"Support tiers entreprise hors coût infrastructure",Market Benchmark,2025-01
+STOCKAGE,Stockage,"SAN Fibre Channel Tier 1",To/an,900,1200,1600,EUR,Annuel,"Stockage primaire haute performance avec support",Storage Benchmark,2025-01
+STOCKAGE,Stockage,"Object Storage S3 Standard",To/mois,18,23,30,EUR,Mensuel,"Stockage objet standard hors requêtes et egress",AWS Public Pricing,2025-01
+SERVICES,Migration,"Migration VM vers cloud",VM,600,1000,1600,EUR,One-shot,"Factory migration par VM simple à moyenne complexité",Service Benchmark,2025-01
+SERVICES,Migration,"Assessment Value Review",Projet,0,0,0,EUR,Inclus,"Inclus dans l'accompagnement avant-projet",Internal Benchmark,2025-01
+BACKUP,Sauvegarde,"Backup entreprise VM",VM/mois,18,28,45,EUR,Mensuel,"Sauvegarde standard avec rétention 30 jours",Backup Benchmark,2025-01

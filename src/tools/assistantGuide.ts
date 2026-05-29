@@ -18,6 +18,42 @@ type GuideSection = { id: string; title: string; titleEn: string; keywords: stri
 
 const sections: GuideSection[] = [
   {
+    id: "it_costs",
+    title: "Coûts IT / Value Review",
+    titleEn: "IT costs / Value Review",
+    keywords: ["cost", "coût", "cout", "costs", "saving", "savings", "économie", "economies", "value review", "business case", "tco", "roi", "azure", "aws", "vmware", "licence", "license", "rightsizing", "migration"],
+    items: [
+      {
+        tool: "list_categories",
+        purpose: "Lister les catégories et sous-catégories de la base de coûts IT avant une recherche.",
+        useCase: "Démarrer un Value Review en découvrant les familles disponibles (cloud, infra virtualisée, licences, stockage...).",
+        purposeEn: "List categories and subcategories from the IT cost knowledge base before searching.",
+        useCaseEn: "Start a Value Review by discovering available families (cloud, virtualized infra, licenses, storage...)."
+      },
+      {
+        tool: "search_it_costs",
+        purpose: "Rechercher des composants de coût par texte, catégorie et sous-catégorie.",
+        useCase: "Trouver les lignes de référence pour VM 4 vCPU/16 Go, Oracle, Microsoft 365, stockage ou migration.",
+        purposeEn: "Search cost components by text, category, and subcategory.",
+        useCaseEn: "Find reference rows for 4 vCPU/16 GB VMs, Oracle, Microsoft 365, storage, or migration."
+      },
+      {
+        tool: "estimate_cost",
+        purpose: "Estimer min/médian/max pour un composant et une quantité sur un horizon mensuel, annuel ou 5 ans.",
+        useCase: "Après inventaire, estimer le coût annuel de 200 VMs VMware ou de 50 cores Oracle.",
+        purposeEn: "Estimate min/median/max for a component and quantity over monthly, annual, or 5-year horizons.",
+        useCaseEn: "After inventory, estimate the annual cost of 200 VMware VMs or 50 Oracle cores."
+      },
+      {
+        tool: "compare_alternatives",
+        purpose: "Comparer les alternatives annualisées et calculer les économies potentielles face à une solution actuelle.",
+        useCase: "Comparer VMware vs Azure/AWS/GCP pour 100 VMs 4 vCPU/16 Go et classer les économies médianes.",
+        purposeEn: "Compare annualized alternatives and calculate potential savings versus a current solution.",
+        useCaseEn: "Compare VMware vs Azure/AWS/GCP for 100 4 vCPU/16 GB VMs and rank median savings."
+      }
+    ]
+  },
+  {
     id: "health",
     title: "Santé / connectivité API",
     titleEn: "Health / API connectivity",
@@ -339,7 +375,7 @@ const GLOBAL_RULES_EN = [
 export function assistantGuideTools() {
   return {
     discovery_tool_guide: {
-      description: "READ THIS FIRST, ALWAYS, before ANY action involving BMC Helix Discovery data (software inventory, hosts, CVE vulnerabilities, end-of-life, compliance, licensing, dependencies, topology, orphan/rationalization scans, raw DSL, or taxonomy). Pass the user's raw question as `request`. Returns: (a) relevant MCP tools to call next, (b) example use cases, (c) global rules to prevent wrong-tool selection and DSL improvisation. Skip this tool ONLY if the user explicitly names a specific MCP tool to use.",
+      description: "READ THIS FIRST, ALWAYS, before ANY action involving BMC Helix Discovery data (software inventory, hosts, CVE vulnerabilities, end-of-life, compliance, licensing, IT cost/value review, dependencies, topology, orphan/rationalization scans, raw DSL, or taxonomy). Pass the user's raw question as `request`. Returns: (a) relevant MCP tools to call next, (b) example use cases, (c) global rules to prevent wrong-tool selection and DSL improvisation. Skip this tool ONLY if the user explicitly names a specific MCP tool to use.",
       schema: guideSchema,
       handler: async (input: z.infer<typeof guideSchema>) => {
         const selected = pickSections(input.request);

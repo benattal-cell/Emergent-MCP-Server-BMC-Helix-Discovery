@@ -97,6 +97,27 @@ Exemple conceptuel (client compatible MCP distant):
 }
 ```
 
+## IT cost / Value Review tools
+
+The server includes a lightweight IT cost knowledge base loaded from `data/it_cost_knowledge_base.csv` at startup. These tools are intended for Value Reviews: combine Discovery inventory outputs with reference market costs to estimate annual or 5-year cost ranges and potential savings.
+
+- `list_categories`: enumerate cost categories/subcategories before searching.
+- `search_it_costs`: search the reference catalog by free text, category, and subcategory.
+- `estimate_cost`: estimate min/median/max cost for a component and quantity over monthly, annual, or 5-year horizons.
+- `compare_alternatives`: compare annualized alternatives for a workload and calculate median savings versus a current solution.
+
+Example:
+
+```json
+{
+  "workload_type": "VM 4vCPU 16Go",
+  "quantity": 100,
+  "current_solution": "VMware vSphere"
+}
+```
+
+The CSV is the source of truth; no live cloud pricing or currency conversion is performed.
+
 ## Discovery DSL authoring helpers
 
 `discovery_search_data` is the advanced fallback for raw BMC Discovery DSL. Its tool description now acts as the primary in-tool DSL reference: clause ordering, traversal syntax, key expressions, `NODECOUNT`, named traversals, string literals, canonical examples, and common recovery hints are documented directly where MCP clients select the tool. Prefer specialized tools first, then use `discovery_search_data` only when a raw DSL query is really needed.
