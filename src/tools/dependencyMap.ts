@@ -14,12 +14,22 @@ export const dependencyMapSchema = z.object({
   iterations: z.number().int().min(50).max(600).default(200),
   linLog: z.boolean().default(false),
   gravity: z.number().min(0).max(10).default(1),
-  scalingRatio: z.number().min(1).max(100).default(10)
+  scalingRatio: z.number().min(1).max(100).default(10),
+  /**
+   * Layout for the INTERACTIVE HTML view only (the PNG/SVG always use ForceAtlas2).
+   * - "concentric"   → focus at center, ringed by BFS distance. Default. Best for
+   *                    topology, dependency graph, blast-radius, impact analysis, modeling.
+   * - "hierarchical" → top-down layered view (Cytoscape breadthfirst). Best for
+   *                    architecture, n-tier, service model, application stack.
+   * - "cose"         → generic force layout (same vibe as the PNG/SVG ForceAtlas2).
+   */
+  layout: z.enum(["concentric", "hierarchical", "cose"]).default("concentric")
 }).strict();
 
 const structuredContentSchema = z.object({
   focus: z.object({ id: z.string(), name: z.string() }),
   layout: z.object({ algorithm: z.literal("forceatlas2"), iterations: z.number(), settings: z.record(z.unknown()) }),
+  interactiveLayout: z.enum(["concentric", "hierarchical", "cose"]),
   nodes: z.array(z.object({ id: z.string(), kind: z.string(), name: z.string(), x: z.number(), y: z.number(), degree: z.number() })),
   edges: z.array(z.object({ from: z.string(), to: z.string(), kind: z.string() })),
   truncated: z.boolean(),
@@ -103,7 +113,7 @@ function layout(nodes: GraphNode[], edges: GraphEdge[], options: z.infer<typeof 
 export function dependencyMapTools(client: DiscoveryClient) {
   return {
     discovery_dependency_map: {
-      description: "Render a dependency map around a Discovery node. Returns multiple representations in the same response: a PNG image (base64), an SVG resource, and a self-contained interactive HTML resource (Cytoscape embedded inline, no external CDN). If your client supports inline image rendering, render the PNG. If your client supports file artifacts or downloadable resources, present the HTML resource as a downloadable file the user can open in a browser for an interactive view. Do NOT attempt to summarize the raw HTML — it is meant for rendering, not reading.",
+      description: "Render a dependency map around a Discovery node. Returns multiple representations in the same response: a PNG image (base64), an SVG resource, and a self-contained interactive HTML resource (Cytoscape embedded inline, no external CDN). The interactive HTML includes CI-style icons per kind, mini-map, search, dark-mode toggle, hover tooltip and click-to-spotlight-neighbors. CHOOSING THE LAYOUT (`layout` param, applies ONLY to the interactive HTML — PNG/SVG always use ForceAtlas2): pass `layout='hierarchical'` when the user's question is about ARCHITECTURE, n-tier, application stack, or service model (top-down layered view). Pass `layout='concentric'` (default) when the question is about TOPOLOGY, MODELING, graph view, dependency map, blast-radius or impact analysis (focus at center, others on rings by distance). Pass `layout='cose'` only if explicitly asked for a generic force-directed look. If your client supports inline image rendering, render the PNG. If your client supports file artifacts or downloadable resources, present the HTML resource as a downloadable file the user can open in a browser. Do NOT attempt to summarize the raw HTML — it is meant for rendering, not reading.",
       schema: dependencyMapSchema,
       handler: async (input: z.infer<typeof dependencyMapSchema>) => {
         let focusId = input.target;
@@ -123,20 +133,17 @@ export function dependencyMapTools(client: DiscoveryClient) {
         const structuredContent = structuredContentSchema.parse({
           focus: { id: focusId, name: focusName },
           layout: { algorithm: "forceatlas2", iterations: input.iterations, settings: { gravity: input.gravity, scalingRatio: input.scalingRatio, strongGravityMode: false, barnesHutOptimize: positionedNodes.length > 50, slowDown: 1, linLogMode: input.linLog } },
+          interactiveLayout: input.layout,
           nodes: positionedNodes,
           edges,
           truncated: positionedNodes.length >= input.maxNodes,
           counts: { nodes: positionedNodes.length, edges: edges.length, kinds }
         });
         const svg = renderForceLayoutSvg({ nodes: positionedNodes, edges: positionedEdges, width: 1600, height: 900, title: `Dependency map · ${focusName}` });
-        const html = buildInteractiveHtml(positionedNodes, edges, {
-          title: `Dependency map · ${focusName}`,
-          focusId,
-          layout: "concentric"
-        });
+        const html = buildInteractiveHtml(positionedNodes, edges, { title: `Dependency map · ${focusName}`, focusId, layout: input.layout });
         return renderVisual(svg, {
           name: `depmap_${focusName.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase()}_d${input.depth}`,
-          textSummary: `Dependency map for '${focusName}': ${positionedNodes.length} nodes, ${edges.length} edges${positionedNodes.length >= input.maxNodes ? " (truncated)" : ""}. Layout=ForceAtlas2, iterations=${input.iterations}.`,
+          textSummary: `Dependency map for '${focusName}': ${positionedNodes.length} nodes, ${edges.length} edges${positionedNodes.length >= input.maxNodes ? " (truncated)" : ""}. Static layout=ForceAtlas2 (${input.iterations} iter). Interactive layout=${input.layout}.`,
           pngWidth: 1600,
           structuredContent,
           ...(html ? {
