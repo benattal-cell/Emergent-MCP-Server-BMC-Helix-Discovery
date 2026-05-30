@@ -1,15 +1,16 @@
 import { AppConfig } from "./config.js";
 import { ApiError } from "./utils/errors.js";
 import { sanitizeObject } from "./utils/sanitize.js";
+import { flattenDiscoveryQueryResult, type FlatQueryResult } from "./utils/flatten.js";
 
-const DISCOVERY_QUERY_ENDPOINT_TODO = "/api/{version}/QUERY_ENDPOINT_TODO"; // TODO: replace with exact JSON query endpoint from Discovery Swagger.
-const DISCOVERY_SCAN_ENDPOINT_TODO = "/api/{version}/SCAN_ENDPOINT_TODO"; // TODO: replace with exact discovery run/scan endpoint from Discovery Swagger.
+const DISCOVERY_SCAN_ENDPOINT = "/scan";
 const REQUEST_TIMEOUT_MS = 30000;
 
-export interface QueryResult {
-  count: number;
-  limit: number;
-  items: unknown[];
+interface SearchOptions {
+  limit?: number;
+  format?: "object" | "tree";
+  entityLabel?: string;
+  appliedFilters?: Record<string, unknown>;
 }
 
 export class DiscoveryClient {
@@ -17,6 +18,11 @@ export class DiscoveryClient {
 
   async getAbout(): Promise<unknown> {
     return this.request("GET", "/api/about", undefined, false);
+  }
+
+  private versionedPath(path: string): string {
+    const normalized = path.startsWith("/") ? path : `/${path}`;
+    return `/api/${this.config.apiVersion}${normalized}`;
   }
 
   async request(method: string, path: string, body?: unknown, authRequired = true): Promise<unknown> {
@@ -81,92 +87,136 @@ export class DiscoveryClient {
     }
   }
 
-  async queryJson(query: unknown, limit = 50): Promise<QueryResult> {
-    const payload = { query, limit };
-    const path = DISCOVERY_QUERY_ENDPOINT_TODO.replace("{version}", this.config.apiVersion);
-    const data = await this.request("POST", path, payload, true);
-    return normalizeListResult(data, limit);
+  async getNodeGraph(nodeId: string, params: Record<string, string | number | boolean | undefined> = {}): Promise<unknown> {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) {
+      if (v === undefined) continue;
+      q.set(k, String(v));
+    }
+    const suffix = q.toString() ? `?${q.toString()}` : "";
+    return this.request("GET", this.versionedPath(`/data/nodes/${encodeURIComponent(nodeId)}/graph${suffix}`), undefined, true);
   }
 
-  findHosts(params: { nameContains?: string; osContains?: string; limit?: number }): Promise<QueryResult> {
-    const conditions: unknown[] = [];
-    if (params.nameContains) conditions.push(substringCondition("name", params.nameContains));
-    if (params.osContains) conditions.push(substringCondition("os", params.osContains));
-
-    const hostNode = {
-      type: "node",
-      label: "host",
-      kind: "Host",
-      required: true,
-      condition: mergeConditions(conditions),
-      show: ["name", "os", "type", "key"].map((name) => ({ type: "attr", name }))
-    };
-
-    return this.queryJson([hostNode], params.limit ?? 50);
+  async getTopologyServices(payload: unknown): Promise<unknown> {
+    return this.request("POST", this.versionedPath(`/topology/services`), payload, true);
   }
 
-  findSoftwareInstances(params: { typeContains?: string; nameContains?: string; instanceContains?: string; limit?: number }): Promise<QueryResult> {
-    const conditions: unknown[] = [];
-    if (params.typeContains) conditions.push(substringCondition("type", params.typeContains));
-    if (params.nameContains) conditions.push(substringCondition("name", params.nameContains));
-    if (params.instanceContains) conditions.push(substringCondition("instance", params.instanceContains));
-
-    const node = {
-      type: "node",
-      label: "software",
-      kind: "SoftwareInstance",
-      required: true,
-      condition: mergeConditions(conditions),
-      show: ["type", "name", "instance", "product_version"].map((name) => ({ type: "attr", name }))
-    };
-
-    return this.queryJson([node], params.limit ?? 50);
+  async queryJson(query: string, limit?: number, options: { entityLabel?: string; appliedFilters?: Record<string, unknown> } = {}): Promise<FlatQueryResult> {
+    return this.searchData(query, { ...(limit === undefined ? {} : { limit }), format: "object", ...options });
   }
 
-  findHostSoftware(params: { hostNameContains: string; softwareTypeContains?: string; limit?: number }): Promise<QueryResult> {
-    const hostNode = {
-      type: "node",
-      label: "host",
-      kind: "Host",
-      required: true,
-      condition: substringCondition("name", params.hostNameContains),
-      show: [{ type: "attr", name: "name" }, { type: "attr", name: "key" }]
-    };
+  async searchData(query: string, options: SearchOptions = {}): Promise<FlatQueryResult> {
+    const format = options.format === "tree" ? "tree" : "object";
+    const params = new URLSearchParams({
+      offset: "0",
+      format
+    });
+    if (options.limit !== undefined) params.set("limit", String(options.limit));
+    const path = `${this.versionedPath("/data/search")}?${params.toString()}`;
+    const data = await this.request("POST", path, { query }, true);
+    return flattenDiscoveryQueryResult(data, {
+      entityLabel: options.entityLabel,
+      appliedFilters: options.appliedFilters,
+      format
+    });
+  }
 
-    const softwareNode = {
-      type: "node",
-      label: "software",
-      kind: "SoftwareInstance",
-      required: true,
-      condition: params.softwareTypeContains ? substringCondition("type", params.softwareTypeContains) : undefined,
-      show: ["type", "name", "instance", "product_version"].map((name) => ({ type: "attr", name }))
-    };
+  findHosts(params: { nameContains?: string; osContains?: string; limit?: number }): Promise<FlatQueryResult> {
+    const filters: string[] = [];
+    const applied: Record<string, unknown> = {};
+    if (params.nameContains) {
+      filters.push(`* has subword "${escapeDiscoveryDoubleQuoted(params.nameContains)}"`);
+      applied.nameContains = params.nameContains;
+    }
+    if (params.osContains) {
+      filters.push(`os has subword "${escapeDiscoveryDoubleQuoted(params.osContains)}"`);
+      applied.osContains = params.osContains;
+    }
+    const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
+    const query = `search Host${where} show name, hostname, dns_name, os, type, key, #id as 'id'`;
+    return this.queryJson(query, params.limit ?? 50, { entityLabel: "hôtes", appliedFilters: applied });
+  }
 
-    const rel = { type: "relation", label: "hosted", kind: "HostedSoftware", left: "host", right: "software" };
-    return this.queryJson([hostNode, softwareNode, rel], params.limit ?? 50);
+  findSoftwareInstances(params: { typeContains?: string; nameContains?: string; instanceContains?: string; limit?: number }): Promise<FlatQueryResult> {
+    const filters: string[] = [];
+    const applied: Record<string, unknown> = {};
+    if (params.typeContains) {
+      filters.push(`type has subword "${escapeDiscoveryDoubleQuoted(params.typeContains)}"`);
+      applied.typeContains = params.typeContains;
+    }
+    if (params.nameContains) {
+      filters.push(`name has subword "${escapeDiscoveryDoubleQuoted(params.nameContains)}"`);
+      applied.nameContains = params.nameContains;
+    }
+    if (params.instanceContains) {
+      filters.push(`instance has subword "${escapeDiscoveryDoubleQuoted(params.instanceContains)}"`);
+      applied.instanceContains = params.instanceContains;
+    }
+    const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
+    const query = `search SoftwareInstance${where} show type, name, instance, product_version`;
+    return this.queryJson(query, params.limit ?? 50, { entityLabel: "instances logicielles", appliedFilters: applied });
+  }
+
+  findHostSoftware(params: { hostNameContains: string; softwareTypeContains?: string; limit?: number }): Promise<FlatQueryResult> {
+    const hostNeedle = escapeDiscoveryDoubleQuoted(params.hostNameContains);
+    const hostFilter = `(#:::Host.name has subword "${hostNeedle}" or #:::Host.hostname has subword "${hostNeedle}" or #:::Host.dns_name has subword "${hostNeedle}")`;
+    const swFilter = params.softwareTypeContains
+      ? ` and type has subword "${escapeDiscoveryDoubleQuoted(params.softwareTypeContains)}"`
+      : "";
+    const query = `search SoftwareInstance where ${hostFilter}${swFilter} show type, name, instance, product_version, #:::Host.name, #:::Host.hostname, #:::Host.key`;
+    const applied: Record<string, unknown> = { hostNameContains: params.hostNameContains };
+    if (params.softwareTypeContains) applied.softwareTypeContains = params.softwareTypeContains;
+    return this.queryJson(query, params.limit ?? 50, { entityLabel: "logiciels sur l'hôte", appliedFilters: applied });
+  }
+
+  async getTaxonomySections(): Promise<unknown> {
+    return this.request("GET", this.versionedPath(`/taxonomy/sections`), undefined, true);
+  }
+
+  async getTaxonomyLocales(): Promise<unknown> {
+    return this.request("GET", this.versionedPath(`/taxonomy/locales`), undefined, true);
+  }
+
+  async getTaxonomyNodeKinds(includeInfo = false): Promise<unknown> {
+    return this.request("GET", this.versionedPath(includeInfo ? `/taxonomy/nodekinds?format=info` : `/taxonomy/nodekinds`), undefined, true);
+  }
+
+  async getTaxonomyNodeKindDetails(kind: string): Promise<unknown> {
+    return this.request("GET", this.versionedPath(`/taxonomy/nodekinds/${encodeURIComponent(kind)}`), undefined, true);
+  }
+
+  async getTaxonomyNodeKindFieldLists(kind: string): Promise<unknown> {
+    return this.request("GET", this.versionedPath(`/taxonomy/nodekinds/${encodeURIComponent(kind)}/fieldlists`), undefined, true);
+  }
+
+  async getTaxonomyNodeKindFieldListFields(kind: string, fieldList: string): Promise<unknown> {
+    return this.request("GET", this.versionedPath(`/taxonomy/nodekinds/${encodeURIComponent(kind)}/fieldlists/${encodeURIComponent(fieldList)}`), undefined, true);
+  }
+
+  async getTaxonomyRelationshipKinds(includeInfo = false): Promise<unknown> {
+    return this.request("GET", this.versionedPath(includeInfo ? `/taxonomy/relkinds?format=info` : `/taxonomy/relkinds`), undefined, true);
+  }
+
+  async getTaxonomyRelationshipKindDetails(kind: string): Promise<unknown> {
+    return this.request("GET", this.versionedPath(`/taxonomy/relkinds/${encodeURIComponent(kind)}`), undefined, true);
   }
 
   async startScan(params: { target: string; label?: string; confirm: boolean }): Promise<unknown> {
     if (!params.confirm) {
       throw new ApiError("Scan rejected: confirm must be true", { code: "SCAN_CONFIRMATION_REQUIRED" });
     }
-    const path = DISCOVERY_SCAN_ENDPOINT_TODO.replace("{version}", this.config.apiVersion);
-    return this.request("POST", path, { target: params.target, label: params.label }, true);
+    return this.request("POST", this.versionedPath(DISCOVERY_SCAN_ENDPOINT), { target: params.target, label: params.label }, true);
   }
 }
 
-function substringCondition(attrName: string, value: string): unknown {
-  return { type: "substring", left: { type: "attr", name: attrName }, right: value };
+function escapeDiscoveryLiteral(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
-function mergeConditions(conditions: unknown[]): unknown {
-  if (conditions.length === 0) return undefined;
-  if (conditions.length === 1) return conditions[0];
-  return { type: "and", conditions };
+
+function escapeDiscoveryDoubleQuoted(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
-function normalizeListResult(raw: unknown, limit: number): QueryResult {
-  const items = Array.isArray(raw) ? raw : (raw && typeof raw === "object" && Array.isArray((raw as { results?: unknown[] }).results)) ? (raw as { results: unknown[] }).results : [];
-  return { count: items.length, limit, items };
-}
+
 function mapStatusToCode(status: number): string {
   if (status === 401) return "UNAUTHORIZED";
   if (status === 403) return "FORBIDDEN";

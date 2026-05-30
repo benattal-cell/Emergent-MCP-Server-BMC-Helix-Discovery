@@ -8,6 +8,10 @@ export interface AppConfig {
   token?: string;
   mcpServerApiKey: string;
   port: number;
+  publicBaseUrl?: string;
+  oauthClientId?: string;
+  oauthClientSecret?: string;
+  nvdApiKey?: string;
 }
 
 export function loadConfig(): AppConfig {
@@ -32,6 +36,10 @@ export function loadConfig(): AppConfig {
     apiVersion: process.env.BMC_DISCOVERY_API_VERSION?.trim() || "v1.18",
     token: process.env.BMC_DISCOVERY_TOKEN?.trim(),
     mcpServerApiKey,
-    port
+    port,
+    publicBaseUrl: process.env.PUBLIC_BASE_URL?.trim(),
+    oauthClientId: process.env.OAUTH_CLIENT_ID?.trim(),
+    oauthClientSecret: process.env.OAUTH_CLIENT_SECRET?.trim(),
+    nvdApiKey: process.env.NVD_API_KEY?.trim()
   };
 }
