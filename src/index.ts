@@ -1,4 +1,5 @@
 import http from "node:http";
+import { pathToFileURL } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { loadConfig, type AppConfig } from "./config.js";
@@ -32,8 +33,10 @@ function scalarKpis(value: Record<string, unknown>): Kpi[] {
 }
 
 function fallbackVisualForObject(toolName: string, result: Record<string, unknown>) {
-  const kpis = scalarKpis(result);
-  if (kpis.length === 0) return null;
+  const scalar = scalarKpis(result);
+  const kpis = scalar.length > 0
+    ? scalar
+    : [{ label: "Champs", value: String(Object.keys(result).length), hint: "Résumé automatique" }];
   return renderVisual(kpiGrid(`MCP · ${toolName}`, kpis), {
     name: `mcp_${toolName.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase()}`,
     textSummary: `Résumé visuel automatique pour ${toolName}.`,
@@ -372,9 +375,11 @@ async function main(): Promise<void> {
   });
 }
 
-main().catch((error) => {
-  const rawMessage = error instanceof Error ? error.message : String(error);
-  process.stderr.write(`[startup-error] ${rawMessage}\n`);
-  process.stderr.write(`${JSON.stringify(normalizeApiError(error))}\n`);
-  process.exit(1);
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    const rawMessage = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`[startup-error] ${rawMessage}\n`);
+    process.stderr.write(`${JSON.stringify(normalizeApiError(error))}\n`);
+    process.exit(1);
+  });
+}

@@ -94,8 +94,8 @@ describe("discovery_find_orphans", () => {
       limit: 500
     });
 
-    expect(result.rows[0]).toMatchObject({ name: "mcr-sqldb-38", significant_inbound: 5, category: "HAS_SIGNIFICANT_INBOUND" });
-    expect(result.summary.generated_dsl_query).toContain("NODECOUNT(TRAVERSE :ObservedCommunication::SoftwareInstance WHERE");
+    expect(result.structuredContent.rows[0]).toMatchObject({ name: "mcr-sqldb-38", significant_inbound: 5, category: "HAS_SIGNIFICANT_INBOUND" });
+    expect(result.structuredContent.summary.generated_dsl_query).toContain("NODECOUNT(TRAVERSE :ObservedCommunication::SoftwareInstance WHERE");
   });
 
   it("categorizes host with zero inbound as NO_INBOUND", async () => {
@@ -112,6 +112,6 @@ describe("discovery_find_orphans", () => {
       limit: 500
     });
 
-    expect(result.rows[0]).toMatchObject({ name: "empty-host", category: "NO_INBOUND", inbound_count: 0 });
+    expect(result.structuredContent.rows[0]).toMatchObject({ name: "empty-host", category: "NO_INBOUND", inbound_count: 0 });
   });
 });

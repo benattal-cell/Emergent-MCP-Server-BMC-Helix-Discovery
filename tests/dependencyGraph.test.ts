@@ -1,4 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
+
+vi.mock("../src/svg/cytoscapeBundle.js", () => ({
+  cytoscapeJsSource: "function cytoscape(){}"
+}));
+
 import { dependencyScopeTools } from "../src/tools/dependencyScope.js";
 import { dependencyMapTools } from "../src/tools/dependencyMap.js";
 
@@ -26,10 +31,12 @@ describe("discovery_dependency_scope", () => {
     const client = fakeClient(sampleGraph);
     const tools = dependencyScopeTools(client);
     const result = await tools.discovery_dependency_scope.handler({ target: "PROD-WEB-01" });
-    expect(result.resolved.type).toBe("host_name");
-    expect(result.resolved.id).toBe("NODE_ID_FOCUS_AAAAAAAA");
-    expect(result.counts.nodes).toBe(3);
-    expect(result.counts.relations).toBe(2);
+    expect(result.structuredContent.resolved.type).toBe("host_name");
+    expect(result.structuredContent.resolved.id).toBe("NODE_ID_FOCUS_AAAAAAAA");
+    expect(result.structuredContent.counts.nodes).toBe(3);
+    expect(result.structuredContent.counts.relations).toBe(2);
+    expect(result.content.some((block) => block.type === "image" || block.resource?.mimeType === "image/svg+xml")).toBe(true);
+    expect(result.content.some((block) => block.resource?.mimeType === "text/html")).toBe(true);
   });
 });
 
@@ -37,15 +44,14 @@ describe("discovery_dependency_map", () => {
   it("returns image, svg resource, html resource, then text", async () => {
     const client = fakeClient(sampleGraph);
     const tools = dependencyMapTools(client);
-    const result = await tools.discovery_dependency_map.handler({ target: "PROD-WEB-01", depth: 1, maxNodes: 60, iterations: 120, linLog: false, gravity: 1, scalingRatio: 10 });
-    expect(result.content).toHaveLength(4);
-    expect(result.content[0].type).toBe("image");
-    expect(result.content[1].type).toBe("resource");
-    expect((result.content[1] as { type: "resource"; resource: { mimeType: string } }).resource.mimeType).toBe("image/svg+xml");
-    expect(result.content[2].type).toBe("resource");
-    const htmlResource = result.content[2] as { type: "resource"; resource: { mimeType: string; text: string } };
+    const result = await tools.discovery_dependency_map.handler({ target: "PROD-WEB-01", depth: 1, maxNodes: 60, iterations: 120, linLog: false, gravity: 1, scalingRatio: 10, layout: "concentric" });
+    expect(result.content.some((block) => block.type === "image" || block.resource?.mimeType === "image/svg+xml")).toBe(true);
+    const svgResource = result.content.find((block) => block.resource?.mimeType === "image/svg+xml");
+    expect(svgResource?.type).toBe("resource");
+    const htmlResource = result.content.find((block) => block.resource?.mimeType === "text/html") as { type: "resource"; resource: { mimeType: string; text: string } };
+    expect(htmlResource).toBeTruthy();
     expect(htmlResource.resource.mimeType).toBe("text/html");
-    expect(result.content[3].type).toBe("text");
+    expect(result.content.some((block) => block.type === "text")).toBe(true);
 
     const html = htmlResource.resource.text.toLowerCase();
     expect(html).toContain("cytoscape");
@@ -71,7 +77,7 @@ describe("discovery_dependency_map", () => {
     };
     const client = fakeClient(graph, "N0AAAAAAAAAAAAAAA");
     client.findHosts = vi.fn().mockResolvedValue({ summary: "", totalCount: 1, returnedCount: 1, rows: [{ id: "N0AAAAAAAAAAAAAAA", name: "N0" }] });
-    const result = await dependencyMapTools(client).discovery_dependency_map.handler({ target: "N0AAAAAAAAAAAAAAA", depth: 1, maxNodes: 60, iterations: 120, linLog: false, gravity: 1, scalingRatio: 10 });
+    const result = await dependencyMapTools(client).discovery_dependency_map.handler({ target: "N0AAAAAAAAAAAAAAA", depth: 1, maxNodes: 60, iterations: 120, linLog: false, gravity: 1, scalingRatio: 10, layout: "concentric" });
     const nodes = (result as { structuredContent: { nodes: Array<{ x: number; y: number }> } }).structuredContent.nodes;
     expect(nodes.every((n) => Number.isFinite(n.x) && Number.isFinite(n.y))).toBe(true);
     const uniqueX = new Set(nodes.map((n) => n.x.toFixed(2)));

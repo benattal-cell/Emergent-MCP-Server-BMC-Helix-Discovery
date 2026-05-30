@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
+import { renderTopologyVisual } from "../svg/topologyVisual.js";
 
 export const dependencyScopeSchema = z.object({
   target: z.string().min(1)
@@ -35,7 +36,7 @@ export function dependencyScopeTools(client: DiscoveryClient) {
     discovery_dependency_scope: {
       description: "Lightweight probe: given a host name OR a Discovery nodeId, returns the topology size around it (node counts by kind, relation counts by kind, in/out fan). Use this BEFORE discovery_dependency_map to estimate how big the graph will be and pick a sensible depth.",
       schema: dependencyScopeSchema,
-      handler: async (input: z.infer<typeof dependencyScopeSchema>): Promise<ScopeResult> => {
+      handler: async (input: z.infer<typeof dependencyScopeSchema>) => {
         let id: string | undefined;
         let name: string | undefined;
         let resolvedAs: "node_id" | "host_name";
@@ -82,14 +83,23 @@ export function dependencyScopeTools(client: DiscoveryClient) {
         else if (nodes.length > 25) suggestion = "Medium neighborhood — discovery_dependency_map with depth=1 should render cleanly.";
         else suggestion = "Small neighborhood — safe to call discovery_dependency_map with depth=2.";
 
-        return {
+        const result: ScopeResult = {
           resolved: { type: resolvedAs, id, name },
           counts: { nodes: nodes.length, relations: links.length, inbound, outbound },
           nodeKinds,
           relationKinds,
           suggestion
         };
-      }
+
+        return renderTopologyVisual(graphRaw, {
+          name: `dependency_scope_${id.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase()}`,
+          title: `Dependency scope · ${name ?? id}`,
+          focusId: id,
+          textSummary: `${nodes.length} nodes, ${links.length} relations. ${suggestion}`,
+          structuredContent: { ...result, rawGraph: graphRaw }
+        });
+      },
+      isVisual: true as const
     }
   };
 }

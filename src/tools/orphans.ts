@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
+import { kpiGrid } from "../svg/kpi.js";
+import { renderVisual } from "../svg/renderer.js";
 
 type GroupBy = "host" | "publisher" | "product" | "type";
 type OrphanCategory = "NO_INBOUND" | "HAS_INBOUND" | "ONLY_FILTERED_INBOUND" | "HAS_SIGNIFICANT_INBOUND";
@@ -188,7 +190,7 @@ Use discovery_search_data if you want to inspect or run raw Discovery DSL. Limit
         if (input.noise_filters.exclude_same_host) warnings.push("exclude_same_host is not implemented in DSL in this version; total_inbound still includes same-host relationships.");
         if (input.include_inbound_detail) warnings.push("include_inbound_detail requested, but this version returns count-based categorization only; use generated_dsl_query with discovery_search_data for raw DSL debugging.");
         if (result.returnedCount < result.totalCount) warnings.push("Result set is truncated by limit; use a more restrictive target_filter or increase limit up to 2000.");
-        return {
+        const payload = {
           summary: {
             total_candidates: allRows.length,
             total_matching_in_discovery: result.totalCount,
@@ -202,7 +204,17 @@ Use discovery_search_data if you want to inspect or run raw Discovery DSL. Limit
           rows,
           generated_dsl_query
         };
-      }
+        const svg = kpiGrid("Orphelins", [
+          { label: "Éléments orphelins", value: String(rows.length), hint: `${allRows.length} candidats analysés`, alert: rows.length > 0 },
+          { label: "Kind", value: input.target_kind, hint: input.inbound_relation.kind }
+        ], { columns: 2 });
+        return renderVisual(svg, {
+          name: `orphans_${input.target_kind.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase()}`,
+          textSummary: `${rows.length} orphan candidates retained from ${allRows.length} analyzed ${input.target_kind} rows.`,
+          structuredContent: payload
+        });
+      },
+      isVisual: true as const
     }
   };
 }

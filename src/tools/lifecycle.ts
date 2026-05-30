@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
+import { kpiGrid } from "../svg/kpi.js";
+import { renderVisual } from "../svg/renderer.js";
 
 const riskWindowDaysDefault = 182;
 const DAY_IN_NANOS = 864000000000;
@@ -121,11 +123,22 @@ export function lifecycleTools(client: DiscoveryClient) {
           productContains: input.productContains,
           typeIn: input.typeIn
         });
-        return client.queryJson(query, input.limit, {
+        const result = await client.queryJson(query, input.limit, {
           entityLabel: "logiciels avec dates de cycle de vie",
           appliedFilters: appliedFiltersFor(input)
         });
-      }
+        const rows = Array.isArray(result.rows) ? result.rows : [];
+        const svg = kpiGrid("Lifecycle", [
+          { label: input.onlyAtRisk ? "Fin de support" : "Éléments", value: String(result.totalCount ?? rows.length), hint: `${result.returnedCount ?? rows.length} retournés`, alert: input.onlyAtRisk || rows.length > 0 },
+          { label: "Fenêtre risque", value: `${input.riskWindowDays} j`, hint: input.publisherContains ?? input.productContains ?? undefined }
+        ], { columns: 2 });
+        return renderVisual(svg, {
+          name: "lifecycle_report",
+          textSummary: result.summary,
+          structuredContent: result
+        });
+      },
+      isVisual: true as const
     },
     discovery_build_lifecycle_query: {
       description: "ADVANCED. Build a customizable lifecycle DSL query without executing it. Returns the DSL string ready to be passed to discovery_search_data. PREFER `discovery_lifecycle_report` for normal use cases — it now accepts the same filters AND executes the query in one call. Use this build tool only when you need to inspect or transform the DSL before running it.",
