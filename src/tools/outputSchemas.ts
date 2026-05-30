@@ -95,6 +95,7 @@ const serviceArchitectureResultSchema = z.object({
 }).passthrough();
 
 export const serviceArchitectureOutputSchema = z.object({
+  summary: z.string().optional(),
   diagrams: z.array(serviceArchitectureResultSchema).optional(),
   count: z.number().optional(),
   error: z.string().optional()

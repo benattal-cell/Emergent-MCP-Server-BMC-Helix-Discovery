@@ -175,9 +175,10 @@ export function serviceArchitectureTools(client: DiscoveryClient) {
         }));
 
         const diagrams = rendered.map((visual) => visual.structuredContent);
+        const summary = `${roots.length} service(s) résolu(s) pour "${input.serviceName}".`;
         return {
           content: rendered.flatMap((visual) => visual.content) as VisualContentBlock[],
-          structuredContent: { diagrams, count: diagrams.length }
+          structuredContent: { summary, diagrams, count: diagrams.length }
         };
       },
       isVisual: true as const

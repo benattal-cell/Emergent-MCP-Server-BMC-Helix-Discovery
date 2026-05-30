@@ -91,7 +91,7 @@ describe("discovery_service_architecture", () => {
     );
     expect(Array.isArray(result.content)).toBe(true);
     expect(Array.isArray(result.structuredContent)).toBe(false);
-    expect(result.structuredContent).toMatchObject({ count: 2 });
+    expect(result.structuredContent).toMatchObject({ count: 2, summary: '2 service(s) résolu(s) pour "Jira".' });
     expect(result.structuredContent.diagrams).toHaveLength(2);
     expect(() => serviceArchitectureOutputSchema.parse(result.structuredContent)).not.toThrow();
     expect(result.structuredContent.diagrams[0]).toMatchObject({
