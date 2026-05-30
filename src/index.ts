@@ -157,15 +157,19 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
   };
 
   for (const [name, def] of Object.entries(tools)) {
-    const toolDef = def as { schema: { parse: (value: unknown) => unknown; shape?: Record<string, unknown> }; handler: (input: never) => Promise<unknown>; description?: string; isVisual?: boolean };
+    const toolDef = def as { schema: { parse: (value: unknown) => unknown; shape?: Record<string, unknown> }; outputSchema?: { shape?: Record<string, unknown> }; handler: (input: never) => Promise<unknown>; description?: string; isVisual?: boolean };
     const inputSchemaShape = toolDef.schema && (toolDef.schema as { shape?: unknown }).shape
       ? (toolDef.schema as { shape: Record<string, unknown> }).shape
       : {};
+    const outputSchemaShape = toolDef.outputSchema && (toolDef.outputSchema as { shape?: unknown }).shape
+      ? (toolDef.outputSchema as { shape: Record<string, unknown> }).shape
+      : undefined;
     mcpServer.registerTool(
       name,
       {
         description: toolDef.description ?? `MCP tool: ${name}`,
-        inputSchema: inputSchemaShape as Record<string, never>
+        inputSchema: inputSchemaShape as Record<string, never>,
+        ...(outputSchemaShape ? { outputSchema: outputSchemaShape as Record<string, never> } : {})
       },
       async (input: unknown) => {
         try {

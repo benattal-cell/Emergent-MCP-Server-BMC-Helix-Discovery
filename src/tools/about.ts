@@ -5,11 +5,20 @@ import { renderVisual } from "../svg/renderer.js";
 
 export const emptyInputSchema = z.object({}).strict();
 
+const aboutOutputSchema = z.object({ about: z.unknown() }).passthrough();
+const apiStatusOutputSchema = z.object({
+  reachable: z.boolean(),
+  configuredApiVersion: z.string(),
+  supportedApiVersions: z.array(z.string()),
+  warning: z.string().optional()
+}).passthrough();
+
 export function aboutTools(client: DiscoveryClient, configuredApiVersion: string) {
   return {
     discovery_about: {
       description: "Returns metadata about the BMC Helix Discovery instance (version, supported API versions, capabilities). Use this to verify connectivity to Discovery or to check what API version is available. No authentication required for this endpoint. Do NOT use for user-facing questions about hosts, software, or compliance.",
       schema: emptyInputSchema,
+      outputSchema: aboutOutputSchema,
       handler: async () => {
         const about = await client.getAbout();
         const payload = about && typeof about === "object" ? about as Record<string, unknown> : {};
@@ -30,6 +39,7 @@ export function aboutTools(client: DiscoveryClient, configuredApiVersion: string
     discovery_get_api_status: {
       description: "Checks if Discovery is reachable AND if the configured API version matches what the instance supports. Use this as a health-check before running other tools, especially if previous calls failed. Returns a warning if there's a version mismatch.",
       schema: emptyInputSchema,
+      outputSchema: apiStatusOutputSchema,
       handler: async () => {
         const about = (await client.getAbout()) as Record<string, unknown>;
         const supported = extractSupportedVersions(about);
