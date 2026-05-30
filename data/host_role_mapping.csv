@@ -1,0 +1,21 @@
+software_type_contains,role,priority
+SQL Server,Database Server,90
+Oracle,Database Server,90
+MySQL,Database Server,90
+PostgreSQL,Database Server,90
+Database,Database Server,80
+Tomcat,Application Server,60
+JBoss,Application Server,60
+WebLogic,Application Server,60
+WebSphere,Application Server,60
+JIRA,Business Application,70
+Confluence,Business Application,70
+SAP,Business Application,70
+Apache Webserver,Web Server,50
+Apache,Web Server,50
+Nginx,Web Server,50
+IIS,Web Server,50
+Control-M,Scheduling Agent,10
+BladeLogic,Management Agent,10
+Networker,Backup Agent,10
+OpenManage,Hardware Agent,10
