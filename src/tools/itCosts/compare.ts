@@ -19,6 +19,23 @@ export interface AlternativeComparison {
   source: string;
 }
 
+export interface SavingsComparison {
+  alternative: string;
+  annual_savings_median: number;
+  five_year_savings_median: number;
+  savings_pct: number;
+}
+
+export interface CompareAlternativesKpi {
+  headline_component: string;
+  current_component: string | null;
+  annual_savings_median: number;
+  five_year_savings_median: number;
+  savings_pct: number | null;
+  currency: "EUR";
+  horizon: "annual";
+}
+
 function comparableRows(rows: ItCostRow[], workloadType: string, current?: ItCostRow): ItCostRow[] {
   const requiredSpecTokens = tokenize(workloadType).filter((token) => /^(\d+vcpu|\d+gb)$/.test(token));
   const scored = rows.map((row) => ({ row, score: componentScore(workloadType, row) }));
@@ -53,22 +70,40 @@ export function compareAlternatives(rows: ItCostRow[], input: z.infer<typeof com
 
   const currentEstimate = currentMatch ? estimateRowCost(currentMatch, input.quantity, "annual") : null;
   const currentSolution = currentEstimate ? { component: currentEstimate.component, annual_cost_median: currentEstimate.costs.median } : undefined;
-  const savings = currentSolution
+  const savings: SavingsComparison[] | undefined = currentSolution
     ? alternatives
       .filter((alternative) => alternative.component !== currentSolution.component)
-      .map((alternative) => ({
-        alternative: alternative.component,
-        annual_savings_median: Math.round(currentSolution.annual_cost_median - alternative.annual_cost_median),
-        savings_pct: currentSolution.annual_cost_median === 0 ? 0 : Math.round(((currentSolution.annual_cost_median - alternative.annual_cost_median) / currentSolution.annual_cost_median) * 100)
-      }))
+      .map((alternative) => {
+        const annualSavings = Math.round(currentSolution.annual_cost_median - alternative.annual_cost_median);
+        return {
+          alternative: alternative.component,
+          annual_savings_median: annualSavings,
+          five_year_savings_median: annualSavings * 5,
+          savings_pct: currentSolution.annual_cost_median === 0 ? 0 : Math.round((annualSavings / currentSolution.annual_cost_median) * 100)
+        };
+      })
       .sort((a, b) => b.annual_savings_median - a.annual_savings_median)
     : undefined;
+
+  const bestSaving = savings?.[0];
+  const kpi: CompareAlternativesKpi | null = alternatives.length > 0
+    ? {
+      headline_component: bestSaving?.alternative ?? alternatives[0].component,
+      current_component: currentSolution?.component ?? null,
+      annual_savings_median: bestSaving?.annual_savings_median ?? 0,
+      five_year_savings_median: (bestSaving?.annual_savings_median ?? 0) * 5,
+      savings_pct: currentSolution ? (bestSaving?.savings_pct ?? 0) : null,
+      currency: "EUR",
+      horizon: "annual"
+    }
+    : null;
 
   return {
     workload_type: input.workload_type,
     quantity: input.quantity,
     alternatives,
     current_solution: currentSolution,
-    savings_vs_current: savings
+    savings_vs_current: savings,
+    kpi
   };
 }

@@ -19,8 +19,46 @@ import { hostCardTools } from "./tools/visualHostCard.js";
 import { orphansTools } from "./tools/orphans.js";
 import { itCostTools } from "./tools/itCosts/index.js";
 import { createOAuthServer } from "./oauth.js";
+import { kpiGrid, type Kpi } from "./svg/kpi.js";
+import { renderVisual } from "./svg/renderer.js";
 
 const MAX_BODY_BYTES = 1_000_000;
+
+function scalarKpis(value: Record<string, unknown>): Kpi[] {
+  return Object.entries(value)
+    .filter(([, v]) => typeof v === "string" || typeof v === "number" || typeof v === "boolean")
+    .slice(0, 4)
+    .map(([key, v]) => ({ label: key, value: String(v) }));
+}
+
+function fallbackVisualForObject(toolName: string, result: Record<string, unknown>) {
+  const kpis = scalarKpis(result);
+  if (kpis.length === 0) return null;
+  return renderVisual(kpiGrid(`MCP · ${toolName}`, kpis), {
+    name: `mcp_${toolName.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase()}`,
+    textSummary: `Résumé visuel automatique pour ${toolName}.`,
+    structuredContent: result
+  });
+}
+
+function fallbackVisualForResult(toolName: string, result: unknown) {
+  if (Array.isArray(result)) {
+    return renderVisual(kpiGrid(`MCP · ${toolName}`, [{ label: "Résultats", value: String(result.length) }]), {
+      name: `mcp_${toolName.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase()}`,
+      textSummary: `Résumé visuel automatique pour ${toolName}.`,
+      structuredContent: result
+    });
+  }
+  if (result && typeof result === "object") return fallbackVisualForObject(toolName, result as Record<string, unknown>);
+  if (typeof result === "string" || typeof result === "number" || typeof result === "boolean") {
+    return renderVisual(kpiGrid(`MCP · ${toolName}`, [{ label: "Réponse", value: String(result) }]), {
+      name: `mcp_${toolName.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase()}`,
+      textSummary: `Résumé visuel automatique pour ${toolName}.`,
+      structuredContent: result
+    });
+  }
+  return null;
+}
 
 function getBearerToken(authHeader: string | undefined): string | null {
   if (!authHeader) return null;
@@ -135,6 +173,9 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
           if (toolDef.isVisual && result && typeof result === "object" && Array.isArray((result as { content?: unknown }).content)) {
             return result as never;
           }
+
+          const visual = fallbackVisualForResult(name, result);
+          if (visual) return { ...visual, content: [...visual.content, { type: "text", text: JSON.stringify(result, null, 2) }] } as never;
 
           return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
         } catch (error) {
