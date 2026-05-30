@@ -174,9 +174,10 @@ export function serviceArchitectureTools(client: DiscoveryClient) {
           });
         }));
 
+        const diagrams = rendered.map((visual) => visual.structuredContent);
         return {
           content: rendered.flatMap((visual) => visual.content) as VisualContentBlock[],
-          structuredContent: rendered.map((visual) => visual.structuredContent)
+          structuredContent: { diagrams, count: diagrams.length }
         };
       },
       isVisual: true as const

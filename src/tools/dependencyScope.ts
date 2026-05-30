@@ -49,14 +49,21 @@ export function dependencyScopeTools(client: DiscoveryClient) {
           id = input.target;
           resolvedAs = "node_id";
         } else {
-          const found = await client.findHosts({ nameContains: input.target, limit: 1 });
-          const first = found.rows[0] as { id?: unknown; name?: unknown } | undefined;
-          if (!first || typeof first.id !== "string") {
-            throw new Error(`No host found matching '${input.target}' and value does not look like a node id`);
+          try {
+            const found = await client.findHosts({ nameContains: input.target, limit: 1 });
+            const first = found.rows[0] as { id?: unknown; name?: unknown } | undefined;
+            if (!first || typeof first.id !== "string") {
+              const message = `target introuvable comme hôte ou nodeId. Pour cartographier un service, utilisez discovery_service_architecture (serviceName="${input.target}").`;
+              return { content: [{ type: "text", text: message }], structuredContent: { error: true, target: input.target, message, suggestedTool: "discovery_service_architecture", suggestedInput: { serviceName: input.target } }, isError: true };
+            }
+            id = first.id;
+            name = typeof first.name === "string" ? first.name : undefined;
+            resolvedAs = "host_name";
+          } catch (error) {
+            const detail = error instanceof Error ? error.message : String(error);
+            const message = `target introuvable comme hôte ou nodeId. Pour cartographier un service, utilisez discovery_service_architecture (serviceName="${input.target}").`;
+            return { content: [{ type: "text", text: `${message} Détail: ${detail}` }], structuredContent: { error: true, target: input.target, message, detail, suggestedTool: "discovery_service_architecture", suggestedInput: { serviceName: input.target } }, isError: true };
           }
-          id = first.id;
-          name = typeof first.name === "string" ? first.name : undefined;
-          resolvedAs = "host_name";
         }
 
         const graphRaw = await client.getNodeGraph(id);

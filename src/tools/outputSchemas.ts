@@ -95,14 +95,8 @@ const serviceArchitectureResultSchema = z.object({
 }).passthrough();
 
 export const serviceArchitectureOutputSchema = z.object({
-  result: z.array(serviceArchitectureResultSchema).optional(),
+  diagrams: z.array(serviceArchitectureResultSchema).optional(),
   count: z.number().optional(),
-  root: z.object({ id: z.string(), name: z.string() }).passthrough().optional(),
-  summary: z.string().optional(),
-  nodes: z.array(serviceNodeSchema).optional(),
-  edges: z.array(serviceEdgeSchema).optional(),
-  levels: z.number().optional(),
-  truncated: z.boolean().optional(),
   error: z.string().optional()
 }).passthrough();
 

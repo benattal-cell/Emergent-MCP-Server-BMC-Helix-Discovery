@@ -38,9 +38,27 @@ describe("discovery_dependency_scope", () => {
     expect(result.content.some((block) => block.type === "image" || block.resource?.mimeType === "image/svg+xml")).toBe(true);
     expect(result.content.some((block) => block.resource?.mimeType === "text/html")).toBe(true);
   });
+
+  it("returns an actionable service-architecture hint when target is not a host", async () => {
+    const client = fakeClient(sampleGraph);
+    client.findHosts = vi.fn().mockResolvedValue({ summary: "", totalCount: 0, returnedCount: 0, rows: [] });
+    const result = await dependencyScopeTools(client).discovery_dependency_scope.handler({ target: "Jira" });
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toMatchObject({ suggestedTool: "discovery_service_architecture", suggestedInput: { serviceName: "Jira" } });
+    expect(result.content[0].text).toContain("target introuvable comme hôte ou nodeId");
+  });
 });
 
 describe("discovery_dependency_map", () => {
+  it("returns an actionable service-architecture hint when map target is not a host", async () => {
+    const client = fakeClient(sampleGraph);
+    client.findHosts = vi.fn().mockResolvedValue({ summary: "", totalCount: 0, returnedCount: 0, rows: [] });
+    const result = await dependencyMapTools(client).discovery_dependency_map.handler({ target: "Jira", depth: 1, maxNodes: 60, iterations: 120, linLog: false, gravity: 1, scalingRatio: 10, layout: "concentric" });
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toMatchObject({ suggestedTool: "discovery_service_architecture", suggestedInput: { serviceName: "Jira" } });
+    expect(result.content[0].text).toContain("target introuvable comme hôte ou nodeId");
+  });
+
   it("returns image, svg resource, html resource, then text", async () => {
     const client = fakeClient(sampleGraph);
     const tools = dependencyMapTools(client);

@@ -148,11 +148,20 @@ export function dependencyMapTools(client: DiscoveryClient) {
         let focusId = input.target;
         let focusName = input.target;
         if (!looksLikeNodeId(input.target)) {
-          const found = await client.findHosts({ nameContains: input.target, limit: 1 });
-          const first = found.rows[0] as { id?: unknown; name?: unknown } | undefined;
-          if (!first || typeof first.id !== "string") throw new Error(`No host found matching '${input.target}' and value does not look like a node id`);
-          focusId = first.id;
-          if (typeof first.name === "string") focusName = first.name;
+          try {
+            const found = await client.findHosts({ nameContains: input.target, limit: 1 });
+            const first = found.rows[0] as { id?: unknown; name?: unknown } | undefined;
+            if (!first || typeof first.id !== "string") {
+              const message = `target introuvable comme hôte ou nodeId. Pour cartographier un service, utilisez discovery_service_architecture (serviceName="${input.target}").`;
+              return { content: [{ type: "text", text: message }], structuredContent: { error: true, target: input.target, message, suggestedTool: "discovery_service_architecture", suggestedInput: { serviceName: input.target } }, isError: true };
+            }
+            focusId = first.id;
+            if (typeof first.name === "string") focusName = first.name;
+          } catch (error) {
+            const detail = error instanceof Error ? error.message : String(error);
+            const message = `target introuvable comme hôte ou nodeId. Pour cartographier un service, utilisez discovery_service_architecture (serviceName="${input.target}").`;
+            return { content: [{ type: "text", text: `${message} Détail: ${detail}` }], structuredContent: { error: true, target: input.target, message, detail, suggestedTool: "discovery_service_architecture", suggestedInput: { serviceName: input.target } }, isError: true };
+          }
         }
         const { nodes, edges } = await walkGraph(client, focusId, input.depth, input.maxNodes, input.kinds);
         if (!nodes.has(focusId)) nodes.set(focusId, { id: focusId, kind: "Focus", name: focusName });

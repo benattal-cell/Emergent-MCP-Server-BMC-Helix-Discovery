@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { buildServiceArchitectureHtml, buildServiceArchitectureSvg } from "../src/svg/serviceArchitectureHtml.js";
 import { serviceArchitectureTools } from "../src/tools/serviceArchitecture.js";
+import { serviceArchitectureOutputSchema } from "../src/tools/outputSchemas.js";
 
 describe("buildServiceArchitectureHtml", () => {
   it("builds a self-contained D3 architecture document and marks duplicated nodes", () => {
@@ -89,8 +90,11 @@ describe("discovery_service_architecture", () => {
       { entityLabel: "services", appliedFilters: { serviceName: "Jira" } }
     );
     expect(Array.isArray(result.content)).toBe(true);
-    expect(result.structuredContent).toHaveLength(2);
-    expect(result.structuredContent[0]).toMatchObject({
+    expect(Array.isArray(result.structuredContent)).toBe(false);
+    expect(result.structuredContent).toMatchObject({ count: 2 });
+    expect(result.structuredContent.diagrams).toHaveLength(2);
+    expect(() => serviceArchitectureOutputSchema.parse(result.structuredContent)).not.toThrow();
+    expect(result.structuredContent.diagrams[0]).toMatchObject({
       root: { id: "root-1", name: "Jira Production" },
       summary: "Jira Production: 2 nœuds, 2 niveaux"
     });
