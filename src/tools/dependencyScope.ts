@@ -2,6 +2,7 @@ import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
 import { renderTopologyVisual } from "../svg/topologyVisual.js";
 import { dependencyScopeOutputSchema } from "./outputSchemas.js";
+import { CYTOSCAPE_VISUAL_DESCRIPTION } from "./visualInstructions.js";
 
 export const dependencyScopeSchema = z.object({
   target: z.string().min(1)
@@ -38,6 +39,7 @@ export function dependencyScopeTools(client: DiscoveryClient) {
       description: "Lightweight probe: given a host name OR a Discovery nodeId, returns the topology size around it (node counts by kind, relation counts by kind, in/out fan). Use this BEFORE discovery_dependency_map to estimate how big the graph will be and pick a sensible depth.",
       schema: dependencyScopeSchema,
       outputSchema: dependencyScopeOutputSchema,
+      visualInstruction: CYTOSCAPE_VISUAL_DESCRIPTION,
       handler: async (input: z.infer<typeof dependencyScopeSchema>) => {
         let id: string | undefined;
         let name: string | undefined;

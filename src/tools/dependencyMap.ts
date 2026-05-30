@@ -6,6 +6,7 @@ import { renderForceLayoutSvg, type PositionedEdge, type PositionedNode } from "
 import { renderVisual } from "../svg/renderer.js";
 import { buildInteractiveHtml } from "../svg/interactiveGraph.js";
 import { dependencyMapOutputSchema } from "./outputSchemas.js";
+import { CYTOSCAPE_VISUAL_DESCRIPTION } from "./visualInstructions.js";
 
 export const dependencyMapSchema = z.object({
   target: z.string().min(1),
@@ -142,6 +143,7 @@ export function dependencyMapTools(client: DiscoveryClient) {
       description: "Render a dependency map around a Discovery node. Returns multiple representations in the same response: a PNG image (base64), an SVG resource, and a self-contained interactive HTML resource (Cytoscape embedded inline, no external CDN). The interactive HTML includes CI-style icons per kind, mini-map, search, dark-mode toggle, hover tooltip and click-to-spotlight-neighbors. CHOOSING THE LAYOUT (`layout` param, applies ONLY to the interactive HTML — PNG/SVG always use ForceAtlas2): pass `layout='hierarchical'` when the user's question is about ARCHITECTURE, n-tier, application stack, or service model (top-down layered view). Pass `layout='concentric'` (default) when the question is about TOPOLOGY, MODELING, graph view, dependency map, blast-radius or impact analysis (focus at center, others on rings by distance). Pass `layout='cose'` only if explicitly asked for a generic force-directed look. If your client supports inline image rendering, render the PNG. If your client supports file artifacts or downloadable resources, present the HTML resource as a downloadable file the user can open in a browser. Do NOT attempt to summarize the raw HTML — it is meant for rendering, not reading.",
       schema: dependencyMapSchema,
       outputSchema: dependencyMapOutputSchema,
+      visualInstruction: CYTOSCAPE_VISUAL_DESCRIPTION,
       handler: async (input: z.infer<typeof dependencyMapSchema>) => {
         let focusId = input.target;
         let focusName = input.target;

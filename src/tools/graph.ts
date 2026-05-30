@@ -2,6 +2,7 @@ import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
 import { renderTopologyVisual } from "../svg/topologyVisual.js";
 import { graphOutputSchema, graphSummaryOutputSchema } from "./outputSchemas.js";
+import { CYTOSCAPE_VISUAL_DESCRIPTION } from "./visualInstructions.js";
 
 const nodeIdSchema = z.object({
   nodeId: z.string().min(1)
@@ -56,6 +57,7 @@ export function graphTools(client: DiscoveryClient) {
       description: "Get the dependency graph around a specific node (by nodeId): all directly-connected nodes and the relationships between them. Use this when the user asks 'what depends on X?', 'what's connected to X?', 'show the topology around X'. The nodeId must come from a previous search (e.g. discovery_find_hosts returns a 'key' field that's the nodeId).",
       schema: nodeIdSchema,
       outputSchema: graphOutputSchema,
+      visualInstruction: CYTOSCAPE_VISUAL_DESCRIPTION,
       handler: async (input: z.infer<typeof nodeIdSchema>) => {
         const raw = await client.getNodeGraph(input.nodeId);
         const summary = summarizeGraph(raw) as { counts?: { nodes?: number; relations?: number } };

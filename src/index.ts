@@ -23,8 +23,15 @@ import { createOAuthServer } from "./oauth.js";
 import { kpiGrid, type Kpi } from "./svg/kpi.js";
 import { renderVisual } from "./svg/renderer.js";
 import { structuredOutputSchema as defaultOutputSchema } from "./tools/outputSchemas.js";
+import { SVG_VISUAL_DESCRIPTION } from "./tools/visualInstructions.js";
 
 const MAX_BODY_BYTES = 1_000_000;
+
+function withVisualInstruction(description: string | undefined, instruction: string | undefined): string {
+  const base = description ?? "MCP tool";
+  const suffix = instruction ?? SVG_VISUAL_DESCRIPTION;
+  return base.includes(suffix) ? base : `${base} ${suffix}`;
+}
 
 function structuredContentObject(value: unknown): Record<string, unknown> {
   if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, unknown>;
@@ -164,7 +171,7 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
   };
 
   for (const [name, def] of Object.entries(tools)) {
-    const toolDef = def as { schema: { parse: (value: unknown) => unknown; shape?: Record<string, unknown> }; outputSchema?: unknown; handler: (input: never) => Promise<unknown>; description?: string; isVisual?: boolean };
+    const toolDef = def as { schema: { parse: (value: unknown) => unknown; shape?: Record<string, unknown> }; outputSchema?: unknown; handler: (input: never) => Promise<unknown>; description?: string; visualInstruction?: string; isVisual?: boolean };
     const inputSchemaShape = toolDef.schema && (toolDef.schema as { shape?: unknown }).shape
       ? (toolDef.schema as { shape: Record<string, unknown> }).shape
       : {};
@@ -172,7 +179,7 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     mcpServer.registerTool(
       name,
       {
-        description: toolDef.description ?? `MCP tool: ${name}`,
+        description: withVisualInstruction(toolDef.description ?? `MCP tool: ${name}`, toolDef.visualInstruction),
         inputSchema: inputSchemaShape as Record<string, never>,
         outputSchema: outputSchema as never
       },
