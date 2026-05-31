@@ -24,4 +24,37 @@ describe("DiscoveryClient", () => {
     const client = new DiscoveryClient(config);
     await expect(client.request("GET", "/api/v1.18/test", undefined, true)).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
+  it("does not add a default limit to raw search requests", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ results: [] }) }));
+    const client = new DiscoveryClient(config);
+
+    await client.searchData("SEARCH Host WHERE name HAS SUBWORD \"prod\" SHOW name");
+
+    const url = String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0]);
+    expect(url).toContain("/api/v1.18/data/search?");
+    expect(url).toContain("format=object");
+    expect(url).not.toContain("limit=");
+  });
+  it("can page raw search requests beyond 100 rows when maxRows is requested", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string) => {
+      const parsed = new URL(url);
+      const offset = Number(parsed.searchParams.get("offset") || 0);
+      const limit = Number(parsed.searchParams.get("limit") || 100);
+      const rows = Array.from({ length: Math.max(0, Math.min(limit, 125 - offset)) }, (_, i) => [`row-${offset + i}`]);
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ items: [{ kind: "SoftwareInstance", count: 125, headings: ["type"], results: rows }] })
+      };
+    }));
+    const client = new DiscoveryClient(config);
+
+    const result = await client.searchData("search SoftwareInstance show type processwith unique()", { maxRows: 200, pageSize: 60 });
+
+    expect(result.returnedCount).toBe(125);
+    expect(result.rows).toHaveLength(125);
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0])).toContain("limit=60");
+  });
+
 });

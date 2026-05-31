@@ -34,6 +34,7 @@ Les valeurs présentes dans `/app/.env` sont des **placeholders preview** (sans 
 - Réécriture du routeur HTTP pour accepter le préfixe `/api` (preview Emergent)
 - Supervisor reconfiguré : `program:backend` lance `node dist/index.js` depuis `/app`
 - Frontend (React) et backend (FastAPI) supprimés du supervisor
+- Remplacement de Graphviz par ForceAtlas2 (graphology) dans discovery_dependency_map, ajout de structuredContent et d'une UI resource Cytoscape.
 
 ## Tests effectués (via curl)
 - ✅ `GET /api/health` (URL publique) → 200 + JSON attendu
