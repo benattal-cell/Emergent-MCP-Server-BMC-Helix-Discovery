@@ -81,8 +81,8 @@ function productTermsFromCpes(cpes: string[]): string[] {
 }
 
 export function buildDiscoveryDsl(cpes: string[]): string {
-  const cpePredicates = cpes.map((cpe) => `cpe_string_23 matches '${esc(cpeToRegex(cpe))}'`);
-  const typePredicates = productTermsFromCpes(cpes).map((term) => `type has subword '${esc(term)}'`);
+  const cpePredicates = cpes.map((cpe) => `(cpe_string_23 and cpe_string_23 matches '${esc(cpeToRegex(cpe))}')`);
+  const typePredicates = productTermsFromCpes(cpes).map((term) => `(not cpe_string_23 and type has subword '${esc(term)}')`);
   const where = [...cpePredicates, ...typePredicates].join(" or ") || "false";
   return `search SoftwareInstance where ${where} show type, version, cpe_string_23, #:::Host.name, #:::BusinessService.name processwith show type as 'Type', version as 'Full Version', cpe_string_23 as 'CPE', #:::Host.name as 'Host Name', #:::BusinessService.name as 'Service Name', #RunningSoftware:HostedSoftware:Host:Host.#OwnedItem:Ownership:BusinessOwner:Person.name as 'Business Owner'`;
 }

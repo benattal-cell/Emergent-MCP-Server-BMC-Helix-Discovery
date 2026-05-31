@@ -35,6 +35,18 @@ describe("DiscoveryClient", () => {
     expect(url).toContain("format=object");
     expect(url).not.toContain("limit=");
   });
+
+  it("can intentionally omit offset for single-page aggregate queries", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ results: [] }) }));
+    const client = new DiscoveryClient(config);
+
+    await client.searchData("search SoftwareInstance show type processwith unique()", { limit: 20000, omitOffset: true });
+
+    const url = String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0]);
+    expect(url).toContain("limit=20000");
+    expect(url).not.toContain("offset=");
+  });
+
   it("can page raw search requests beyond 100 rows when maxRows is requested", async () => {
     vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string) => {
       const parsed = new URL(url);
