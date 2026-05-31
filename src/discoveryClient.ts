@@ -11,6 +11,7 @@ interface SearchOptions {
   maxRows?: number;
   pageSize?: number;
   format?: "object" | "tree";
+  omitOffset?: boolean;
   entityLabel?: string;
   appliedFilters?: Record<string, unknown>;
 }
@@ -110,10 +111,8 @@ export class DiscoveryClient {
   async searchData(query: string, options: SearchOptions = {}): Promise<FlatQueryResult> {
     const format = options.format === "tree" ? "tree" : "object";
     const fetchPage = async (offset: number, limit?: number): Promise<FlatQueryResult> => {
-      const params = new URLSearchParams({
-        offset: String(offset),
-        format
-      });
+      const params = new URLSearchParams({ format });
+      if (!options.omitOffset) params.set("offset", String(offset));
       if (limit !== undefined) params.set("limit", String(limit));
       const path = `${this.versionedPath("/data/search")}?${params.toString()}`;
       const data = await this.request("POST", path, { query }, true);
@@ -124,7 +123,7 @@ export class DiscoveryClient {
       });
     };
 
-    if (options.maxRows === undefined) return fetchPage(0, options.limit);
+    if (options.maxRows === undefined || options.omitOffset) return fetchPage(0, options.limit);
 
     const pageSize = options.pageSize ?? options.limit ?? 500;
     const maxRows = Math.max(0, options.maxRows);
