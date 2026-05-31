@@ -45,6 +45,12 @@ describe("CVE CPE matching", () => {
     expect(dsl).not.toContain("type has subword");
   });
 
+  it("adds the application type fallback only for rows with no CPE fingerprint", () => {
+    const dsl = buildDiscoveryDsl([tomcatCpe]);
+
+    expect(dsl).toContain("(not cpe_string_23 and type has subword 'tomcat')");
+  });
+
   it("does not add a type fallback for precise application versions", () => {
     const dsl = buildDiscoveryDsl(["cpe:2.3:a:apache:tomcat:11.0.0:*:*:*:*:*:*:*"]);
 

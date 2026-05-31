@@ -43,7 +43,7 @@ function inferDirection(link: Record<string, unknown>, focusId: string): "in" | 
 export function dependencyScopeTools(client: DiscoveryClient) {
   return {
     discovery_dependency_scope: {
-      description: "Lightweight probe. Given a NAME (BusinessService, BusinessApplicationInstance, Host or SoftwareInstance) OR a Discovery nodeId, returns ONLY the SIZE of the topology around it — node counts by kind, relation counts by kind, in/out fan — WITHOUT drawing the graph. Use it BEFORE discovery_dependency_map to estimate graph size and pick a sensible depth. For the actual visual graph, use discovery_dependency_map. Returns a statistics summary card to render inline (not the interactive graph).",
+      description: "Lightweight probe. Given a NAME (BusinessService, BusinessApplicationInstance, Host or SoftwareInstance) OR a Discovery nodeId, returns ONLY the SIZE of the topology around it (node/relation counts by kind, in/out fan) WITHOUT drawing the graph. Use BEFORE discovery_dependency_map to estimate size and pick a depth. For the actual visual graph, use discovery_dependency_map. Returns a statistics summary card to render inline.",
       schema: dependencyScopeSchema,
       outputSchema: dependencyScopeOutputSchema,
       visualInstruction: SVG_VISUAL_DESCRIPTION,

@@ -52,6 +52,13 @@ const sections: GuideSection[] = [
         useCase: "Comparer VMware vs Azure/AWS/GCP pour 100 VMs 4 vCPU/16 Go et classer les économies médianes.",
         purposeEn: "Compare annualized alternatives and calculate potential savings versus a current solution.",
         useCaseEn: "Compare VMware vs Azure/AWS/GCP for 100 4 vCPU/16 GB VMs and rank median savings."
+      },
+      {
+        tool: "discovery_windows_license_report",
+        purpose: "Calculer les licences Windows Server par hôte physique, chiffrer Standard vs Datacenter et pré-calculer les optimisations.",
+        useCase: "Pour un audit licensing Windows/Datacenter/Hyper-V/VMware, appeler ce tool puis narrer les optimizationOpportunities en priorité économie décroissante.",
+        purposeEn: "Calculate Windows Server licensing by physical host, price Standard vs Datacenter, and precompute optimization opportunities.",
+        useCaseEn: "For a Windows/Datacenter/Hyper-V/VMware licensing audit, call this tool then narrate optimizationOpportunities by descending savings."
       }
     ]
   },
@@ -91,11 +98,33 @@ const sections: GuideSection[] = [
         useCaseEn: "For 'Microsoft software end-of-life', call with publisherContains='Microsoft'. NO NEED to chain build_lifecycle_query + search_data."
       },
       {
+        tool: "discovery_os_lifecycle_report",
+        purpose: "Exécuter directement un rapport d'obsolescence OS depuis les Host avec dates EOS/EOSS/EOES/EOL SupportDetail OS et gestion de failure_reason.",
+        useCase: "Pour 'Windows Server obsolètes' ou 'OS à risque', appeler ce tool avec osContains si besoin et onlyAtRisk=true pour EOS dépassée. PAS BESOIN d'enchaîner search_data.",
+        purposeEn: "Run an OS obsolescence report directly from Host nodes with OS SupportDetail EOS/EOSS/EOES/EOL dates and failure_reason handling.",
+        useCaseEn: "For 'obsolete Windows Server' or 'OS at risk', call this tool with osContains as needed and onlyAtRisk=true for exceeded EOS. NO NEED to chain search_data."
+      },
+      {
         tool: "discovery_build_lifecycle_query",
         purpose: "AVANCÉ. Construire le DSL sans l'exécuter, uniquement pour inspection.",
         useCase: "Rare : seulement si on doit modifier la requête avant exécution.",
         purposeEn: "ADVANCED. Build the DSL string without executing it, only for inspection.",
         useCaseEn: "Rare: only when the query must be modified before execution."
+      }
+    ]
+  },
+  {
+    id: "compliance",
+    title: "Conformité / patch management",
+    titleEn: "Compliance / patch management",
+    keywords: ["conformité", "conformite", "compliance", "patch", "kb", "correctif", "hotfix", "windows update", "missing kb", "non conforme", "non-compliant"],
+    items: [
+      {
+        tool: "discovery_patch_compliance_report",
+        purpose: "Vérifier directement la conformité patch KB de hôtes Windows (virtuels et baremetal), avec filtre optionnel sur OS et logiciels hébergés.",
+        useCase: "Pour 'quels serveurs n'ont pas KB4018271/KB500...' appeler avec kbList et complianceMode='all' ou 'any'; utiliser hostsSoftwareMatching + hostingFilter pour cibler les hôtes qui hébergent un logiciel donné.",
+        purposeEn: "Directly check Windows host KB patch compliance (virtual and bare-metal), with optional OS and hosted-software filters.",
+        useCaseEn: "For 'which servers miss KB4018271/KB500...', call with kbList and complianceMode='all' or 'any'; use hostsSoftwareMatching + hostingFilter to target hosts running a given software."
       }
     ]
   },
