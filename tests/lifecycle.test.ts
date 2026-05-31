@@ -27,7 +27,18 @@ describe("buildLifecycleQuery", () => {
       publisherContains: 'Microsoft "Corp"'
     });
 
-    expect(query).toContain('publisher has subword "Microsoft \\"Corp\\""');
+    expect(query).toContain('(publisher has subword "Microsoft \\"Corp\\"" or type has subword "Microsoft \\"Corp\\"" or @support_publisher has subword "Microsoft \\"Corp\\"")');
+  });
+
+  it("matches publisherContains against publisher, type, and support publisher", () => {
+    const query = buildLifecycleQuery({
+      ...baseInput,
+      publisherContains: "Microsoft"
+    });
+
+    expect(query).toContain('publisher has subword "Microsoft"');
+    expect(query).toContain('type has subword "Microsoft"');
+    expect(query).toContain('@support_publisher has subword "Microsoft"');
   });
 
   it("uses has subword for productContains", () => {
@@ -49,6 +60,6 @@ describe("buildLifecycleQuery", () => {
     const whereClause = query.slice(query.indexOf(" where ") + " where ".length, query.indexOf(" order by "));
 
     expect(whereClause).toContain(') and nodecount(traverse RunningSoftware:HostedSoftware:Host:Host where name has subword "PROD-WEB-01"');
-    expect(whereClause).toContain(') > 0 and publisher has subword "Microsoft" and product has subword "SQL Server"');
+    expect(whereClause).toContain(') > 0 and (publisher has subword "Microsoft" or type has subword "Microsoft" or @support_publisher has subword "Microsoft") and product has subword "SQL Server"');
   });
 });

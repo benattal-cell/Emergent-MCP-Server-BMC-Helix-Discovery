@@ -5,8 +5,9 @@ import { looksLikeNodeId, resolveTarget } from "../src/discovery/resolveTarget.j
 describe("resolveTarget", () => {
   it("detects node ids without querying Discovery", async () => {
     const client = { searchData: vi.fn() } as never;
-    expect(looksLikeNodeId("NODE_ID_FOCUS_AAAAAAAA")).toBe(true);
-    await expect(resolveTarget(client, "NODE_ID_FOCUS_AAAAAAAA")).resolves.toEqual({ status: "node_id", id: "NODE_ID_FOCUS_AAAAAAAA" });
+    expect(looksLikeNodeId("0123456789abcdef0123456789abcdef0123456789abcdef01234567")).toBe(true);
+    expect(looksLikeNodeId("ZbloutchMachinTruc42")).toBe(false);
+    await expect(resolveTarget(client, "0123456789abcdef0123456789abcdef0123456789abcdef01234567")).resolves.toEqual({ status: "node_id", id: "0123456789abcdef0123456789abcdef0123456789abcdef01234567" });
     expect((client as { searchData: ReturnType<typeof vi.fn> }).searchData).not.toHaveBeenCalled();
   });
 
@@ -14,7 +15,7 @@ describe("resolveTarget", () => {
     const searchData = vi.fn().mockImplementation(async (query: string) => {
       if (query === "SEARCH BusinessService SHOW name, kind, #id") return { rows: [{ name: "Jira", kind: "BusinessService", "#id": "bs-1" }] };
       if (query.includes("BusinessApplicationInstance") || query.includes("Host")) return { rows: [] };
-      if (query === "search SoftwareInstance show type processwith unique()") return { rows: [] };
+      if (query === "search SoftwareInstance show type") return { rows: [] };
       throw new Error(`unexpected query: ${query}`);
     });
     await loadCatalog({ searchData } as never);

@@ -105,9 +105,9 @@ function softwareTypesFromRows(result: FlatQueryResult): Map<string, CatalogSoft
 }
 
 async function loadSoftwareTypes(client: DiscoveryClient): Promise<{ registry: Map<string, CatalogSoftwareTypeEntry>; truncated: boolean }> {
-  const result = await client.searchData("search SoftwareInstance show type processwith unique()", {
+  const result = await client.searchData("search SoftwareInstance show type", {
     entityLabel: "catalog:SoftwareInstanceTypes",
-    appliedFilters: { catalog: "softwareTypes", mode: "unique" },
+    appliedFilters: { catalog: "softwareTypes", mode: "paged-distinct" },
     maxRows: CATALOG_MAX_ROWS,
     pageSize: CATALOG_PAGE_SIZE
   });
@@ -142,7 +142,9 @@ export async function loadCatalog(client: DiscoveryClient): Promise<void> {
     const loaded = await loadSoftwareTypes(client);
     softwareTypeRegistry = loaded.registry;
     softwareTypesTruncated = loaded.truncated;
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`${JSON.stringify({ message: "Discovery software type catalog load failed", error: message })}\n`);
     softwareTypeRegistry = new Map<string, CatalogSoftwareTypeEntry>();
     softwareTypesTruncated = true;
   }

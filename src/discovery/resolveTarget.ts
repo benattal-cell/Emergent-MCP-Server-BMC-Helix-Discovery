@@ -16,7 +16,7 @@ export type ResolveTargetResult =
 const LIVE_KINDS = ["BusinessService", "BusinessApplicationInstance", "Host"] as const;
 
 export function looksLikeNodeId(value: string): boolean {
-  return value.length >= 16 && !/\s/.test(value) && /^[A-Za-z0-9+/=_\-]+$/.test(value);
+  return /^[0-9a-f]{32,}$/i.test(value);
 }
 
 function escapeDiscoveryDoubleQuoted(value: string): string {

@@ -3,7 +3,7 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { renderTopologyVisual } from "../svg/topologyVisual.js";
 import { resolveTarget, type ResolveTargetResult } from "../discovery/resolveTarget.js";
 import { dependencyScopeOutputSchema } from "./outputSchemas.js";
-import { CYTOSCAPE_VISUAL_DESCRIPTION } from "./visualInstructions.js";
+import { SVG_VISUAL_DESCRIPTION } from "./visualInstructions.js";
 
 export const dependencyScopeSchema = z.object({
   target: z.string().min(1)
@@ -43,10 +43,10 @@ function inferDirection(link: Record<string, unknown>, focusId: string): "in" | 
 export function dependencyScopeTools(client: DiscoveryClient) {
   return {
     discovery_dependency_scope: {
-      description: "Lightweight probe: given a host name OR a Discovery nodeId, returns the topology size around it (node counts by kind, relation counts by kind, in/out fan). Use this BEFORE discovery_dependency_map to estimate how big the graph will be and pick a sensible depth.",
+      description: "Lightweight probe. Given a NAME (BusinessService, BusinessApplicationInstance, Host or SoftwareInstance) OR a Discovery nodeId, returns ONLY the SIZE of the topology around it — node counts by kind, relation counts by kind, in/out fan — WITHOUT drawing the graph. Use it BEFORE discovery_dependency_map to estimate graph size and pick a sensible depth. For the actual visual graph, use discovery_dependency_map. Returns a statistics summary card to render inline (not the interactive graph).",
       schema: dependencyScopeSchema,
       outputSchema: dependencyScopeOutputSchema,
-      visualInstruction: CYTOSCAPE_VISUAL_DESCRIPTION,
+      visualInstruction: SVG_VISUAL_DESCRIPTION,
       handler: async (input: z.infer<typeof dependencyScopeSchema>) => {
         const resolution = await resolveTarget(client, input.target);
         if (resolution.status === "none" || resolution.status === "ambiguous") return resolutionError(input.target, resolution);

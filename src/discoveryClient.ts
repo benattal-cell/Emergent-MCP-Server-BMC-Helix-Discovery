@@ -161,7 +161,7 @@ export class DiscoveryClient {
     };
   }
 
-  findHosts(params: { nameContains?: string; osContains?: string; limit?: number }): Promise<FlatQueryResult> {
+  findHosts(params: { nameContains?: string; osContains?: string; limit?: number; defaultLimit?: number; maxRows?: number; pageSize?: number }): Promise<FlatQueryResult> {
     const filters: string[] = [];
     const applied: Record<string, unknown> = {};
     if (params.nameContains) {
@@ -174,10 +174,17 @@ export class DiscoveryClient {
     }
     const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
     const query = `search Host${where} show name, hostname, dns_name, os, type, key, #id as 'id'`;
-    return this.queryJson(query, params.limit ?? 50, { entityLabel: "hôtes", appliedFilters: applied });
+    return this.searchData(query, {
+      limit: params.maxRows === undefined ? (params.limit ?? params.defaultLimit ?? 50) : params.limit,
+      maxRows: params.maxRows,
+      pageSize: params.pageSize,
+      format: "object",
+      entityLabel: "hôtes",
+      appliedFilters: applied
+    });
   }
 
-  findSoftwareInstances(params: { typeContains?: string; nameContains?: string; instanceContains?: string; limit?: number }): Promise<FlatQueryResult> {
+  findSoftwareInstances(params: { typeContains?: string; nameContains?: string; instanceContains?: string; limit?: number; defaultLimit?: number; maxRows?: number; pageSize?: number }): Promise<FlatQueryResult> {
     const filters: string[] = [];
     const applied: Record<string, unknown> = {};
     if (params.typeContains) {
@@ -194,7 +201,14 @@ export class DiscoveryClient {
     }
     const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
     const query = `search SoftwareInstance${where} show type, name, instance, product_version`;
-    return this.queryJson(query, params.limit ?? 50, { entityLabel: "instances logicielles", appliedFilters: applied });
+    return this.searchData(query, {
+      limit: params.maxRows === undefined ? (params.limit ?? params.defaultLimit ?? 50) : params.limit,
+      maxRows: params.maxRows,
+      pageSize: params.pageSize,
+      format: "object",
+      entityLabel: "instances logicielles",
+      appliedFilters: applied
+    });
   }
 
   findHostSoftware(params: { hostNameContains: string; softwareTypeContains?: string; limit?: number }): Promise<FlatQueryResult> {

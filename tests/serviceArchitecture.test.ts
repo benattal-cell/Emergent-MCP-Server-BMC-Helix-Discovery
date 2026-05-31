@@ -126,6 +126,7 @@ describe("discovery_service_architecture", () => {
     expect(client.searchData).toHaveBeenCalledTimes(4);
     expect(result).toMatchObject({ isError: true, structuredContent: { status: "none", target: "Missing" } });
     expect(result.content[0]).toEqual({ type: "text", text: "Rien trouvé pour Missing." });
+    expect(client.getNodeGraph).not.toHaveBeenCalled();
   });
 
   it("returns ambiguous without rendering when several objects match", async () => {
@@ -143,5 +144,6 @@ describe("discovery_service_architecture", () => {
     expect(result).toMatchObject({ isError: true, structuredContent: { status: "ambiguous" } });
     expect(result.structuredContent.candidates).toHaveLength(2);
     expect(result.content.some((block: { type?: string; resource?: unknown }) => block.type === "image" || block.resource)).toBe(false);
+    expect(client.getNodeGraph).not.toHaveBeenCalled();
   });
 });

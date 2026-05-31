@@ -12,7 +12,7 @@ function fakeClient(graph: Record<string, unknown>, hostName = "PROD-WEB-01") {
   return {
     searchData: vi.fn().mockImplementation(async (query: string) => {
       if (query.includes("Host") && query.includes(hostName)) {
-        return { summary: "1 host", totalCount: 1, returnedCount: 1, rows: [{ "#id": "NODE_ID_FOCUS_AAAAAAAA", id: "NODE_ID_FOCUS_AAAAAAAA", name: hostName, kind: "Host" }] };
+        return { summary: "1 host", totalCount: 1, returnedCount: 1, rows: [{ "#id": "0123456789abcdef0123456789abcdef0123456789abcdef01234567", id: "0123456789abcdef0123456789abcdef0123456789abcdef01234567", name: hostName, kind: "Host" }] };
       }
       return { summary: "0", totalCount: 0, returnedCount: 0, rows: [] };
     }),
@@ -22,13 +22,13 @@ function fakeClient(graph: Record<string, unknown>, hostName = "PROD-WEB-01") {
 
 const sampleGraph = {
   nodes: [
-    { id: "NODE_ID_FOCUS_AAAAAAAA", kind: "Host", name: "PROD-WEB-01", short_name: "PROD-WEB-01" },
-    { id: "NODE_ID_SI_NGINX_BBBBB", kind: "SoftwareInstance", name: "nginx", short_name: "nginx" },
-    { id: "NODE_ID_SI_NODE_CCCCCC", kind: "SoftwareInstance", name: "Node.js", short_name: "Node.js" }
+    { id: "0123456789abcdef0123456789abcdef0123456789abcdef01234567", kind: "Host", name: "PROD-WEB-01", short_name: "PROD-WEB-01" },
+    { id: "11111111111111111111111111111111111111111111111111111111", kind: "SoftwareInstance", name: "nginx", short_name: "nginx" },
+    { id: "22222222222222222222222222222222222222222222222222222222", kind: "SoftwareInstance", name: "Node.js", short_name: "Node.js" }
   ],
   links: [
-    { src_id: "NODE_ID_FOCUS_AAAAAAAA", tgt_id: "NODE_ID_SI_NGINX_BBBBB", kind: "HostedSoftware" },
-    { src_id: "NODE_ID_FOCUS_AAAAAAAA", tgt_id: "NODE_ID_SI_NODE_CCCCCC", kind: "HostedSoftware" }
+    { src_id: "0123456789abcdef0123456789abcdef0123456789abcdef01234567", tgt_id: "11111111111111111111111111111111111111111111111111111111", kind: "HostedSoftware" },
+    { src_id: "0123456789abcdef0123456789abcdef0123456789abcdef01234567", tgt_id: "22222222222222222222222222222222222222222222222222222222", kind: "HostedSoftware" }
   ]
 };
 
@@ -42,7 +42,7 @@ describe("discovery_dependency_scope", () => {
     const tools = dependencyScopeTools(client);
     const result = await tools.discovery_dependency_scope.handler({ target: "PROD-WEB-01" });
     expect(result.structuredContent.resolved.type).toBe("host_name");
-    expect(result.structuredContent.resolved.id).toBe("NODE_ID_FOCUS_AAAAAAAA");
+    expect(result.structuredContent.resolved.id).toBe("0123456789abcdef0123456789abcdef0123456789abcdef01234567");
     expect(result.structuredContent.counts.nodes).toBe(3);
     expect(result.structuredContent.counts.relations).toBe(2);
     expect(result.content.some((block) => block.type === "image" || block.resource?.mimeType === "image/svg+xml")).toBe(true);
@@ -55,6 +55,7 @@ describe("discovery_dependency_scope", () => {
     expect(result.isError).toBe(true);
     expect(result.structuredContent).toMatchObject({ status: "none", target: "Jira" });
     expect(result.content[0].text).toContain("Rien trouvé pour Jira");
+    expect(client.getNodeGraph).not.toHaveBeenCalled();
   });
 });
 
@@ -71,23 +72,24 @@ describe("discovery_dependency_map", () => {
     expect(result.structuredContent).toMatchObject({ status: "ambiguous" });
     expect(result.structuredContent.candidates).toHaveLength(2);
     expect(result.content.some((block) => block.type === "image" || block.resource)).toBe(false);
+    expect(client.getNodeGraph).not.toHaveBeenCalled();
   });
 
   it("follows reversed relationships when expanding the dependency map", async () => {
     const graph = {
       nodes: [
-        { id: "NODE_ID_FOCUS_AAAAAAAA", kind: "Host", name: "PROD-WEB-01" },
-        { id: "NODE_ID_CHILD_BBBBBBB", kind: "SoftwareInstance", name: "Jira Core" }
+        { id: "0123456789abcdef0123456789abcdef0123456789abcdef01234567", kind: "Host", name: "PROD-WEB-01" },
+        { id: "33333333333333333333333333333333333333333333333333333333", kind: "SoftwareInstance", name: "Jira Core" }
       ],
       relationships: [
-        { src_id: "NODE_ID_CHILD_BBBBBBB", tgt_id: "NODE_ID_FOCUS_AAAAAAAA", kind: "HostedSoftware" }
+        { src_id: "33333333333333333333333333333333333333333333333333333333", tgt_id: "0123456789abcdef0123456789abcdef0123456789abcdef01234567", kind: "HostedSoftware" }
       ]
     };
     const client = fakeClient(graph);
-    const result = await dependencyMapTools(client).discovery_dependency_map.handler({ target: "NODE_ID_FOCUS_AAAAAAAA", depth: 1, maxNodes: 60, iterations: 120, linLog: false, gravity: 1, scalingRatio: 10, layout: "concentric" });
+    const result = await dependencyMapTools(client).discovery_dependency_map.handler({ target: "0123456789abcdef0123456789abcdef0123456789abcdef01234567", depth: 1, maxNodes: 60, iterations: 120, linLog: false, gravity: 1, scalingRatio: 10, layout: "concentric" });
     const sc = (result as { structuredContent: { nodes: Array<{ id: string }>; edges: Array<{ from: string; to: string }> } }).structuredContent;
-    expect(sc.nodes.map((node) => node.id)).toContain("NODE_ID_CHILD_BBBBBBB");
-    expect(sc.edges).toContainEqual({ from: "NODE_ID_CHILD_BBBBBBB", to: "NODE_ID_FOCUS_AAAAAAAA", kind: "HostedSoftware" });
+    expect(sc.nodes.map((node) => node.id)).toContain("33333333333333333333333333333333333333333333333333333333");
+    expect(sc.edges).toContainEqual({ from: "33333333333333333333333333333333333333333333333333333333", to: "0123456789abcdef0123456789abcdef0123456789abcdef01234567", kind: "HostedSoftware" });
   }, 30000);
 
   it("returns image, svg resource, html resource, then text", async () => {
@@ -118,14 +120,14 @@ describe("discovery_dependency_map", () => {
     const graph = {
       nodes: Array.from({ length: 5 }, (_, i) => ({ id: `N${i}AAAAAAAAAAAAAAA`, kind: "SoftwareInstance", name: `n${i}` })),
       links: [
-        { src_id: "N0AAAAAAAAAAAAAAA", tgt_id: "N1AAAAAAAAAAAAAAA", kind: "r" },
-        { src_id: "N1AAAAAAAAAAAAAAA", tgt_id: "N2AAAAAAAAAAAAAAA", kind: "r" },
-        { src_id: "N2AAAAAAAAAAAAAAA", tgt_id: "N3AAAAAAAAAAAAAAA", kind: "r" },
-        { src_id: "N3AAAAAAAAAAAAAAA", tgt_id: "N4AAAAAAAAAAAAAAA", kind: "r" }
+        { src_id: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", tgt_id: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", kind: "r" },
+        { src_id: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", tgt_id: "cccccccccccccccccccccccccccccccccccccccccccccccccccc", kind: "r" },
+        { src_id: "cccccccccccccccccccccccccccccccccccccccccccccccccccc", tgt_id: "dddddddddddddddddddddddddddddddddddddddddddddddddddd", kind: "r" },
+        { src_id: "dddddddddddddddddddddddddddddddddddddddddddddddddddd", tgt_id: "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", kind: "r" }
       ]
     };
-    const client = fakeClient(graph, "N0AAAAAAAAAAAAAAA");
-    const result = await dependencyMapTools(client).discovery_dependency_map.handler({ target: "N0AAAAAAAAAAAAAAA", depth: 1, maxNodes: 60, iterations: 120, linLog: false, gravity: 1, scalingRatio: 10, layout: "concentric" });
+    const client = fakeClient(graph, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    const result = await dependencyMapTools(client).discovery_dependency_map.handler({ target: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", depth: 1, maxNodes: 60, iterations: 120, linLog: false, gravity: 1, scalingRatio: 10, layout: "concentric" });
     const nodes = (result as { structuredContent: { nodes: Array<{ x: number; y: number }> } }).structuredContent.nodes;
     expect(nodes.every((n) => Number.isFinite(n.x) && Number.isFinite(n.y))).toBe(true);
     const uniqueX = new Set(nodes.map((n) => n.x.toFixed(2)));
