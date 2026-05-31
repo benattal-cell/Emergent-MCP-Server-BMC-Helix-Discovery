@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { AppConfig } from "../config.js";
+import type { DiscoveryClient } from "../discoveryClient.js";
 import { structuredOutputSchema } from "./outputSchemas.js";
 
 const languageSchema = z.enum(["fr", "en"]).optional();
@@ -9,14 +10,81 @@ const cpeSchema = z.string().min(1).refine((v) => v.startsWith("cpe:2.3:"), {
 });
 
 const cveIdSchema = z.string().regex(/^CVE-\d{4}-\d{4,}$/i, "Invalid CVE format");
+const CVE_SEARCH_MAX_ROWS = 20_000;
+const CVE_SEARCH_PAGE_SIZE = 500;
 
 function esc(value: string): string {
   return value.replace(/'/g, "\\'");
 }
 
-function buildDiscoveryDsl(cpes: string[]): string {
-  const where = cpes.map((cpe) => `cpe_string_23 matches '${esc(cpe)}'`).join(" or ");
-  return `search SoftwareInstance where ${where} show type, version, #:::Host.name, #:::BusinessService.name processwith show type as 'Type', version as 'Full Version', #:::Host.name as 'Host Name', #:::BusinessService.name as 'Service Name', #RunningSoftware:HostedSoftware:Host:Host.#OwnedItem:Ownership:BusinessOwner:Person.name as 'Business Owner'`;
+function splitCpe(cpe: string): string[] {
+  const parts: string[] = [];
+  let current = "";
+  let escaped = false;
+  for (const char of cpe) {
+    if (escaped) {
+      current += `\\${char}`;
+      escaped = false;
+      continue;
+    }
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (char === ":") {
+      parts.push(current);
+      current = "";
+      continue;
+    }
+    current += char;
+  }
+  if (escaped) current += "\\";
+  parts.push(current);
+  return parts;
+}
+
+function regexEscapeLiteral(value: string): string {
+  return value.replace(/\\([()])/g, "$1").replace(/[\\^$+?.()|[\]{}]/g, "\\$&");
+}
+
+function cpeSegmentToRegex(segment: string): string {
+  if (segment === "*") return ".*";
+  return segment.split("*").map(regexEscapeLiteral).join(".*");
+}
+
+export function cpeToRegex(cpe: string): string {
+  const parts = splitCpe(cpe);
+  const regexParts: string[] = [];
+  for (const part of parts) {
+    if (part === "*") {
+      regexParts.push(".*");
+      break;
+    }
+    regexParts.push(cpeSegmentToRegex(part));
+  }
+  return regexParts.join(":");
+}
+
+function productTermsFromCpes(cpes: string[]): string[] {
+  const terms = new Map<string, string>();
+  for (const cpe of cpes) {
+    const parts = splitCpe(cpe);
+    const part = parts[2];
+    const product = parts[4];
+    const version = parts[5];
+    if (part !== "a" || version !== "*" || !product || product === "*") continue;
+    const term = product.replace(/[_-]+/g, " ").trim();
+    if (!term) continue;
+    terms.set(term.toLowerCase(), term);
+  }
+  return [...terms.values()];
+}
+
+export function buildDiscoveryDsl(cpes: string[]): string {
+  const cpePredicates = cpes.map((cpe) => `cpe_string_23 matches '${esc(cpeToRegex(cpe))}'`);
+  const typePredicates = productTermsFromCpes(cpes).map((term) => `type has subword '${esc(term)}'`);
+  const where = [...cpePredicates, ...typePredicates].join(" or ") || "false";
+  return `search SoftwareInstance where ${where} show type, version, cpe_string_23, #:::Host.name, #:::BusinessService.name processwith show type as 'Type', version as 'Full Version', cpe_string_23 as 'CPE', #:::Host.name as 'Host Name', #:::BusinessService.name as 'Service Name', #RunningSoftware:HostedSoftware:Host:Host.#OwnedItem:Ownership:BusinessOwner:Person.name as 'Business Owner'`;
 }
 
 async function fetchNvdCpes(cveId: string, nvdApiKey?: string): Promise<string[]> {
@@ -55,10 +123,38 @@ async function fetchNvdCpes(cveId: string, nvdApiKey?: string): Promise<string[]
   return Array.from(out);
 }
 
-export function cveTools(config: Pick<AppConfig, "nvdApiKey">) {
+function rowString(row: Record<string, unknown>, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = row[key];
+    if (typeof value === "string" && value.trim() !== "") return value.trim();
+  }
+  return undefined;
+}
+
+function annotateMatchPrecision(rows: Array<Record<string, unknown>>, cpes: string[]): Array<Record<string, unknown>> {
+  const cpeRegexes = cpes.map((cpe) => new RegExp(cpeToRegex(cpe), "i"));
+  return rows.map((row) => {
+    const cpe = rowString(row, ["CPE", "cpe_string_23", "cpe", "Cpe"]);
+    const exact = cpe ? cpeRegexes.some((regex) => regex.test(cpe)) : false;
+    return { ...row, matchPrecision: exact ? "exact" : "approximate" };
+  });
+}
+
+async function rowsForExecutiveSummary(client: DiscoveryClient, dsl: string, inputRows: Array<Record<string, unknown>>, cpes: string[], cveId: string): Promise<{ rows: Array<Record<string, unknown>>; source: "provided_rows" | "executed_query" }> {
+  if (inputRows.length > 0) return { rows: annotateMatchPrecision(inputRows, cpes), source: "provided_rows" };
+  const result = await client.searchData(dsl, {
+    entityLabel: "actifs impactés",
+    appliedFilters: { cveId, cpeCount: cpes.length },
+    maxRows: CVE_SEARCH_MAX_ROWS,
+    pageSize: CVE_SEARCH_PAGE_SIZE
+  });
+  return { rows: annotateMatchPrecision(result.rows as Array<Record<string, unknown>>, cpes), source: "executed_query" };
+}
+
+export function cveTools(client: DiscoveryClient, config: Pick<AppConfig, "nvdApiKey">) {
   return {
     discovery_cve_executive_summary: {
-      description: "Produce an EXECUTIVE-style summary for a CVE: number of impacted assets, top business services / hosts / versions, and a follow-up prompt asking if the user wants the full impacted inventory. Use this FIRST when the user asks 'are we exposed to CVE-XXXX-YYYY?' or 'what's the impact of CVE-XXXX-YYYY?'. Requires the CVE ID. Optionally pass already-fetched Discovery rows to compute aggregates; otherwise pass discoveryRows=[].",
+      description: "Produce an EXECUTIVE-style summary for a CVE: number of impacted assets, top business services / hosts / versions, and a follow-up prompt asking if the user wants the full impacted inventory. Use this FIRST when the user asks 'are we exposed to CVE-XXXX-YYYY?' or 'what's the impact of CVE-XXXX-YYYY?'. Requires the CVE ID. If discoveryRows is empty, this tool fetches NVD CPEs, builds the Discovery impact query, executes it internally, and summarizes the impacted rows.",
       schema: z.object({
         cveId: cveIdSchema,
         topN: z.number().int().min(1).max(20).default(5),
@@ -73,22 +169,23 @@ export function cveTools(config: Pick<AppConfig, "nvdApiKey">) {
         const cveId = input.cveId.toUpperCase();
         const cpes = await fetchNvdCpes(cveId, config.nvdApiKey);
         const dsl = buildDiscoveryDsl(cpes);
-        const rows = input.discoveryRows;
+        const { rows, source } = await rowsForExecutiveSummary(client, dsl, input.discoveryRows, cpes, cveId);
 
         const topServices = aggregateTop(rows, ["Service Name", "Business Service", "business_service", "service"], input.topN);
         const topHosts = aggregateTop(rows, ["Host Name", "Host", "host"], input.topN);
         const topVersions = aggregateTop(rows, ["Full Version", "version", "product_version"], input.topN);
+        const matchPrecision = aggregateTop(rows, ["matchPrecision"], 2);
 
         return {
           cveHeader: { cveId, riskTitle: t.riskTitle, note: t.summaryNote },
-          cveSummary: { cpeCount: cpes.length, impactedRowsCount: rows.length, topServices, topHosts, topVersions },
-          discoverySearchPlan: { primaryTool: "discovery_build_cve_software_query", nextExecutionTool: "discovery_search_data", dslQuery: dsl },
+          cveSummary: { cpeCount: cpes.length, impactedRowsCount: rows.length, topServices, topHosts, topVersions, matchPrecision },
+          discoverySearchPlan: { primaryTool: "discovery_build_cve_software_query", execution: source, dslQuery: dsl },
           followUpPrompt: t.followUpPrompt
         };
       }
     },
     discovery_build_cve_software_query: {
-      description: "Build the Discovery DSL query that finds software instances matching a list of CPEs. Use this AFTER getting CPEs from discovery_get_cve_cpes_from_nvd, to construct the query that will be passed to discovery_search_data. Returns the ready-to-run DSL string.",
+      description: "Build the Discovery DSL query that finds software instances matching a list of CPEs. Use this AFTER getting CPEs from discovery_get_cve_cpes_from_nvd, to inspect or debug the exact query used by the CVE summary tool. Returns the ready-to-run DSL string.",
       schema: z.object({ cpeStrings: z.array(cpeSchema).min(1), includeUrlEncoded: z.boolean().default(false) }).strict(),
       outputSchema: structuredOutputSchema,
       handler: async (input: { cpeStrings: string[]; includeUrlEncoded: boolean }) => {

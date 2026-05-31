@@ -159,7 +159,7 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...queryTools(client),
     ...hostTools(client),
     ...taxonomyTools(client),
-    ...cveTools(config),
+    ...cveTools(client, config),
     ...graphTools(client),
     ...lifecycleTools(client),
     ...assistantGuideTools(),
