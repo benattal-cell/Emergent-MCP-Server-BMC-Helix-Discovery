@@ -3,6 +3,7 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { kpiGrid } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { dslQueryOutputSchema, flatRowsOutputSchema } from "./outputSchemas.js";
+import { appendRowsMarkdownSummary } from "./shared/markdownTable.js";
 
 const riskWindowDaysDefault = 182;
 const DAY_IN_NANOS = 864000000000;
@@ -139,7 +140,7 @@ export function lifecycleTools(client: DiscoveryClient) {
         ], { columns: 2 });
         return renderVisual(svg, {
           name: "lifecycle_report",
-          textSummary: result.summary,
+          textSummary: appendRowsMarkdownSummary(result.summary, rows),
           structuredContent: result
         });
       },

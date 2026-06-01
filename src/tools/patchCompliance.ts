@@ -3,6 +3,7 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { kpiGrid } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { flatRowsOutputSchema } from "./outputSchemas.js";
+import { appendRowsMarkdownSummary } from "./shared/markdownTable.js";
 
 const patchComplianceSchema = z.object({
   kbList: z.array(z.string().min(1)).min(1).max(100),
@@ -135,7 +136,7 @@ export function patchComplianceTools(client: DiscoveryClient) {
           { label: "% conformes", value: `${compliancePct}%`, hint: input.complianceMode === "all" ? "Tous les KB" : "Au moins un KB", alert: compliancePct < 95 },
           { label: "Non conformes", value: String(nonCompliantCount), hint: uniqueKbList(input.kbList).join(", "), alert: nonCompliantCount > 0 }
         ], { columns: 3 });
-        return renderVisual(svg, { name: "patch_compliance_report", textSummary: result.summary, structuredContent: result });
+        return renderVisual(svg, { name: "patch_compliance_report", textSummary: appendRowsMarkdownSummary(result.summary, rows), structuredContent: result });
       },
       isVisual: true as const
     }

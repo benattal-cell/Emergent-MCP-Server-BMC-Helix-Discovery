@@ -4,6 +4,7 @@ import { kpiGrid, type Kpi } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { deriveHostRole } from "./hostRole.js";
 import { flatRowsOutputSchema, hostSoftwareOutputSchema } from "./outputSchemas.js";
+import { appendRowsMarkdownSummary } from "./shared/markdownTable.js";
 
 export const findHostsSchema = z.object({
   nameContains: z.string().min(1).optional(),
@@ -66,7 +67,7 @@ export function hostTools(client: DiscoveryClient) {
           { label: "OS principaux", value: String(new Set(rows.map((row) => row.os).filter(Boolean)).size), hint: topCounts(rows, ["os", "OS"]) },
           { label: "Types", value: String(new Set(rows.map((row) => row.type).filter(Boolean)).size), hint: topCounts(rows, ["type", "kind"]) }
         ]);
-        return renderVisual(svg, { name: `hosts_${slug(input.nameContains ?? input.osContains ?? "all")}`, textSummary: result.summary, structuredContent: result });
+        return renderVisual(svg, { name: `hosts_${slug(input.nameContains ?? input.osContains ?? "all")}`, textSummary: appendRowsMarkdownSummary(result.summary, rows), structuredContent: result });
       },
       isVisual: true as const
     },
@@ -81,7 +82,7 @@ export function hostTools(client: DiscoveryClient) {
           { label: "Instances", value: String(result.totalCount ?? rows.length), hint: `${result.returnedCount ?? rows.length} retournées` },
           { label: "Types", value: String(new Set(rows.map(softwareType).filter(Boolean)).size), hint: topCounts(rows, ["type", "Type"]) }
         ], { columns: 2 });
-        return renderVisual(svg, { name: `software_instances_${slug(input.typeContains ?? input.nameContains ?? "all")}`, textSummary: result.summary, structuredContent: result });
+        return renderVisual(svg, { name: `software_instances_${slug(input.typeContains ?? input.nameContains ?? "all")}`, textSummary: appendRowsMarkdownSummary(result.summary, rows), structuredContent: result });
       },
       isVisual: true as const
     },
@@ -102,7 +103,7 @@ export function hostTools(client: DiscoveryClient) {
           { label: "Lifecycle", value: hasLifecycleRisk ? "À vérifier" : "Non détecté", hint: "Hook EOL/EOS", alert: hasLifecycleRisk }
         ];
         const svg = kpiGrid("Logiciels de l'hôte", kpis);
-        return renderVisual(svg, { name: `host_software_${slug(input.hostNameContains)}`, textSummary: `${distinctRows.length} logiciels distincts. Rôle dérivé: ${role.role}.`, structuredContent });
+        return renderVisual(svg, { name: `host_software_${slug(input.hostNameContains)}`, textSummary: appendRowsMarkdownSummary(`${distinctRows.length} logiciels distincts. Rôle dérivé: ${role.role}.`, distinctRows), structuredContent });
       },
       isVisual: true as const
     }
