@@ -3,6 +3,7 @@ import type { ItCostRow } from "../src/tools/itCosts/dataLoader.js";
 import {
   buildWindowsLicenseQueries,
   buildWindowsLicenseReportFromHosts,
+  buildWindowsLicenseTextSummary,
   calculateLicenses,
   clearCpuLookupCache,
   findOptimizationOpportunities,
@@ -169,12 +170,12 @@ describe("Windows license calculations", () => {
   });
 
 
-  it("adds required Windows version, version licensing, edition breakdown and rationale restitution", async () => {
+  it("adds required Windows version, version licensing, edition breakdown and text restitution", async () => {
     const report = await buildWindowsLicenseReportFromHosts([
       host("esx-versioned", {
         processorInfoNumCores: 40,
         windowsVmCount: 10,
-        windowsVmGuestOs: ["Microsoft Windows Server 2016", "Microsoft Windows Server 2022"]
+        windowsVmOsVersions: ["Microsoft Windows Server 2016", "Microsoft Windows Server 2022"]
       }),
       host("baremetal-2019", {
         role: "baremetal",
@@ -182,32 +183,45 @@ describe("Windows license calculations", () => {
         hostNumCores: 16,
         windowsVmCount: 0
       }),
+      host("esx-no-version", { processorInfoNumCores: 16, windowsVmCount: 1 }),
+      host("none-esx", { processorInfoNumCores: 16, windowsVmCount: 0, totalVmCount: 0 }),
       host("unknown-version", { processorType: "Intel Xeon" })
     ], params, { costRows, cpuLookup: vi.fn().mockResolvedValue(null) });
 
     const versioned = report.hosts.find((h) => h.id === "esx-versioned");
     expect(versioned).toMatchObject({ requiredWindowsVersion: "2022" });
     expect(report.hosts.find((h) => h.id === "baremetal-2019")).toMatchObject({ requiredWindowsVersion: "2019" });
+    expect(report.hosts.find((h) => h.id === "esx-no-version")).toMatchObject({ requiredWindowsVersion: "indéterminée" });
     expect(report.hosts.find((h) => h.id === "unknown-version")).toMatchObject({ requiredWindowsVersion: "indéterminée", coreSource: "undetermined" });
     expect(report.versionLicensing.reduce((sum, row) => sum + row.licenseableCores, 0)).toBe(report.totals.licenseableCores);
     expect(report.versionLicensing.find((row) => row.version === "2022")).toMatchObject({ licenseableCores: 40, editionDatacenterHosts: 1 });
-    expect(report.editionBreakdown.standard.hosts + report.editionBreakdown.datacenter.hosts).toBe(report.totals.licenseableHosts);
+    const breakdownCount = report.editionBreakdown.standard.hosts + report.editionBreakdown.datacenter.hosts + report.editionBreakdown.none.hosts;
+    expect(breakdownCount).toBe(report.hosts.length - report.editionBreakdown.undetermined.hosts);
     expect(report.editionBreakdown.undetermined.hosts).toBe(report.undeterminedHosts.length);
+    const textSummary = buildWindowsLicenseTextSummary(report);
+    expect(textSummary).toContain("Standard");
+    expect(textSummary).toContain("Datacenter");
+    expect(textSummary).toContain("Version");
     expect(report.markdownReport).toContain("## Détail par hôte");
-    expect(report.markdownReport).toContain("## Cœurs à licencier par version Windows");
     expect(report.markdownReport).toContain("## Hôtes à vérifier (scan/permissions)");
   });
 
-  it("attaches a business rationale to every optimization opportunity", () => {
+  it("attaches a business rationale to every optimization opportunity type", () => {
     const licensed = calculateLicenses([
       { ...host("redundant-rationale", { windowsVmCount: 20, hasDatacenterLicense: true, hasStandardLicenses: true }), cores: 40, processors: 2, coreSource: "processorinfo.num_cores" },
-      { ...host("underloaded-rationale", { windowsVmCount: 2, hasDatacenterLicense: true }), cores: 40, processors: 2, coreSource: "processorinfo.num_cores" }
+      { ...host("underloaded-rationale", { windowsVmCount: 2, hasDatacenterLicense: true }), cores: 40, processors: 2, coreSource: "processorinfo.num_cores" },
+      { ...host("cluster-rationale-1", { clusterId: "cluster-rationale", clusterName: "Cluster Rationale", windowsVmCount: 4, windowsVmVcpuCount: 24 }), cores: 40, processors: 2, coreSource: "processorinfo.num_cores" },
+      { ...host("cluster-rationale-2", { clusterId: "cluster-rationale", clusterName: "Cluster Rationale", windowsVmCount: 2, windowsVmVcpuCount: 16 }), cores: 40, processors: 2, coreSource: "processorinfo.num_cores" }
     ], params, prices);
 
     const opportunities = findOptimizationOpportunities(licensed, params);
+    const expectedTypes = ["redundant_standard_on_datacenter_host", "underloaded_datacenter_host", "consolidation_candidate", "windows_affinity_pod"];
 
-    expect(opportunities.length).toBeGreaterThan(0);
-    expect(opportunities.every((opportunity) => typeof opportunity.rationale === "string" && opportunity.rationale.length > 20)).toBe(true);
+    for (const type of expectedTypes) {
+      const opportunity = opportunities.find((candidate) => candidate.type === type);
+      expect(opportunity?.rationale).toEqual(expect.any(String));
+      expect(opportunity!.rationale.length).toBeGreaterThan(20);
+    }
   });
 
   it("builds the three validated inventory source queries", () => {

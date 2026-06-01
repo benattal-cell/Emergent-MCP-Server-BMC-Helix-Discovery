@@ -49,6 +49,7 @@ export interface PhysicalHostInventoryRow {
   windowsVmCount?: number;
   windowsVmVcpuCount?: number;
   windowsVmGuestOs?: string[];
+  windowsVmOsVersions?: string[];
   hasStandardLicenses?: boolean;
   hasDatacenterLicense?: boolean;
 }
@@ -87,7 +88,7 @@ export interface LicensedHost extends ResolvedHost {
   licensePacks?: number;
   windowsWorkloads: number;
   recommendedEdition: "standard" | "datacenter" | "none" | "undetermined";
-  requiredWindowsVersion: string;
+  requiredWindowsVersion?: string;
   costStandard?: number;
   costDatacenter?: number;
 }
@@ -115,6 +116,7 @@ export interface VersionLicensingRow {
 export interface EditionBreakdown {
   standard: { hosts: number; cores: number; cost: number };
   datacenter: { hosts: number; cores: number; cost: number };
+  none: { hosts: number };
   undetermined: { hosts: number };
 }
 
@@ -255,7 +257,8 @@ export function normalizeInventoryRow(row: Record<string, unknown>, fallbackRole
     windowsVmGuestOs: [
       ...stringList(rowValue(row, ["windows_vm_guest_os", "Windows VM Guest OS"])),
       ...stringList(rowValue(row, ["windows_vm_os", "Windows VM OS"]))
-    ]
+    ],
+    windowsVmOsVersions: stringList(rowValue(row, ["windows_vm_os", "Windows VM OS"]))
   };
 }
 
@@ -271,6 +274,7 @@ export function dedupeHosts(hosts: PhysicalHostInventoryRow[]): PhysicalHostInve
       windowsVmCount: Math.max(host.windowsVmCount ?? 0, existing.windowsVmCount ?? 0),
       windowsVmVcpuCount: Math.max(host.windowsVmVcpuCount ?? 0, existing.windowsVmVcpuCount ?? 0),
       windowsVmGuestOs: [...new Set([...(existing.windowsVmGuestOs ?? []), ...(host.windowsVmGuestOs ?? [])])],
+      windowsVmOsVersions: [...new Set([...(existing.windowsVmOsVersions ?? []), ...(host.windowsVmOsVersions ?? [])])],
       totalVmCount: Math.max(host.totalVmCount ?? 0, existing.totalVmCount ?? 0)
     });
   }
@@ -421,7 +425,7 @@ function detectWindowsVersion(value: string): string | undefined {
 export function requiredWindowsVersionForHost(host: PhysicalHostInventoryRow): string {
   const candidates: string[] = [];
   if (host.role === "baremetal" || host.role === "hyperv") candidates.push(...stringList(host.os));
-  if (host.role === "esx" || host.role === "hyperv") candidates.push(...(host.windowsVmGuestOs ?? []));
+  if (host.role === "esx" || host.role === "hyperv") candidates.push(...(host.windowsVmOsVersions ?? []), ...(host.windowsVmGuestOs ?? []));
   const versions = candidates.map(detectWindowsVersion).filter((version): version is string => Boolean(version));
   if (versions.length === 0) return "indéterminée";
   return versions.sort((a, b) => WINDOWS_VERSION_ORDER.indexOf(b) - WINDOWS_VERSION_ORDER.indexOf(a))[0];
@@ -489,7 +493,7 @@ export function findOptimizationOpportunities(hosts: LicensedHost[], input: Lice
         optimizedCost: host.costStandard,
         saving: currentDatacenterCost - host.costStandard,
         evidence: `${host.name}: ${host.windowsWorkloads} VM/workload(s) Windows, sous le seuil ${input.underloadedVmThreshold}; Standard est moins cher que Datacenter.`,
-        rationale: `Sous ${input.underloadedVmThreshold} VM Windows, Standard (${input.standardVmsPerLicense} VM/licence) coûte moins que Datacenter sur ces cœurs → bascule d'édition. Économie = coûtDatacenter − coûtStandard.`
+        rationale: "Sous le seuil de VM Windows, Standard (2 VM/licence) revient moins cher que Datacenter sur ces cœurs → bascule d'édition. Économie = coûtDatacenter − coûtStandard."
       });
     }
   }
@@ -519,7 +523,7 @@ export function findOptimizationOpportunities(hosts: LicensedHost[], input: Lice
         optimizedCost,
         saving: currentCost - optimizedCost,
         evidence: `${totalWindowsVms} VM Windows (${totalWindowsVcpus || "vCPU inconnus"} vCPU) réparties sur ${clusterHosts.length} ESX; consolidation théorique sur ${targetHosts} hôte(s) Windows.`,
-        rationale: "Regrouper les VM Windows sur moins d'hôtes physiques réduit le nb d'hôtes à licencier en Datacenter. Économie = coût des hôtes libérés."
+        rationale: "Regrouper les VM Windows sur moins d'hôtes physiques réduit le nombre d'hôtes à licencier en Datacenter. Économie = coût des hôtes libérés."
       });
       opportunities.push({
         type: "windows_affinity_pod",
@@ -528,7 +532,7 @@ export function findOptimizationOpportunities(hosts: LicensedHost[], input: Lice
         optimizedCost,
         saving: currentCost - optimizedCost,
         evidence: `Créer un pod d'affinité Windows de ${targetHosts} ESX pour ${totalWindowsVcpus || "vCPU Windows inconnus"} vCPU Windows au lieu de licencier tout le cluster.`,
-        rationale: "Regrouper les VM Windows sur moins d'hôtes physiques réduit le nb d'hôtes à licencier en Datacenter. Économie = coût des hôtes libérés."
+        rationale: "Créer un cluster dédié aux VM Windows permet de ne licencier que ces hôtes en Datacenter plutôt que tout le cluster mixte. Économie = coût des hôtes non-Windows libérés."
       });
     }
   }
@@ -551,11 +555,14 @@ export function buildEditionBreakdown(hosts: LicensedHost[]): EditionBreakdown {
       acc.datacenter.hosts += 1;
       acc.datacenter.cores += host.licenseableCores ?? 0;
       acc.datacenter.cost += host.costDatacenter ?? 0;
+    } else if (host.recommendedEdition === "none") {
+      acc.none.hosts += 1;
     }
     return acc;
   }, {
     standard: { hosts: 0, cores: 0, cost: 0 },
     datacenter: { hosts: 0, cores: 0, cost: 0 },
+    none: { hosts: 0 },
     undetermined: { hosts: 0 }
   });
 }
@@ -563,7 +570,7 @@ export function buildEditionBreakdown(hosts: LicensedHost[]): EditionBreakdown {
 export function buildVersionLicensing(hosts: LicensedHost[]): VersionLicensingRow[] {
   const buckets = new Map<string, VersionLicensingRow>();
   for (const host of hosts) {
-    if (host.coreSource === "undetermined" || host.recommendedEdition === "undetermined" || host.recommendedEdition === "none") continue;
+    if (host.coreSource === "undetermined" || host.recommendedEdition === "undetermined") continue;
     const version = host.requiredWindowsVersion || "indéterminée";
     const row = buckets.get(version) ?? { version, hosts: 0, licenseableCores: 0, licensePacks: 0, editionStandardHosts: 0, editionDatacenterHosts: 0, estimatedCost: 0 };
     row.hosts += 1;
@@ -607,21 +614,22 @@ function hostTable(hosts: LicensedHost[]): string {
 
 function versionTable(rows: VersionLicensingRow[]): string {
   return [
-    "## Cœurs à licencier par version Windows",
-    "| Version | Hôtes | Cœurs à licencier | Packs (2c) | Standard / Datacenter | Coût est. |",
-    "|---|---:|---:|---:|---:|---:|",
+    "**Cœurs à licencier par version Windows**",
+    "| Version | Hôtes | Cœurs | Packs (2c) | Standard / Datacenter | Coût est. |",
+    "|---------|-------|-------|------------|----------------------|-----------|",
     ...(rows.length > 0 ? rows.map((row) => `| ${md(row.version)} | ${row.hosts} | ${row.licenseableCores} | ${row.licensePacks} | ${row.editionStandardHosts} / ${row.editionDatacenterHosts} | ${eur(row.estimatedCost)} |`) : ["| n/a | 0 | 0 | 0 | 0 / 0 | 0 € |"]),
     "",
-    "_Version = plus haute version déployée sur l'hôte (downgrade rights). La Software Assurance éventuelle (hors scope) conditionne les droits d'upgrade — à vérifier côté contrat client._"
+    "*Note: Version = plus haute version déployée sur l'hôte (downgrade rights). SA éventuelle (hors scope) conditionne les droits d'upgrade — à vérifier côté contrat client.*"
   ].join("\n");
 }
 
 function editionBreakdownText(breakdown: EditionBreakdown): string {
   return [
-    "## Répartition Standard vs Datacenter",
-    `- Standard : ${breakdown.standard.hosts} hôte(s), ${breakdown.standard.cores} cœur(s), ${eur(breakdown.standard.cost)}.`,
-    `- Datacenter : ${breakdown.datacenter.hosts} hôte(s), ${breakdown.datacenter.cores} cœur(s), ${eur(breakdown.datacenter.cost)}.`,
-    `- À vérifier : ${breakdown.undetermined.hosts} hôte(s) avec cœurs indéterminés.`
+    "**Répartition Standard / Datacenter**",
+    `Standard : ${breakdown.standard.hosts} hôte(s), ${breakdown.standard.cores} cœur(s), ${eur(breakdown.standard.cost)}.`,
+    `Datacenter : ${breakdown.datacenter.hosts} hôte(s), ${breakdown.datacenter.cores} cœur(s), ${eur(breakdown.datacenter.cost)}.`,
+    `Sans VM Windows : ${breakdown.none.hosts} hôte(s) (aucune licence requise).`,
+    `À vérifier : ${breakdown.undetermined.hosts} hôte(s) (cœurs ou version indéterminés).`
   ].join("\n");
 }
 
@@ -635,8 +643,32 @@ function undeterminedText(hosts: LicensedHost[]): string {
   ].join("\n");
 }
 
-export function buildWindowsLicenseMarkdown(hosts: LicensedHost[], versionLicensing: VersionLicensingRow[], editionBreakdown: EditionBreakdown): string {
-  return [hostTable(hosts), versionTable(versionLicensing), editionBreakdownText(editionBreakdown), undeterminedText(hosts.filter((host) => host.coreSource === "undetermined"))].join("\n\n");
+function opportunityScopeLabel(opportunity: OptimizationOpportunity): string {
+  return opportunity.scope.clusterName ?? opportunity.scope.clusterId ?? opportunity.scope.hostName ?? opportunity.scope.hostId ?? "scope inconnu";
+}
+
+function topOpportunitiesText(opportunities: OptimizationOpportunity[]): string {
+  const top = opportunities.slice().sort((a, b) => b.saving - a.saving).slice(0, 5);
+  if (top.length === 0) return "**Top 5 opportunités d'optimisation**\nAucune opportunité chiffrée détectée.";
+  return [
+    "**Top 5 opportunités d'optimisation**",
+    ...top.map((opportunity, index) => `${index + 1}. ${opportunity.type} (${md(opportunityScopeLabel(opportunity))}) — économie ${eur(opportunity.saving)} : ${opportunity.rationale}`)
+  ].join("\n");
+}
+
+export function buildWindowsLicenseTextSummary(report: WindowsLicenseReport): string {
+  return [
+    report.summary,
+    editionBreakdownText(report.editionBreakdown),
+    versionTable(report.versionLicensing),
+    topOpportunitiesText(report.optimizationOpportunities),
+    report.markdownReport,
+    report.recommendationPrompt
+  ].join("\n\n");
+}
+
+export function buildWindowsLicenseMarkdown(hosts: LicensedHost[], _versionLicensing: VersionLicensingRow[], _editionBreakdown: EditionBreakdown): string {
+  return [hostTable(hosts), undeterminedText(hosts.filter((host) => host.coreSource === "undetermined"))].join("\n\n");
 }
 
 function parametersFromInput(input: WindowsLicenseInput): LicenseParameters {
@@ -726,7 +758,7 @@ export function windowsLicenseTools(client: DiscoveryClient) {
         ], { columns: 3 });
         return renderVisual(svg, {
           name: "windows_license_report",
-          textSummary: `${report.summary}\n\n${report.markdownReport}\n\n${report.recommendationPrompt}`,
+          textSummary: buildWindowsLicenseTextSummary(report),
           structuredContent: report
         });
       },
