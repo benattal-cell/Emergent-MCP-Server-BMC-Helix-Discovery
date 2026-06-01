@@ -15,7 +15,7 @@ describe("resolveTarget", () => {
     const searchData = vi.fn().mockImplementation(async (query: string) => {
       if (query === "SEARCH BusinessService SHOW name, kind, #id") return { rows: [{ name: "Jira", kind: "BusinessService", "#id": "bs-1" }] };
       if (query.includes("BusinessApplicationInstance") || query.includes("Host")) return { rows: [] };
-      if (query === "search SoftwareInstance show type") return { rows: [] };
+      if (query === "search SoftwareInstance show type processwith unique()") return { rows: [] };
       throw new Error(`unexpected query: ${query}`);
     });
     await loadCatalog({ searchData } as never);
@@ -26,9 +26,10 @@ describe("resolveTarget", () => {
 
   it("returns none when cache and live lookup have no candidates", async () => {
     await loadCatalog({ searchData: vi.fn().mockResolvedValue({ rows: [] }) } as never);
-    const client = { searchData: vi.fn().mockResolvedValue({ rows: [] }) } as never;
+    const client = { searchData: vi.fn().mockResolvedValue({ rows: [] }), getNodeGraph: vi.fn() } as never;
 
     await expect(resolveTarget(client, "Missing")).resolves.toEqual({ status: "none", target: "Missing" });
+    expect((client as { getNodeGraph: ReturnType<typeof vi.fn> }).getNodeGraph).not.toHaveBeenCalled();
   });
 
   it("returns ambiguous when live lookup finds several candidates", async () => {
