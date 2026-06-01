@@ -3,7 +3,6 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { kpiGrid } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { flatRowsOutputSchema } from "./outputSchemas.js";
-codex/add-two-new-compliance-and-os-lifecycle-tools-s96vnx
 import { rowsToMarkdownTable } from "./shared/markdownTable.js";
 
 export const patchComplianceSchema = z.object({
