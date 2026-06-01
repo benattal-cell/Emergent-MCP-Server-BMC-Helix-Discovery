@@ -8,7 +8,10 @@ const REQUEST_TIMEOUT_MS = 30000;
 
 interface SearchOptions {
   limit?: number;
+  maxRows?: number;
+  pageSize?: number;
   format?: "object" | "tree";
+  omitOffset?: boolean;
   entityLabel?: string;
   appliedFilters?: Record<string, unknown>;
 }
@@ -107,21 +110,57 @@ export class DiscoveryClient {
 
   async searchData(query: string, options: SearchOptions = {}): Promise<FlatQueryResult> {
     const format = options.format === "tree" ? "tree" : "object";
-    const params = new URLSearchParams({
-      offset: "0",
-      format
-    });
-    if (options.limit !== undefined) params.set("limit", String(options.limit));
-    const path = `${this.versionedPath("/data/search")}?${params.toString()}`;
-    const data = await this.request("POST", path, { query }, true);
-    return flattenDiscoveryQueryResult(data, {
-      entityLabel: options.entityLabel,
-      appliedFilters: options.appliedFilters,
-      format
-    });
+    const fetchPage = async (offset: number, limit?: number): Promise<FlatQueryResult> => {
+      const params = new URLSearchParams({ format });
+      if (!options.omitOffset) params.set("offset", String(offset));
+      if (limit !== undefined) params.set("limit", String(limit));
+      const path = `${this.versionedPath("/data/search")}?${params.toString()}`;
+      const data = await this.request("POST", path, { query }, true);
+      return flattenDiscoveryQueryResult(data, {
+        entityLabel: options.entityLabel,
+        appliedFilters: options.appliedFilters,
+        format
+      });
+    };
+
+    if (options.maxRows === undefined || options.omitOffset) return fetchPage(0, options.limit);
+
+    const pageSize = options.pageSize ?? options.limit ?? 500;
+    const maxRows = Math.max(0, options.maxRows);
+    const rows: Array<Record<string, unknown>> = [];
+    let totalCount = 0;
+    let first: FlatQueryResult | undefined;
+
+    for (let offset = 0; rows.length < maxRows; offset += pageSize) {
+      const page = await fetchPage(offset, Math.min(pageSize, maxRows - rows.length));
+      if (!first) first = page;
+      totalCount = page.totalCount;
+      rows.push(...page.rows);
+      if (page.returnedCount === 0 || rows.length >= page.totalCount) break;
+    }
+
+    const base = first ?? await fetchPage(0, 0);
+    const returnedCount = rows.length;
+    const label = options.entityLabel ?? base.kind ?? "objet";
+    const filtersDesc = options.appliedFilters && Object.keys(options.appliedFilters).length > 0
+      ? ` (filtres: ${Object.entries(options.appliedFilters).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(", ")})`
+      : "";
+    const formatNote = format === "tree" ? " [format=tree, résultats hiérarchiques]" : "";
+    const truncated = returnedCount < totalCount;
+    const summary = truncated
+      ? `${totalCount} ${label} correspondants en base${filtersDesc}, ${returnedCount} retournés (résultats tronqués)${formatNote}.`
+      : `${totalCount} ${label} correspondants en base${filtersDesc}${formatNote}.`;
+
+    return {
+      ...base,
+      summary,
+      totalCount,
+      returnedCount,
+      rows
+    };
   }
 
-  findHosts(params: { nameContains?: string; osContains?: string; limit?: number }): Promise<FlatQueryResult> {
+  findHosts(params: { nameContains?: string; osContains?: string; limit?: number; defaultLimit?: number; maxRows?: number; pageSize?: number }): Promise<FlatQueryResult> {
     const filters: string[] = [];
     const applied: Record<string, unknown> = {};
     if (params.nameContains) {
@@ -134,10 +173,17 @@ export class DiscoveryClient {
     }
     const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
     const query = `search Host${where} show name, hostname, dns_name, os, type, key, #id as 'id'`;
-    return this.queryJson(query, params.limit ?? 50, { entityLabel: "hôtes", appliedFilters: applied });
+    return this.searchData(query, {
+      limit: params.maxRows === undefined ? (params.limit ?? params.defaultLimit ?? 50) : params.limit,
+      maxRows: params.maxRows,
+      pageSize: params.pageSize,
+      format: "object",
+      entityLabel: "hôtes",
+      appliedFilters: applied
+    });
   }
 
-  findSoftwareInstances(params: { typeContains?: string; nameContains?: string; instanceContains?: string; limit?: number }): Promise<FlatQueryResult> {
+  findSoftwareInstances(params: { typeContains?: string; nameContains?: string; instanceContains?: string; limit?: number; defaultLimit?: number; maxRows?: number; pageSize?: number }): Promise<FlatQueryResult> {
     const filters: string[] = [];
     const applied: Record<string, unknown> = {};
     if (params.typeContains) {
@@ -154,7 +200,14 @@ export class DiscoveryClient {
     }
     const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
     const query = `search SoftwareInstance${where} show type, name, instance, product_version`;
-    return this.queryJson(query, params.limit ?? 50, { entityLabel: "instances logicielles", appliedFilters: applied });
+    return this.searchData(query, {
+      limit: params.maxRows === undefined ? (params.limit ?? params.defaultLimit ?? 50) : params.limit,
+      maxRows: params.maxRows,
+      pageSize: params.pageSize,
+      format: "object",
+      entityLabel: "instances logicielles",
+      appliedFilters: applied
+    });
   }
 
   findHostSoftware(params: { hostNameContains: string; softwareTypeContains?: string; limit?: number }): Promise<FlatQueryResult> {

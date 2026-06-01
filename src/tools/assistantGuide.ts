@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getCatalogDigest, lookupByName, lookupByType } from "../discovery/catalog.js";
 import { structuredOutputSchema } from "./outputSchemas.js";
 
 const guideSchema = z.object({
@@ -51,6 +52,13 @@ const sections: GuideSection[] = [
         useCase: "Comparer VMware vs Azure/AWS/GCP pour 100 VMs 4 vCPU/16 Go et classer les économies médianes.",
         purposeEn: "Compare annualized alternatives and calculate potential savings versus a current solution.",
         useCaseEn: "Compare VMware vs Azure/AWS/GCP for 100 4 vCPU/16 GB VMs and rank median savings."
+      },
+      {
+        tool: "discovery_windows_license_report",
+        purpose: "Calculer les licences Windows Server par hôte physique, chiffrer Standard vs Datacenter et pré-calculer les optimisations.",
+        useCase: "Pour un audit licensing Windows/Datacenter/Hyper-V/VMware, appeler ce tool puis narrer les optimizationOpportunities en priorité économie décroissante.",
+        purposeEn: "Calculate Windows Server licensing by physical host, price Standard vs Datacenter, and precompute optimization opportunities.",
+        useCaseEn: "For a Windows/Datacenter/Hyper-V/VMware licensing audit, call this tool then narrate optimizationOpportunities by descending savings."
       }
     ]
   },
@@ -90,11 +98,33 @@ const sections: GuideSection[] = [
         useCaseEn: "For 'Microsoft software end-of-life', call with publisherContains='Microsoft'. NO NEED to chain build_lifecycle_query + search_data."
       },
       {
+        tool: "discovery_os_lifecycle_report",
+        purpose: "Exécuter directement un rapport d'obsolescence OS depuis les Host avec dates EOS/EOSS/EOES/EOL SupportDetail OS et gestion de failure_reason.",
+        useCase: "Pour 'Windows Server obsolètes' ou 'OS à risque', appeler ce tool avec osContains si besoin et onlyAtRisk=true pour EOS dépassée. PAS BESOIN d'enchaîner search_data.",
+        purposeEn: "Run an OS obsolescence report directly from Host nodes with OS SupportDetail EOS/EOSS/EOES/EOL dates and failure_reason handling.",
+        useCaseEn: "For 'obsolete Windows Server' or 'OS at risk', call this tool with osContains as needed and onlyAtRisk=true for exceeded EOS. NO NEED to chain search_data."
+      },
+      {
         tool: "discovery_build_lifecycle_query",
         purpose: "AVANCÉ. Construire le DSL sans l'exécuter, uniquement pour inspection.",
         useCase: "Rare : seulement si on doit modifier la requête avant exécution.",
         purposeEn: "ADVANCED. Build the DSL string without executing it, only for inspection.",
         useCaseEn: "Rare: only when the query must be modified before execution."
+      }
+    ]
+  },
+  {
+    id: "compliance",
+    title: "Conformité / patch management",
+    titleEn: "Compliance / patch management",
+    keywords: ["conformité", "conformite", "compliance", "patch", "kb", "correctif", "hotfix", "windows update", "missing kb", "non conforme", "non-compliant"],
+    items: [
+      {
+        tool: "discovery_patch_compliance_report",
+        purpose: "Vérifier directement la conformité patch KB de hôtes Windows (virtuels et baremetal), avec filtre optionnel sur OS et logiciels hébergés.",
+        useCase: "Pour 'quels serveurs n'ont pas KB4018271/KB500...' appeler avec kbList et complianceMode='all' ou 'any'; utiliser hostsSoftwareMatching + hostingFilter pour cibler les hôtes qui hébergent un logiciel donné.",
+        purposeEn: "Directly check Windows host KB patch compliance (virtual and bare-metal), with optional OS and hosted-software filters.",
+        useCaseEn: "For 'which servers miss KB4018271/KB500...', call with kbList and complianceMode='all' or 'any'; use hostsSoftwareMatching + hostingFilter to target hosts running a given software."
       }
     ]
   },
@@ -358,6 +388,10 @@ function resolveLanguage(language: "fr" | "en" | undefined, request: string): "f
 }
 
 const GLOBAL_RULES_FR = [
+  "R-A1: AVANT tout appel d'outil, si l'intention ne correspond pas clairement à un outil de niveau 1 (vulnérabilités/CVE, dépendances/graphe, architecture, obsolescence), pose UNE question pour clarifier. Ne rien appeler.",
+  "R-A2: Si le tool exige un OBJET et qu'aucun objet n'est nommé, demande lequel avant d'appeler l'outil.",
+  "R-A3: Si l'objet nommé est absent À LA FOIS du registre nominatif (services/apps/hosts) ET des types SoftwareInstance connus, demande DE QUEL TYPE d'objet il s'agit plutôt que de deviner ou de lancer un data_search.",
+  "R-A4: Ne JAMAIS improviser une requête discovery_search_data pour contourner une ambiguïté.",
   "RÈGLE 1: N'invente JAMAIS du DSL Discovery (search/show) si un outil spécialisé couvre le besoin. Utilise d'abord les outils paramétrés ci-dessous.",
   "RÈGLE 2: Si l'utilisateur mentionne un éditeur (Microsoft, Oracle...) ou un produit (Windows Server, JBoss...), passe-le DIRECTEMENT en paramètre `publisherContains` / `productContains` à `discovery_lifecycle_report`. Pas d'enchaînement.",
   "RÈGLE 3: La réponse de chaque outil contient généralement un champ `summary` avec le chiffre clé. Cite-le textuellement avant tout détail.",
@@ -366,12 +400,32 @@ const GLOBAL_RULES_FR = [
 ];
 
 const GLOBAL_RULES_EN = [
+  "R-A1: BEFORE any tool call, if the intent does not clearly map to a level-1 tool (vulnerabilities/CVE, dependencies/graph, architecture, obsolescence), ask ONE clarifying question. Do not call anything.",
+  "R-A2: If the tool requires an OBJECT and no object is named, ask which one before calling the tool.",
+  "R-A3: If the named object is absent from BOTH the nominal registry (services/apps/hosts) and known SoftwareInstance types, ask WHAT TYPE of object it is instead of guessing or launching data_search.",
+  "R-A4: NEVER improvise a discovery_search_data query to work around ambiguity.",
   "RULE 1: NEVER invent Discovery DSL (search/show) when a specialized tool covers the need. Use the parameterized tools below first.",
   "RULE 2: If the user mentions a vendor (Microsoft, Oracle...) or a product (Windows Server, JBoss...), pass it DIRECTLY as `publisherContains` / `productContains` to `discovery_lifecycle_report`. No chaining.",
   "RULE 3: Tool responses usually include a `summary` field with the headline count. Quote it verbatim before any detail.",
   "RULE 4: For tools returning multiple representations (e.g. discovery_dependency_map), choose the richest representation your client supports. The interactive HTML is self-contained — offer it as a downloadable artifact when possible.",
   "RULE 5: For raw DSL, call `discovery_dsl_examples` or `discovery_validate_query` first; then call `discovery_search_data` only if no specialized tool is enough."
 ];
+
+function previewList(values: string[], max = 12): string {
+  const visible = values.slice(0, max);
+  const suffix = values.length > max ? ` (+${values.length - max})` : "";
+  return visible.length > 0 ? `${visible.join(", ")}${suffix}` : "(vide)";
+}
+
+function catalogMatchesForRequest(request: string) {
+  const terms = [...new Set(request.match(/[\p{L}0-9_.-]{3,}/gu) ?? [])].slice(0, 12);
+  return terms.flatMap((term) => {
+    const names = lookupByName(term).slice(0, 5);
+    const types = lookupByType(term).slice(0, 5);
+    if (names.length === 0 && types.length === 0) return [];
+    return [{ term, names, types }];
+  });
+}
 
 export function assistantGuideTools() {
   return {
@@ -383,6 +437,8 @@ export function assistantGuideTools() {
         const selected = pickSections(input.request);
         const language = resolveLanguage(input.language, input.request);
         const rules = language === "fr" ? GLOBAL_RULES_FR : GLOBAL_RULES_EN;
+        const catalogDigest = getCatalogDigest({ nominalLimit: 100 });
+        const catalogMatches = catalogMatchesForRequest(input.request);
         const lines: string[] = [];
         if (language === "fr") {
           lines.push(`Demande comprise: ${input.request}`);
@@ -390,12 +446,24 @@ export function assistantGuideTools() {
           lines.push("## Règles globales");
           for (const rule of rules) lines.push(`- ${rule}`);
           lines.push("");
+          lines.push("## Catalogue Discovery connu (cache)");
+          lines.push(`- Services: ${previewList(catalogDigest.services.map((item) => item.name))}`);
+          lines.push(`- Applications: ${previewList(catalogDigest.apps.map((item) => item.name))}`);
+          lines.push(`- Hosts${catalogDigest.nominalTruncated ? " (liste partielle)" : ""}: ${previewList(catalogDigest.hosts.map((item) => item.name))}`);
+          lines.push(`- Types SoftwareInstance${catalogDigest.truncated ? " (liste partielle)" : ""}: ${previewList(catalogDigest.softwareTypes.map((item) => item.type), catalogDigest.truncated ? 20 : catalogDigest.softwareTypes.length)}`);
+          lines.push("");
           lines.push("## Outils pertinents pour cette demande");
         } else {
           lines.push(`Understood request: ${input.request}`);
           lines.push("");
           lines.push("## Global rules");
           for (const rule of rules) lines.push(`- ${rule}`);
+          lines.push("");
+          lines.push("## Known Discovery catalog (cache)");
+          lines.push(`- Services: ${previewList(catalogDigest.services.map((item) => item.name))}`);
+          lines.push(`- Applications: ${previewList(catalogDigest.apps.map((item) => item.name))}`);
+          lines.push(`- Hosts${catalogDigest.nominalTruncated ? " (partial list)" : ""}: ${previewList(catalogDigest.hosts.map((item) => item.name))}`);
+          lines.push(`- SoftwareInstance types${catalogDigest.truncated ? " (partial list)" : ""}: ${previewList(catalogDigest.softwareTypes.map((item) => item.type), catalogDigest.truncated ? 20 : catalogDigest.softwareTypes.length)}`);
           lines.push("");
           lines.push("## Relevant tools for this request");
         }
@@ -412,6 +480,8 @@ export function assistantGuideTools() {
           language,
           matchedSections: selected.map((s) => s.id),
           globalRules: rules,
+          catalogDigest,
+          catalogMatches,
           guidance: lines.join("\n")
         };
       }

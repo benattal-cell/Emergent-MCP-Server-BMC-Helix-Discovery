@@ -2,19 +2,17 @@ import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
 import { buildServiceArchitectureHtml, buildServiceArchitectureSvg, type ServiceEdge, type ServiceNode } from "../svg/serviceArchitectureHtml.js";
 import { renderVisual, type VisualContentBlock } from "../svg/renderer.js";
+import { RESOLVABLE_TARGET_KINDS, resolveTarget, type ResolveTargetResult } from "../discovery/resolveTarget.js";
 import { serviceArchitectureOutputSchema } from "./outputSchemas.js";
 
 export const serviceArchitectureSchema = z.object({
   serviceName: z.string().min(1),
+  targetKind: z.enum(RESOLVABLE_TARGET_KINDS).optional(),
   depth: z.number().int().min(0).default(2),
   title: z.string().min(1).optional(),
-  kindFilter: z.array(z.string().min(1)).optional(),
+  kindFilter: z.array(z.string().min(1)).optional().describe("Restricts which CI kinds are displayed in the architecture graph (to reduce clutter). It does NOT affect how serviceName is resolved — use targetKind for that."),
   maxNodes: z.number().int().min(5).max(500).default(100)
 }).strict();
-
-function escapeDiscoveryDoubleQuoted(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-}
 
 function formatOptionalAttribute(value: unknown): string | undefined {
   if (typeof value === "string") return value.trim() === "" ? undefined : value;
@@ -47,32 +45,39 @@ function readEdge(raw: Record<string, unknown>): ServiceEdge | null {
   return { from, to, kind };
 }
 
-function rowString(row: Record<string, unknown>, keys: string[]): string | undefined {
-  for (const key of keys) {
-    const value = row[key];
-    if (typeof value === "string" && value.trim() !== "") return value;
-  }
-  return undefined;
+function graphLinkContainers(graph: Record<string, unknown>): Array<Record<string, unknown>> {
+  return [graph.links, graph.edges, graph.relationships].flatMap((container) =>
+    Array.isArray(container) ? container as Array<Record<string, unknown>> : []
+  );
 }
 
-async function resolveServiceRoots(client: DiscoveryClient, serviceName: string): Promise<Array<{ id: string; name: string }>> {
-  const needle = escapeDiscoveryDoubleQuoted(serviceName);
-  const queries = [
-    `SEARCH BusinessService WHERE name HAS SUBWORD "${needle}" SHOW name, #id`,
-    `SEARCH BusinessApplicationInstance WHERE name HAS SUBWORD "${needle}" SHOW name, #id`
-  ];
-
-  for (const query of queries) {
-    const result = await client.searchData(query, { entityLabel: "services", appliedFilters: { serviceName } });
-    const roots = result.rows.flatMap((row) => {
-      const id = rowString(row, ["#id", "id", "key", "node_id"]);
-      if (!id) return [];
-      return [{ id, name: rowString(row, ["name", "Name"]) ?? id }];
-    });
-    if (roots.length > 0) return roots;
+function orientEdgesFromRoot(edges: ServiceEdge[], rootId: string): ServiceEdge[] {
+  const adjacency = new Map<string, ServiceEdge[]>();
+  for (const edge of edges) {
+    adjacency.set(edge.from, [...(adjacency.get(edge.from) ?? []), edge]);
+    adjacency.set(edge.to, [...(adjacency.get(edge.to) ?? []), edge]);
   }
 
-  return [];
+  const distance = new Map<string, number>([[rootId, 0]]);
+  const queue = [rootId];
+  for (let index = 0; index < queue.length; index += 1) {
+    const current = queue[index];
+    for (const edge of adjacency.get(current) ?? []) {
+      const next = edge.from === current ? edge.to : edge.from;
+      if (distance.has(next)) continue;
+      distance.set(next, (distance.get(current) ?? 0) + 1);
+      queue.push(next);
+    }
+  }
+
+  return edges.map((edge) => {
+    const fromDistance = distance.get(edge.from);
+    const toDistance = distance.get(edge.to);
+    if (fromDistance !== undefined && toDistance !== undefined && fromDistance > toDistance) {
+      return { from: edge.to, to: edge.from, kind: edge.kind };
+    }
+    return edge;
+  });
 }
 
 async function collectArchitectureGraph(
@@ -83,23 +88,22 @@ async function collectArchitectureGraph(
   maxNodes = 100
 ): Promise<{ nodes: ServiceNode[]; edges: ServiceEdge[]; levels: number }> {
   const nodes = new Map<string, ServiceNode>();
-  const edges: ServiceEdge[] = [];
-  const seenEdge = new Set<string>();
+  const rawEdges: ServiceEdge[] = [];
+  const seenRawEdge = new Set<string>();
   const visited = new Set<string>();
+  const distances = new Map<string, number>([[rootId, 0]]);
   const allowedKinds = kindFilter && kindFilter.length > 0 ? new Set(kindFilter) : null;
   let frontier: string[] = [rootId];
-  let levels = 0;
 
   for (let d = 0; d <= depth && frontier.length > 0 && nodes.size < maxNodes; d += 1) {
-    const next: string[] = [];
-    levels = Math.max(levels, d + 1);
+    const next = new Set<string>();
     for (const id of frontier) {
       if (visited.has(id) || nodes.size >= maxNodes) continue;
       visited.add(id);
       const raw = await client.getNodeGraph(id);
       const graph = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
       const rawNodes = Array.isArray(graph.nodes) ? graph.nodes as Array<Record<string, unknown>> : [];
-      const rawLinks = Array.isArray(graph.links) ? graph.links as Array<Record<string, unknown>> : (Array.isArray(graph.edges) ? graph.edges as Array<Record<string, unknown>> : []);
+      const rawLinks = graphLinkContainers(graph);
 
       for (const rawNode of rawNodes) {
         if (nodes.size >= maxNodes) break;
@@ -107,22 +111,31 @@ async function collectArchitectureGraph(
         if (!node) continue;
         if (allowedKinds && !allowedKinds.has(node.kind)) continue;
         if (!nodes.has(node.id)) nodes.set(node.id, node);
-        if (d < depth && node.id !== id && !visited.has(node.id)) next.push(node.id);
       }
 
       for (const rawLink of rawLinks) {
         const edge = readEdge(rawLink);
-        if (!edge || !nodes.has(edge.from) || !nodes.has(edge.to)) continue;
+        if (!edge) continue;
         const key = `${edge.from}>${edge.to}>${edge.kind}`;
-        if (seenEdge.has(key)) continue;
-        seenEdge.add(key);
-        edges.push(edge);
+        if (!seenRawEdge.has(key)) {
+          seenRawEdge.add(key);
+          rawEdges.push(edge);
+        }
+
+        if (d >= depth) continue;
+        const neighbor = edge.from === id ? edge.to : (edge.to === id ? edge.from : undefined);
+        if (!neighbor || visited.has(neighbor) || !nodes.has(neighbor)) continue;
+        if (!distances.has(neighbor)) distances.set(neighbor, d + 1);
+        next.add(neighbor);
       }
     }
-    frontier = [...new Set(next)];
+    frontier = [...next];
   }
 
   if (!nodes.has(rootId) && !allowedKinds) nodes.set(rootId, { id: rootId, kind: "Root", name: rootId });
+  const collectedEdges = rawEdges.filter((edge) => nodes.has(edge.from) && nodes.has(edge.to));
+  const edges = orientEdgesFromRoot(collectedEdges, rootId);
+  const levels = Math.max(1, ...[...nodes.keys()].map((id) => (distances.get(id) ?? 0) + 1));
   return { nodes: [...nodes.values()], edges, levels };
 }
 
@@ -131,22 +144,30 @@ function resourceSlug(value: string): string {
   return slug || "service";
 }
 
+function resolutionError(target: string, resolution: Extract<ResolveTargetResult, { status: "none" | "ambiguous" }>) {
+  if (resolution.status === "none") {
+    const text = `Rien trouvé pour ${target}.`;
+    return { content: [{ type: "text", text }], structuredContent: { status: "none", target }, isError: true };
+  }
+  const candidatesText = resolution.candidates.map((candidate) => `${candidate.name} (${candidate.kind}) [id: ${candidate.id}]`).join(", ");
+  const text = `Cible ambiguë pour ${target}. Candidats: ${candidatesText}. Pour choisir, rappelez l'outil avec targetKind=<kind> OU target=<id exact>.`;
+  return { content: [{ type: "text", text }], structuredContent: { status: "ambiguous", target, candidates: resolution.candidates }, isError: true };
+}
+
 export function serviceArchitectureTools(client: DiscoveryClient) {
   return {
     discovery_service_architecture: {
-      description: "Generate one or more self-contained D3 hierarchical architecture diagrams from a BusinessService or BusinessApplicationInstance name. Resolves node ids automatically via HAS SUBWORD lookup, generates one diagram per match. Returns native MCP visual content: PNG image, SVG resource, and self-contained D3 HTML resource. Use kindFilter to restrict node kinds and avoid graph explosion on large services (e.g. [\"BusinessService\",\"BusinessApplicationInstance\",\"Host\",\"SoftwareInstance\"]). Prefer discovery_dependency_map for mesh/topology/blast-radius graphs.",
+      description: "Generate one or more self-contained D3 hierarchical architecture diagrams from a BusinessService, BusinessApplicationInstance, Host or SoftwareInstance name, or from an exact Discovery nodeId. Use targetKind to disambiguate NAME resolution, or pass serviceName=<id exact>. Returns native MCP visual content: PNG image, SVG resource, and self-contained D3 HTML resource. kindFilter restricts which CI kinds are DISPLAYED in the architecture graph (to reduce clutter). It does NOT affect how serviceName is resolved — use targetKind for that. Prefer discovery_dependency_map for mesh/topology/blast-radius graphs.",
       schema: serviceArchitectureSchema,
       outputSchema: serviceArchitectureOutputSchema,
       handler: async (input: z.infer<typeof serviceArchitectureSchema>) => {
-        const roots = await resolveServiceRoots(client, input.serviceName);
-        if (roots.length === 0) {
-          return {
-            content: [{ type: "text", text: `Aucun BusinessService ou BusinessApplicationInstance trouvé pour le nom "${input.serviceName}".` }],
-            isError: true
-          };
-        }
+        const resolution = await resolveTarget(client, input.serviceName, { targetKind: input.targetKind });
+        if (resolution.status === "none" || resolution.status === "ambiguous") return resolutionError(input.serviceName, resolution);
+        const root = resolution.status === "node_id"
+          ? { id: resolution.id, name: input.serviceName }
+          : { id: resolution.id, name: resolution.name };
 
-        const rendered = await Promise.all(roots.map(async (root) => {
+        const rendered = await Promise.all([root].map(async (root) => {
           const { nodes, edges, levels } = await collectArchitectureGraph(client, root.id, input.depth, input.kindFilter, input.maxNodes);
           const title = input.title ?? `Service architecture · ${root.name}`;
           const summary = `${root.name}: ${nodes.length} nœuds, ${levels} niveaux${nodes.length >= input.maxNodes ? " (truncated)" : ""}`;
@@ -175,7 +196,7 @@ export function serviceArchitectureTools(client: DiscoveryClient) {
         }));
 
         const diagrams = rendered.map((visual) => visual.structuredContent);
-        const summary = `${roots.length} service(s) résolu(s) pour "${input.serviceName}".`;
+        const summary = `${rendered.length} service(s) résolu(s) pour "${input.serviceName}".`;
         return {
           content: rendered.flatMap((visual) => visual.content) as VisualContentBlock[],
           structuredContent: { summary, diagrams, count: diagrams.length }

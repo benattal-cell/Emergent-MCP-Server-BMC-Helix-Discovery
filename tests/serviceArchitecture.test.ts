@@ -1,7 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { loadCatalog } from "../src/discovery/catalog.js";
 import { buildServiceArchitectureHtml, buildServiceArchitectureSvg } from "../src/svg/serviceArchitectureHtml.js";
 import { serviceArchitectureTools } from "../src/tools/serviceArchitecture.js";
 import { serviceArchitectureOutputSchema } from "../src/tools/outputSchemas.js";
+
+beforeEach(async () => {
+  await loadCatalog({ searchData: vi.fn().mockResolvedValue({ rows: [] }) } as never);
+});
 
 describe("buildServiceArchitectureHtml", () => {
   it("builds a self-contained D3 architecture document and marks duplicated nodes", () => {
@@ -56,23 +61,21 @@ describe("buildServiceArchitectureHtml", () => {
 });
 
 describe("discovery_service_architecture", () => {
-  it("resolves services by name and returns one diagram per match", async () => {
+  it("resolves a service by name and returns a diagram", async () => {
     const client = {
-      searchData: vi.fn().mockResolvedValue({
-        rows: [
-          { name: "Jira Production", "#id": "root-1" },
-          { name: "Jira Test", "#id": "root-2" }
-        ]
+      searchData: vi.fn().mockImplementation(async (query: string) => {
+        if (query.includes("BusinessService")) return { rows: [{ name: "Jira Production", kind: "BusinessService", "#id": "root-1" }] };
+        return { rows: [] };
       }),
       getNodeGraph: vi.fn().mockImplementation(async (id: string) => id.endsWith("-si") ? { nodes: [], links: [] } : ({
         nodes: [
-          { id, kind: "BusinessService", name: id === "root-1" ? "Jira Production" : "Jira Test" },
+          { id, kind: "BusinessService", name: "Jira Production" },
           { id: `${id}-si`, kind: "SoftwareInstance", name: "nginx", type: "Web Server", listening_ports: [80, 443], vendor: "NGINX" },
           { id: `${id}-ignored`, kind: "Database", name: "ignored-db" }
         ],
-        links: [
-          { src_id: id, tgt_id: `${id}-si`, kind: "HostedSoftware" },
-          { src_id: id, tgt_id: `${id}-ignored`, kind: "Detail" }
+        relationships: [
+          { src_id: `${id}-si`, tgt_id: id, kind: "HostedSoftware" },
+          { src_id: `${id}-ignored`, tgt_id: id, kind: "Detail" }
         ]
       }))
     } as never;
@@ -86,13 +89,13 @@ describe("discovery_service_architecture", () => {
     });
 
     expect(client.searchData).toHaveBeenCalledWith(
-      'SEARCH BusinessService WHERE name HAS SUBWORD "Jira" SHOW name, #id',
-      { entityLabel: "services", appliedFilters: { serviceName: "Jira" } }
+      'SEARCH BusinessService WHERE name HAS SUBWORD "Jira" SHOW name, kind, #id',
+      { entityLabel: "resolver:BusinessService", appliedFilters: { target: "Jira", kind: "BusinessService" }, maxRows: 1000, pageSize: 250 }
     );
     expect(Array.isArray(result.content)).toBe(true);
     expect(Array.isArray(result.structuredContent)).toBe(false);
-    expect(result.structuredContent).toMatchObject({ count: 2, summary: '2 service(s) résolu(s) pour "Jira".' });
-    expect(result.structuredContent.diagrams).toHaveLength(2);
+    expect(result.structuredContent).toMatchObject({ count: 1, summary: '1 service(s) résolu(s) pour "Jira".' });
+    expect(result.structuredContent.diagrams).toHaveLength(1);
     expect(() => serviceArchitectureOutputSchema.parse(result.structuredContent)).not.toThrow();
     expect(result.structuredContent.diagrams[0]).toMatchObject({
       root: { id: "root-1", name: "Jira Production" },
@@ -103,7 +106,9 @@ describe("discovery_service_architecture", () => {
     const textBlock = result.content.find((block: { type?: string; text?: string }) => block.type === "text");
     expect(svgResource?.resource.text).toContain("Jira architecture");
     expect(svgResource?.resource.text).toContain('id="static-graph"');
+    expect(svgResource?.resource.text).toContain("nginx");
     expect(htmlResource?.resource.text).toContain("Jira architecture");
+    expect(htmlResource?.resource.text).toContain("nginx");
     expect(htmlResource?.resource.text).toContain("80, 443");
     expect(htmlResource?.resource.text).toContain("NGINX");
     expect(htmlResource?.resource.text).not.toContain("ignored-db");
@@ -118,8 +123,27 @@ describe("discovery_service_architecture", () => {
 
     const result = await serviceArchitectureTools(client).discovery_service_architecture.handler({ serviceName: "Missing" });
 
-    expect(client.searchData).toHaveBeenCalledTimes(2);
-    expect(result).toMatchObject({ isError: true });
-    expect(result.content[0]).toEqual({ type: "text", text: 'Aucun BusinessService ou BusinessApplicationInstance trouvé pour le nom "Missing".' });
+    expect(client.searchData).toHaveBeenCalledTimes(4);
+    expect(result).toMatchObject({ isError: true, structuredContent: { status: "none", target: "Missing" } });
+    expect(result.content[0]).toEqual({ type: "text", text: "Rien trouvé pour Missing." });
+    expect(client.getNodeGraph).not.toHaveBeenCalled();
+  });
+
+  it("returns ambiguous without rendering when several objects match", async () => {
+    const client = {
+      searchData: vi.fn().mockImplementation(async (query: string) => {
+        if (query.includes("BusinessService")) return { rows: [{ name: "Jira", kind: "BusinessService", "#id": "bs-1" }] };
+        if (query.includes("Host")) return { rows: [{ name: "jira-host", kind: "Host", "#id": "host-1" }] };
+        return { rows: [] };
+      }),
+      getNodeGraph: vi.fn()
+    } as never;
+
+    const result = await serviceArchitectureTools(client).discovery_service_architecture.handler({ serviceName: "Jira" });
+
+    expect(result).toMatchObject({ isError: true, structuredContent: { status: "ambiguous" } });
+    expect(result.structuredContent.candidates).toHaveLength(2);
+    expect(result.content.some((block: { type?: string; resource?: unknown }) => block.type === "image" || block.resource)).toBe(false);
+    expect(client.getNodeGraph).not.toHaveBeenCalled();
   });
 });

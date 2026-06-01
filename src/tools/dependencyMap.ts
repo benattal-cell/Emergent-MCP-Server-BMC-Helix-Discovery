@@ -5,13 +5,15 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { renderForceLayoutSvg, type PositionedEdge, type PositionedNode } from "../svg/forceLayoutRenderer.js";
 import { renderVisual } from "../svg/renderer.js";
 import { buildInteractiveHtml } from "../svg/interactiveGraph.js";
+import { RESOLVABLE_TARGET_KINDS, resolveTarget, type ResolveTargetResult } from "../discovery/resolveTarget.js";
 import { dependencyMapOutputSchema } from "./outputSchemas.js";
 import { CYTOSCAPE_VISUAL_DESCRIPTION } from "./visualInstructions.js";
 
 export const dependencyMapSchema = z.object({
   target: z.string().min(1),
+  targetKind: z.enum(RESOLVABLE_TARGET_KINDS).optional(),
   depth: z.number().int().min(1).max(3).default(1),
-  kinds: z.array(z.string().min(1)).optional(),
+  kinds: z.array(z.string().min(1)).optional().describe("Restricts which CI KINDS are DISPLAYED in the resulting graph (to reduce clutter). It does NOT affect how the target name is resolved — use targetKind for that. Leave empty to show all kinds."),
   maxNodes: z.number().int().min(5).max(200).default(60),
   iterations: z.number().int().min(50).max(600).default(200),
   linLog: z.boolean().default(false),
@@ -40,8 +42,6 @@ const structuredContentSchema = z.object({
 
 interface GraphNode { id: string; kind: string; name: string; type?: string; port?: string; publisher?: string }
 interface GraphEdge { from: string; to: string; kind: string }
-const looksLikeNodeId = (v: string) => v.length >= 16 && !/\s/.test(v) && /^[A-Za-z0-9+/=_\-]+$/.test(v);
-
 function formatOptionalAttribute(value: unknown): string | undefined {
   if (typeof value === "string") return value.trim() === "" ? undefined : value;
   if (typeof value === "number" || typeof value === "boolean") return String(value);
@@ -54,21 +54,35 @@ function formatOptionalAttribute(value: unknown): string | undefined {
   return undefined;
 }
 
+function graphLinkContainers(graph: Record<string, unknown>): Array<Record<string, unknown>> {
+  return [graph.links, graph.edges, graph.relationships].flatMap((container) =>
+    Array.isArray(container) ? container as Array<Record<string, unknown>> : []
+  );
+}
+
+function readGraphEdge(raw: Record<string, unknown>): GraphEdge | null {
+  const from = typeof raw.src_id === "string" ? raw.src_id : (typeof raw.from === "string" ? raw.from : undefined);
+  const to = typeof raw.tgt_id === "string" ? raw.tgt_id : (typeof raw.to === "string" ? raw.to : undefined);
+  if (!from || !to) return null;
+  const kind = typeof raw.kind === "string" ? raw.kind : "rel";
+  return { from, to, kind };
+}
+
 async function walkGraph(client: DiscoveryClient, focusId: string, depth: number, maxNodes: number, kindFilter?: string[]) {
   const nodes = new Map<string, GraphNode>();
-  const edges: GraphEdge[] = [];
+  const rawEdges: GraphEdge[] = [];
   const visited = new Set<string>();
-  const seenEdge = new Set<string>();
+  const seenRawEdge = new Set<string>();
   let frontier: string[] = [focusId];
   for (let d = 0; d <= depth; d++) {
-    const next: string[] = [];
+    const next = new Set<string>();
     for (const id of frontier) {
       if (visited.has(id)) continue;
       visited.add(id);
       const raw = await client.getNodeGraph(id);
       const g = (raw && typeof raw === "object") ? raw as Record<string, unknown> : {};
       const rawNodes = Array.isArray(g.nodes) ? g.nodes as Array<Record<string, unknown>> : [];
-      const rawLinks = Array.isArray(g.links) ? g.links as Array<Record<string, unknown>> : [];
+      const rawLinks = graphLinkContainers(g);
       for (const n of rawNodes) {
         const nid = typeof n.id === "string" ? n.id : undefined;
         if (!nid) continue;
@@ -80,24 +94,38 @@ async function walkGraph(client: DiscoveryClient, focusId: string, depth: number
           const port = formatOptionalAttribute(n.port) ?? formatOptionalAttribute(n.listening_ports);
           const publisher = formatOptionalAttribute(n.publisher) ?? formatOptionalAttribute(n.vendor);
           nodes.set(nid, { id: nid, kind, name, ...(type ? { type } : {}), ...(port ? { port } : {}), ...(publisher ? { publisher } : {}) });
-          if (d < depth && nid !== id) next.push(nid);
         }
       }
       for (const l of rawLinks) {
-        const src = typeof l.src_id === "string" ? l.src_id : undefined;
-        const tgt = typeof l.tgt_id === "string" ? l.tgt_id : undefined;
-        if (!src || !tgt || !nodes.has(src) || !nodes.has(tgt)) continue;
-        const kind = typeof l.kind === "string" ? l.kind : "rel";
-        const eid = `${src}>${tgt}>${kind}`;
-        if (seenEdge.has(eid)) continue;
-        seenEdge.add(eid);
-        edges.push({ from: src, to: tgt, kind });
+        const edge = readGraphEdge(l);
+        if (!edge) continue;
+        const eid = `${edge.from}>${edge.to}>${edge.kind}`;
+        if (!seenRawEdge.has(eid)) {
+          seenRawEdge.add(eid);
+          rawEdges.push(edge);
+        }
+
+        if (d >= depth) continue;
+        const neighbor = edge.from === id ? edge.to : (edge.to === id ? edge.from : undefined);
+        if (!neighbor || visited.has(neighbor) || !nodes.has(neighbor)) continue;
+        next.add(neighbor);
       }
     }
-    frontier = next;
+    frontier = [...next];
     if (nodes.size >= maxNodes) break;
   }
+  const edges = rawEdges.filter((edge) => nodes.has(edge.from) && nodes.has(edge.to));
   return { nodes, edges };
+}
+
+function resolutionError(target: string, resolution: Extract<ResolveTargetResult, { status: "none" | "ambiguous" }>) {
+  if (resolution.status === "none") {
+    const text = `Rien trouvé pour ${target}.`;
+    return { content: [{ type: "text", text }], structuredContent: { status: "none", target }, isError: true };
+  }
+  const candidatesText = resolution.candidates.map((candidate) => `${candidate.name} (${candidate.kind}) [id: ${candidate.id}]`).join(", ");
+  const text = `Cible ambiguë pour ${target}. Candidats: ${candidatesText}. Pour choisir, rappelez l'outil avec targetKind=<kind> OU target=<id exact>.`;
+  return { content: [{ type: "text", text }], structuredContent: { status: "ambiguous", target, candidates: resolution.candidates }, isError: true };
 }
 
 function layout(nodes: GraphNode[], edges: GraphEdge[], options: z.infer<typeof dependencyMapSchema>): PositionedNode[] {
@@ -140,29 +168,15 @@ function layout(nodes: GraphNode[], edges: GraphEdge[], options: z.infer<typeof 
 export function dependencyMapTools(client: DiscoveryClient) {
   return {
     discovery_dependency_map: {
-      description: "Render a dependency map around a Discovery node. Returns multiple representations in the same response: a PNG image (base64), an SVG resource, and a self-contained interactive HTML resource (Cytoscape embedded inline, no external CDN). The interactive HTML includes CI-style icons per kind, mini-map, search, dark-mode toggle, hover tooltip and click-to-spotlight-neighbors. CHOOSING THE LAYOUT (`layout` param, applies ONLY to the interactive HTML — PNG/SVG always use ForceAtlas2): pass `layout='hierarchical'` when the user's question is about ARCHITECTURE, n-tier, application stack, or service model (top-down layered view). Pass `layout='concentric'` (default) when the question is about TOPOLOGY, MODELING, graph view, dependency map, blast-radius or impact analysis (focus at center, others on rings by distance). Pass `layout='cose'` only if explicitly asked for a generic force-directed look. If your client supports inline image rendering, render the PNG. If your client supports file artifacts or downloadable resources, present the HTML resource as a downloadable file the user can open in a browser. Do NOT attempt to summarize the raw HTML — it is meant for rendering, not reading.",
+      description: "DRAWS the actual dependency graph around a Discovery node. targetKind optionally disambiguates NAME resolution (BusinessService, BusinessApplicationInstance, Host or SoftwareInstance); alternatively pass target=<id exact>. kinds restricts which CI KINDS are DISPLAYED in the resulting graph (to reduce clutter) and does NOT affect target resolution — leave empty to show all kinds. Returns multiple representations in the same response: a PNG image (base64), an SVG resource, and a self-contained interactive HTML resource (Cytoscape embedded inline, no external CDN). The interactive HTML includes CI-style icons per kind, mini-map, search, dark-mode toggle, hover tooltip and click-to-spotlight-neighbors. CHOOSING THE LAYOUT (`layout` param, applies ONLY to the interactive HTML — PNG/SVG always use ForceAtlas2): pass `layout='hierarchical'` when the user's question is about ARCHITECTURE, n-tier, application stack, or service model (top-down layered view). Pass `layout='concentric'` (default) when the question is about TOPOLOGY, MODELING, graph view, dependency map, blast-radius or impact analysis (focus at center, others on rings by distance). Pass `layout='cose'` only if explicitly asked for a generic force-directed look. If your client supports inline image rendering, render the PNG. If your client supports file artifacts or downloadable resources, present the HTML resource as a downloadable file the user can open in a browser. Do NOT attempt to summarize the raw HTML — it is meant for rendering, not reading.",
       schema: dependencyMapSchema,
       outputSchema: dependencyMapOutputSchema,
       visualInstruction: CYTOSCAPE_VISUAL_DESCRIPTION,
       handler: async (input: z.infer<typeof dependencyMapSchema>) => {
-        let focusId = input.target;
-        let focusName = input.target;
-        if (!looksLikeNodeId(input.target)) {
-          try {
-            const found = await client.findHosts({ nameContains: input.target, limit: 1 });
-            const first = found.rows[0] as { id?: unknown; name?: unknown } | undefined;
-            if (!first || typeof first.id !== "string") {
-              const message = `target introuvable comme hôte ou nodeId. Pour cartographier un service, utilisez discovery_service_architecture (serviceName="${input.target}").`;
-              return { content: [{ type: "text", text: message }], structuredContent: { error: true, target: input.target, message, suggestedTool: "discovery_service_architecture", suggestedInput: { serviceName: input.target } }, isError: true };
-            }
-            focusId = first.id;
-            if (typeof first.name === "string") focusName = first.name;
-          } catch (error) {
-            const detail = error instanceof Error ? error.message : String(error);
-            const message = `target introuvable comme hôte ou nodeId. Pour cartographier un service, utilisez discovery_service_architecture (serviceName="${input.target}").`;
-            return { content: [{ type: "text", text: `${message} Détail: ${detail}` }], structuredContent: { error: true, target: input.target, message, detail, suggestedTool: "discovery_service_architecture", suggestedInput: { serviceName: input.target } }, isError: true };
-          }
-        }
+        const resolution = await resolveTarget(client, input.target, { targetKind: input.targetKind });
+        if (resolution.status === "none" || resolution.status === "ambiguous") return resolutionError(input.target, resolution);
+        const focusId = resolution.status === "node_id" ? resolution.id : resolution.id;
+        const focusName = resolution.status === "node_id" ? input.target : resolution.name;
         const { nodes, edges } = await walkGraph(client, focusId, input.depth, input.maxNodes, input.kinds);
         if (!nodes.has(focusId)) nodes.set(focusId, { id: focusId, kind: "Focus", name: focusName });
         const positionedNodes = layout(Array.from(nodes.values()), edges, input);

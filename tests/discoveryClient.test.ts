@@ -36,4 +36,65 @@ describe("DiscoveryClient", () => {
     expect(url).not.toContain("limit=");
   });
 
+  it("can intentionally omit offset for single-page aggregate queries", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ results: [] }) }));
+    const client = new DiscoveryClient(config);
+
+    await client.searchData("search SoftwareInstance show type processwith unique()", { limit: 20000, omitOffset: true });
+
+    const url = String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0]);
+    expect(url).toContain("limit=20000");
+    expect(url).not.toContain("offset=");
+  });
+
+  it("can page raw search requests beyond 100 rows when maxRows is requested", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string) => {
+      const parsed = new URL(url);
+      const offset = Number(parsed.searchParams.get("offset") || 0);
+      const limit = Number(parsed.searchParams.get("limit") || 100);
+      const rows = Array.from({ length: Math.max(0, Math.min(limit, 125 - offset)) }, (_, i) => [`row-${offset + i}`]);
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ items: [{ kind: "SoftwareInstance", count: 125, headings: ["type"], results: rows }] })
+      };
+    }));
+    const client = new DiscoveryClient(config);
+
+    const result = await client.searchData("search SoftwareInstance show type processwith unique()", { maxRows: 200, pageSize: 60 });
+
+    expect(result.returnedCount).toBe(125);
+    expect(result.rows).toHaveLength(125);
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0])).toContain("limit=60");
+  });
+
+  it("keeps simple host/software lookups capped by default but allows full inventory paging", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string, init?: { body?: string }) => {
+      const parsed = new URL(url);
+      const offset = Number(parsed.searchParams.get("offset") || 0);
+      const limit = Number(parsed.searchParams.get("limit") || 100);
+      const query = JSON.parse(init?.body ?? "{}").query as string | undefined;
+      const total = query?.includes("SoftwareInstance") ? 120 : 1;
+      const rows = Array.from({ length: Math.max(0, Math.min(limit, total - offset)) }, (_, i) => [`item-${offset + i}`]);
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ items: [{ count: total, headings: ["name"], results: rows }] })
+      };
+    }));
+    const client = new DiscoveryClient(config);
+
+    await client.findHosts({ nameContains: "prod" });
+    expect(String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0])).toContain("limit=50");
+
+    await client.findHosts({ nameContains: "prod", defaultLimit: 75 });
+    expect(String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[1][0])).toContain("limit=75");
+
+    const inventory = await client.findSoftwareInstances({ typeContains: "Microsoft", maxRows: 120, pageSize: 80 });
+    expect(inventory.rows).toHaveLength(120);
+    expect(fetch).toHaveBeenCalledTimes(4);
+    expect(String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[2][0])).toContain("limit=80");
+  });
+
 });

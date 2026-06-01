@@ -3,6 +3,7 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { kpiGrid } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { dslQueryOutputSchema, flatRowsOutputSchema } from "./outputSchemas.js";
+import { appendRowsMarkdownSummary } from "./shared/markdownTable.js";
 
 const riskWindowDaysDefault = 182;
 const DAY_IN_NANOS = 864000000000;
@@ -41,7 +42,10 @@ function buildWhereClause(input: z.infer<typeof lifecycleSchema>): string {
     const needle = esc(input.hostNameContains);
     filters.push(`nodecount(traverse RunningSoftware:HostedSoftware:Host:Host where name has subword "${needle}" or hostname has subword "${needle}" or dns_name has subword "${needle}") > 0`);
   }
-  if (input.publisherContains) filters.push(`publisher has subword "${esc(input.publisherContains)}"`);
+  if (input.publisherContains) {
+    const needle = esc(input.publisherContains);
+    filters.push(`(publisher has subword "${needle}" or type has subword "${needle}" or @support_publisher has subword "${needle}")`);
+  }
   if (input.productContains) filters.push(`product has subword "${esc(input.productContains)}"`);
   if (input.typeIn && input.typeIn.length > 0) {
     filters.push(`(${input.typeIn.map((v) => `type = '${v}'`).join(" or ")})`);
@@ -136,7 +140,7 @@ export function lifecycleTools(client: DiscoveryClient) {
         ], { columns: 2 });
         return renderVisual(svg, {
           name: "lifecycle_report",
-          textSummary: result.summary,
+          textSummary: appendRowsMarkdownSummary(result.summary, rows),
           structuredContent: result
         });
       },

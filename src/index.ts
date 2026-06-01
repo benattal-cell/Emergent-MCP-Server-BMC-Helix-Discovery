@@ -12,6 +12,9 @@ import { taxonomyTools } from "./tools/taxonomy.js";
 import { cveTools } from "./tools/cve.js";
 import { graphTools } from "./tools/graph.js";
 import { lifecycleTools } from "./tools/lifecycle.js";
+import { patchComplianceTools } from "./tools/patchCompliance.js";
+import { osLifecycleTools } from "./tools/osLifecycle.js";
+import { windowsLicenseTools } from "./tools/windowsLicense.js";
 import { assistantGuideTools } from "./tools/assistantGuide.js";
 import { dependencyMapTools } from "./tools/dependencyMap.js";
 import { dependencyScopeTools } from "./tools/dependencyScope.js";
@@ -24,6 +27,7 @@ import { kpiGrid, type Kpi } from "./svg/kpi.js";
 import { renderVisual } from "./svg/renderer.js";
 import { structuredOutputSchema as defaultOutputSchema } from "./tools/outputSchemas.js";
 import { SVG_VISUAL_DESCRIPTION } from "./tools/visualInstructions.js";
+import { loadCatalog } from "./discovery/catalog.js";
 
 const MAX_BODY_BYTES = 1_000_000;
 
@@ -158,9 +162,12 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...queryTools(client),
     ...hostTools(client),
     ...taxonomyTools(client),
-    ...cveTools(config),
+    ...cveTools(client, config),
     ...graphTools(client),
     ...lifecycleTools(client),
+    ...patchComplianceTools(client),
+    ...osLifecycleTools(client),
+    ...windowsLicenseTools(client),
     ...assistantGuideTools(),
     ...hostCardTools(client),
     ...dependencyScopeTools(client),
@@ -209,6 +216,12 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
 
 export async function createHttpServer(config: AppConfig): Promise<http.Server> {
   const client = new DiscoveryClient(config);
+  if (process.env.NODE_ENV !== "test" && !process.env.VITEST) {
+    void loadCatalog(client).catch((error) => {
+      const message = error instanceof Error ? error.message : String(error);
+      process.stderr.write(`${JSON.stringify({ message: "Discovery catalog preload failed", error: message })}\n`);
+    });
+  }
   const issuer = (config.publicBaseUrl || `http://localhost:${config.port}`).replace(/\/$/, "");
   const oauth = createOAuthServer({
     issuer,

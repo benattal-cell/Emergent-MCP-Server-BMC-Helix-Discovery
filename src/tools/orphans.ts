@@ -2,6 +2,7 @@ import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
 import { kpiGrid } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
+import { appendRowsMarkdownSummary } from "./shared/markdownTable.js";
 import { orphanOutputSchema } from "./outputSchemas.js";
 
 type GroupBy = "host" | "publisher" | "product" | "type";
@@ -212,7 +213,7 @@ Use discovery_search_data if you want to inspect or run raw Discovery DSL. Limit
         ], { columns: 2 });
         return renderVisual(svg, {
           name: `orphans_${input.target_kind.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase()}`,
-          textSummary: `${rows.length} orphan candidates retained from ${allRows.length} analyzed ${input.target_kind} rows.`,
+          textSummary: appendRowsMarkdownSummary(`${rows.length} orphan candidates retained from ${allRows.length} analyzed ${input.target_kind} rows.`, rows),
           structuredContent: payload
         });
       },

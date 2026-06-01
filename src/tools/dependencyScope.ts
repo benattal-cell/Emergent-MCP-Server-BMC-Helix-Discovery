@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
 import { renderTopologyVisual } from "../svg/topologyVisual.js";
+import { RESOLVABLE_TARGET_KINDS, resolveTarget, type ResolveTargetResult } from "../discovery/resolveTarget.js";
 import { dependencyScopeOutputSchema } from "./outputSchemas.js";
-import { CYTOSCAPE_VISUAL_DESCRIPTION } from "./visualInstructions.js";
+import { SVG_VISUAL_DESCRIPTION } from "./visualInstructions.js";
 
 export const dependencyScopeSchema = z.object({
-  target: z.string().min(1)
+  target: z.string().min(1),
+  targetKind: z.enum(RESOLVABLE_TARGET_KINDS).optional()
 }).strict();
 
 interface ScopeResult {
@@ -21,8 +23,14 @@ interface ScopeResult {
   suggestion: string;
 }
 
-function looksLikeNodeId(value: string): boolean {
-  return value.length >= 16 && !/\s/.test(value) && /^[A-Za-z0-9+/=_\-]+$/.test(value);
+function resolutionError(target: string, resolution: Extract<ResolveTargetResult, { status: "none" | "ambiguous" }>) {
+  if (resolution.status === "none") {
+    const text = `Rien trouvé pour ${target}.`;
+    return { content: [{ type: "text", text }], structuredContent: { status: "none", target }, isError: true };
+  }
+  const candidatesText = resolution.candidates.map((candidate) => `${candidate.name} (${candidate.kind}) [id: ${candidate.id}]`).join(", ");
+  const text = `Cible ambiguë pour ${target}. Candidats: ${candidatesText}. Pour choisir, rappelez l'outil avec targetKind=<kind> OU target=<id exact>.`;
+  return { content: [{ type: "text", text }], structuredContent: { status: "ambiguous", target, candidates: resolution.candidates }, isError: true };
 }
 
 function inferDirection(link: Record<string, unknown>, focusId: string): "in" | "out" | "unknown" {
@@ -36,35 +44,18 @@ function inferDirection(link: Record<string, unknown>, focusId: string): "in" | 
 export function dependencyScopeTools(client: DiscoveryClient) {
   return {
     discovery_dependency_scope: {
-      description: "Lightweight probe: given a host name OR a Discovery nodeId, returns the topology size around it (node counts by kind, relation counts by kind, in/out fan). Use this BEFORE discovery_dependency_map to estimate how big the graph will be and pick a sensible depth.",
+
+      description: "Lightweight probe. Given a NAME (BusinessService, BusinessApplicationInstance, Host or SoftwareInstance) OR a Discovery nodeId, returns ONLY the SIZE of the topology around it (node/relation counts by kind, in/out fan) WITHOUT drawing the graph. Use BEFORE discovery_dependency_map to estimate size and pick a depth. For the actual visual graph, use discovery_dependency_map. Returns a statistics summary card to render inline. Use targetKind to disambiguate NAME resolution, or pass target=<id exact>.",
+
       schema: dependencyScopeSchema,
       outputSchema: dependencyScopeOutputSchema,
-      visualInstruction: CYTOSCAPE_VISUAL_DESCRIPTION,
+      visualInstruction: SVG_VISUAL_DESCRIPTION,
       handler: async (input: z.infer<typeof dependencyScopeSchema>) => {
-        let id: string | undefined;
-        let name: string | undefined;
-        let resolvedAs: "node_id" | "host_name";
-
-        if (looksLikeNodeId(input.target)) {
-          id = input.target;
-          resolvedAs = "node_id";
-        } else {
-          try {
-            const found = await client.findHosts({ nameContains: input.target, limit: 1 });
-            const first = found.rows[0] as { id?: unknown; name?: unknown } | undefined;
-            if (!first || typeof first.id !== "string") {
-              const message = `target introuvable comme hôte ou nodeId. Pour cartographier un service, utilisez discovery_service_architecture (serviceName="${input.target}").`;
-              return { content: [{ type: "text", text: message }], structuredContent: { error: true, target: input.target, message, suggestedTool: "discovery_service_architecture", suggestedInput: { serviceName: input.target } }, isError: true };
-            }
-            id = first.id;
-            name = typeof first.name === "string" ? first.name : undefined;
-            resolvedAs = "host_name";
-          } catch (error) {
-            const detail = error instanceof Error ? error.message : String(error);
-            const message = `target introuvable comme hôte ou nodeId. Pour cartographier un service, utilisez discovery_service_architecture (serviceName="${input.target}").`;
-            return { content: [{ type: "text", text: `${message} Détail: ${detail}` }], structuredContent: { error: true, target: input.target, message, detail, suggestedTool: "discovery_service_architecture", suggestedInput: { serviceName: input.target } }, isError: true };
-          }
-        }
+        const resolution = await resolveTarget(client, input.target, { targetKind: input.targetKind });
+        if (resolution.status === "none" || resolution.status === "ambiguous") return resolutionError(input.target, resolution);
+        const id = resolution.status === "node_id" ? resolution.id : resolution.id;
+        const name = resolution.status === "node_id" ? undefined : resolution.name;
+        const resolvedAs: "node_id" | "host_name" = resolution.status === "node_id" ? "node_id" : "host_name";
 
         const graphRaw = await client.getNodeGraph(id);
         const graph = (graphRaw && typeof graphRaw === "object") ? graphRaw as Record<string, unknown> : {};
