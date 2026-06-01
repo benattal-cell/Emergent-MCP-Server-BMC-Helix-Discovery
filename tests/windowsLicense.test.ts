@@ -168,6 +168,48 @@ describe("Windows license calculations", () => {
     expect(report.undeterminedHosts[0]).toMatchObject({ id: "unknown", coreSource: "undetermined" });
   });
 
+
+  it("adds required Windows version, version licensing, edition breakdown and rationale restitution", async () => {
+    const report = await buildWindowsLicenseReportFromHosts([
+      host("esx-versioned", {
+        processorInfoNumCores: 40,
+        windowsVmCount: 10,
+        windowsVmGuestOs: ["Microsoft Windows Server 2016", "Microsoft Windows Server 2022"]
+      }),
+      host("baremetal-2019", {
+        role: "baremetal",
+        os: "Microsoft Windows Server 2019",
+        hostNumCores: 16,
+        windowsVmCount: 0
+      }),
+      host("unknown-version", { processorType: "Intel Xeon" })
+    ], params, { costRows, cpuLookup: vi.fn().mockResolvedValue(null) });
+
+    const versioned = report.hosts.find((h) => h.id === "esx-versioned");
+    expect(versioned).toMatchObject({ requiredWindowsVersion: "2022" });
+    expect(report.hosts.find((h) => h.id === "baremetal-2019")).toMatchObject({ requiredWindowsVersion: "2019" });
+    expect(report.hosts.find((h) => h.id === "unknown-version")).toMatchObject({ requiredWindowsVersion: "indéterminée", coreSource: "undetermined" });
+    expect(report.versionLicensing.reduce((sum, row) => sum + row.licenseableCores, 0)).toBe(report.totals.licenseableCores);
+    expect(report.versionLicensing.find((row) => row.version === "2022")).toMatchObject({ licenseableCores: 40, editionDatacenterHosts: 1 });
+    expect(report.editionBreakdown.standard.hosts + report.editionBreakdown.datacenter.hosts).toBe(report.totals.licenseableHosts);
+    expect(report.editionBreakdown.undetermined.hosts).toBe(report.undeterminedHosts.length);
+    expect(report.markdownReport).toContain("## Détail par hôte");
+    expect(report.markdownReport).toContain("## Cœurs à licencier par version Windows");
+    expect(report.markdownReport).toContain("## Hôtes à vérifier (scan/permissions)");
+  });
+
+  it("attaches a business rationale to every optimization opportunity", () => {
+    const licensed = calculateLicenses([
+      { ...host("redundant-rationale", { windowsVmCount: 20, hasDatacenterLicense: true, hasStandardLicenses: true }), cores: 40, processors: 2, coreSource: "processorinfo.num_cores" },
+      { ...host("underloaded-rationale", { windowsVmCount: 2, hasDatacenterLicense: true }), cores: 40, processors: 2, coreSource: "processorinfo.num_cores" }
+    ], params, prices);
+
+    const opportunities = findOptimizationOpportunities(licensed, params);
+
+    expect(opportunities.length).toBeGreaterThan(0);
+    expect(opportunities.every((opportunity) => typeof opportunity.rationale === "string" && opportunity.rationale.length > 20)).toBe(true);
+  });
+
   it("builds the three validated inventory source queries", () => {
     const queries = buildWindowsLicenseQueries();
 
@@ -179,6 +221,7 @@ describe("Windows license calculations", () => {
     expect(queries.esx).toContain("NODECOUNT(TRAVERSE Host:HostedSoftware:RunningSoftware:VirtualMachine");
     expect(queries.esx).toContain("NODES(TRAVERSE Host:HostedSoftware:RunningSoftware:VirtualMachine");
     expect(queries.esx).toContain("AS 'windows_vm_vcpus'");
+    expect(queries.esx).toContain("AS 'windows_vm_guest_os'");
     expect(queries.esx).toContain("#Hardware:ReferenceData:ReferenceData:HardwareReferenceData.model");
     expect(queries.esx).not.toContain("#Host:Hardware:ReferenceData");
   });
