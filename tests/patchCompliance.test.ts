@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPatchComplianceQueries } from "../src/tools/patchCompliance.js";
+import { buildPatchComplianceQueries, patchComplianceSchema, patchComplianceTools } from "../src/tools/patchCompliance.js";
 
 const baseInput = {
   kbList: ["KB4018271", "KB5000001"],
@@ -57,5 +57,46 @@ describe("buildPatchComplianceQueries", () => {
     });
 
     expect(nonCompliantQuery).toContain('os MATCHES "(?i)Windows Server 2019"');
+  });
+});
+
+
+describe("patchComplianceSchema", () => {
+  it("treats an empty hostsSoftwareMatching string as omitted", () => {
+    const parsed = patchComplianceSchema.parse({ kbList: ["KB1"], hostsSoftwareMatching: "" });
+    expect(parsed.hostsSoftwareMatching).toBeUndefined();
+  });
+});
+
+describe("discovery_patch_compliance_report", () => {
+  it("includes non-compliant host rows as a markdown table in textSummary", async () => {
+    const client = {
+      queryJson: async (query: string) => {
+        if (query.includes("Installed KBs")) {
+          return {
+            totalCount: 1,
+            rows: [{ Host: "srv-a", OS: "Windows Server 2019", "Installed KB Count": 1, "Installed KBs": ["KB1"] }]
+          };
+        }
+        return { totalCount: 2, rows: [{ Host: "srv-a" }, { Host: "srv-b" }] };
+      }
+    } as never;
+
+    const result = await patchComplianceTools(client).discovery_patch_compliance_report.handler({
+      kbList: ["KB1", "KB2"],
+      complianceMode: "all",
+      hostingFilter: "any",
+      limit: 100
+    });
+
+    const textBlock = result.content.find((block) => block.type === "text");
+    const structured = result.structuredContent as { summary: string };
+    expect(textBlock?.text).toContain(structured.summary);
+    expect(textBlock?.text).toContain("| Host | OS | Installed KB Count | Missing KBs |");
+    expect(textBlock?.text).toContain("KB2");
+  });
+
+  it("documents when hostsSoftwareMatching is applied", () => {
+    expect(patchComplianceTools({} as never).discovery_patch_compliance_report.description).toContain("ONLY used when hostingFilter is 'with' or 'without'");
   });
 });

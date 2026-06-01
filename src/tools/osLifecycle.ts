@@ -3,6 +3,9 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { kpiGrid } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { flatRowsOutputSchema } from "./outputSchemas.js";
+codex/add-two-new-compliance-and-os-lifecycle-tools-s96vnx
+import { appendRowsMarkdownSummary } from "./shared/markdownTable.js";
+
 
 const riskWindowDaysDefault = 182;
 const DAY_IN_NANOS = 864000000000;
@@ -140,7 +143,9 @@ export function osLifecycleTools(client: DiscoveryClient) {
           { label: "À risque", value: String(result.risk.atRisk), hint: "EOS dépassée", alert: result.risk.atRisk > 0 },
           { label: "Fenêtre", value: String(result.risk.window), hint: `${input.riskWindowDays} j`, alert: result.risk.window > 0 }
         ], { columns: 3 });
-        return renderVisual(svg, { name: "os_lifecycle_report", textSummary: result.summary, structuredContent: result });
+
+        return renderVisual(svg, { name: "os_lifecycle_report", textSummary: appendRowsMarkdownSummary(result.summary, rows), structuredContent: result });
+
       },
       isVisual: true as const
     }

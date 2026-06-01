@@ -5,14 +5,15 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { renderForceLayoutSvg, type PositionedEdge, type PositionedNode } from "../svg/forceLayoutRenderer.js";
 import { renderVisual } from "../svg/renderer.js";
 import { buildInteractiveHtml } from "../svg/interactiveGraph.js";
-import { resolveTarget, type ResolveTargetResult } from "../discovery/resolveTarget.js";
+import { RESOLVABLE_TARGET_KINDS, resolveTarget, type ResolveTargetResult } from "../discovery/resolveTarget.js";
 import { dependencyMapOutputSchema } from "./outputSchemas.js";
 import { CYTOSCAPE_VISUAL_DESCRIPTION } from "./visualInstructions.js";
 
 export const dependencyMapSchema = z.object({
   target: z.string().min(1),
+  targetKind: z.enum(RESOLVABLE_TARGET_KINDS).optional(),
   depth: z.number().int().min(1).max(3).default(1),
-  kinds: z.array(z.string().min(1)).optional(),
+  kinds: z.array(z.string().min(1)).optional().describe("Restricts which CI KINDS are DISPLAYED in the resulting graph (to reduce clutter). It does NOT affect how the target name is resolved — use targetKind for that. Leave empty to show all kinds."),
   maxNodes: z.number().int().min(5).max(200).default(60),
   iterations: z.number().int().min(50).max(600).default(200),
   linLog: z.boolean().default(false),
@@ -122,8 +123,8 @@ function resolutionError(target: string, resolution: Extract<ResolveTargetResult
     const text = `Rien trouvé pour ${target}.`;
     return { content: [{ type: "text", text }], structuredContent: { status: "none", target }, isError: true };
   }
-  const candidatesText = resolution.candidates.map((candidate) => `${candidate.name} (${candidate.kind})`).join(", ");
-  const text = `Cible ambiguë pour ${target}. Candidats: ${candidatesText}.`;
+  const candidatesText = resolution.candidates.map((candidate) => `${candidate.name} (${candidate.kind}) [id: ${candidate.id}]`).join(", ");
+  const text = `Cible ambiguë pour ${target}. Candidats: ${candidatesText}. Pour choisir, rappelez l'outil avec targetKind=<kind> OU target=<id exact>.`;
   return { content: [{ type: "text", text }], structuredContent: { status: "ambiguous", target, candidates: resolution.candidates }, isError: true };
 }
 
@@ -167,12 +168,12 @@ function layout(nodes: GraphNode[], edges: GraphEdge[], options: z.infer<typeof 
 export function dependencyMapTools(client: DiscoveryClient) {
   return {
     discovery_dependency_map: {
-      description: "DRAWS the actual dependency graph around a Discovery node. Returns multiple representations in the same response: a PNG image (base64), an SVG resource, and a self-contained interactive HTML resource (Cytoscape embedded inline, no external CDN). The interactive HTML includes CI-style icons per kind, mini-map, search, dark-mode toggle, hover tooltip and click-to-spotlight-neighbors. CHOOSING THE LAYOUT (`layout` param, applies ONLY to the interactive HTML — PNG/SVG always use ForceAtlas2): pass `layout='hierarchical'` when the user's question is about ARCHITECTURE, n-tier, application stack, or service model (top-down layered view). Pass `layout='concentric'` (default) when the question is about TOPOLOGY, MODELING, graph view, dependency map, blast-radius or impact analysis (focus at center, others on rings by distance). Pass `layout='cose'` only if explicitly asked for a generic force-directed look. If your client supports inline image rendering, render the PNG. If your client supports file artifacts or downloadable resources, present the HTML resource as a downloadable file the user can open in a browser. Do NOT attempt to summarize the raw HTML — it is meant for rendering, not reading.",
+      description: "DRAWS the actual dependency graph around a Discovery node. targetKind optionally disambiguates NAME resolution (BusinessService, BusinessApplicationInstance, Host or SoftwareInstance); alternatively pass target=<id exact>. kinds restricts which CI KINDS are DISPLAYED in the resulting graph (to reduce clutter) and does NOT affect target resolution — leave empty to show all kinds. Returns multiple representations in the same response: a PNG image (base64), an SVG resource, and a self-contained interactive HTML resource (Cytoscape embedded inline, no external CDN). The interactive HTML includes CI-style icons per kind, mini-map, search, dark-mode toggle, hover tooltip and click-to-spotlight-neighbors. CHOOSING THE LAYOUT (`layout` param, applies ONLY to the interactive HTML — PNG/SVG always use ForceAtlas2): pass `layout='hierarchical'` when the user's question is about ARCHITECTURE, n-tier, application stack, or service model (top-down layered view). Pass `layout='concentric'` (default) when the question is about TOPOLOGY, MODELING, graph view, dependency map, blast-radius or impact analysis (focus at center, others on rings by distance). Pass `layout='cose'` only if explicitly asked for a generic force-directed look. If your client supports inline image rendering, render the PNG. If your client supports file artifacts or downloadable resources, present the HTML resource as a downloadable file the user can open in a browser. Do NOT attempt to summarize the raw HTML — it is meant for rendering, not reading.",
       schema: dependencyMapSchema,
       outputSchema: dependencyMapOutputSchema,
       visualInstruction: CYTOSCAPE_VISUAL_DESCRIPTION,
       handler: async (input: z.infer<typeof dependencyMapSchema>) => {
-        const resolution = await resolveTarget(client, input.target);
+        const resolution = await resolveTarget(client, input.target, { targetKind: input.targetKind });
         if (resolution.status === "none" || resolution.status === "ambiguous") return resolutionError(input.target, resolution);
         const focusId = resolution.status === "node_id" ? resolution.id : resolution.id;
         const focusName = resolution.status === "node_id" ? input.target : resolution.name;

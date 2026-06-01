@@ -3,12 +3,15 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { kpiGrid } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { flatRowsOutputSchema } from "./outputSchemas.js";
+codex/add-two-new-compliance-and-os-lifecycle-tools-s96vnx
+import { rowsToMarkdownTable } from "./shared/markdownTable.js";
 
-const patchComplianceSchema = z.object({
+export const patchComplianceSchema = z.object({
   kbList: z.array(z.string().min(1)).min(1).max(100),
   complianceMode: z.enum(["all", "any"]).default("all"),
   osContains: z.string().min(1).optional(),
-  hostsSoftwareMatching: z.string().min(1).optional(),
+  hostsSoftwareMatching: z.string().optional().transform((value) => (value && value.trim() !== "" ? value : undefined)),
+
   hostingFilter: z.enum(["with", "without", "any"]).default("any"),
   limit: z.number().int().min(1).max(1000).default(100)
 }).strict();
@@ -106,7 +109,8 @@ function appliedFiltersFor(input: PatchComplianceInput): Record<string, unknown>
 export function patchComplianceTools(client: DiscoveryClient) {
   return {
     discovery_patch_compliance_report: {
-      description: "Run a Windows host patch compliance report directly in Discovery. Starts from Host nodes (virtual and bare-metal), optionally filters by OS regex and by hosted SoftwareInstance type/name regex, then checks Patch nodes whose name equals every/any KB in kbList. Returns visual KPIs plus non-compliant hosts with missing KBs. USE THIS DIRECTLY; do not delegate to discovery_search_data.",
+      description: "Run a Windows host patch compliance report directly in Discovery. Starts from Host nodes (virtual and bare-metal), optionally filters by OS regex and by hosted SoftwareInstance type/name regex. NOTE: hostsSoftwareMatching is ONLY used when hostingFilter is 'with' or 'without'. When hostingFilter='any' (default), OMIT hostsSoftwareMatching entirely — do not pass an empty string. Only set hostsSoftwareMatching together with hostingFilter='with' (hosts that RUN matching software) or 'without' (hosts that do NOT). Then checks Patch nodes whose name equals every/any KB in kbList. Returns visual KPIs plus non-compliant hosts with missing KBs. USE THIS DIRECTLY; do not delegate to discovery_search_data.",
+
       schema: patchComplianceSchema,
       outputSchema: flatRowsOutputSchema,
       handler: async (input: PatchComplianceInput) => {
@@ -135,7 +139,16 @@ export function patchComplianceTools(client: DiscoveryClient) {
           { label: "% conformes", value: `${compliancePct}%`, hint: input.complianceMode === "all" ? "Tous les KB" : "Au moins un KB", alert: compliancePct < 95 },
           { label: "Non conformes", value: String(nonCompliantCount), hint: uniqueKbList(input.kbList).join(", "), alert: nonCompliantCount > 0 }
         ], { columns: 3 });
-        return renderVisual(svg, { name: "patch_compliance_report", textSummary: result.summary, structuredContent: result });
+        const summaryRows = rows.map((row) => ({
+          Host: row.Host,
+          OS: row.OS,
+          "Installed KB Count": row["Installed KB Count"],
+          "Missing KBs": row["Missing KBs"]
+        }));
+        const rowsTable = rowsToMarkdownTable(summaryRows);
+        const textSummary = [result.summary, rowsTable].filter((part) => part.trim() !== "").join("\n\n");
+        return renderVisual(svg, { name: "patch_compliance_report", textSummary, structuredContent: result });
+
       },
       isVisual: true as const
     }

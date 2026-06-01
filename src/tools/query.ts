@@ -44,6 +44,7 @@ const SEARCH_DATA_DESCRIPTION = [
   "",
   "Clauses MUST appear in this order. WHERE filters the current set; ",
   "TRAVERSE moves to a new set of related nodes; SHOW selects output columns.",
+  "ORDER BY <attr-or-key-expr> [DESC] [, ...]  — ascending is DEFAULT, NO 'ASC' keyword (it errors). Only DESC reverses.",
   "",
   "  LOOKUP \"<node_id>\" [, \"<node_id>\", ...] [TRAVERSE ...] SHOW ...",
   "",
@@ -248,6 +249,10 @@ const SEARCH_DATA_DESCRIPTION = [
 
 const DSL_ERROR_HINTS: Array<{ match: RegExp; hint: string }> = [
   {
+    match: /unexpected (identifier )?.*'asc'/i,
+    hint: "There is no ASC keyword in Discovery DSL. Ascending is the default: write 'ORDER BY attr' (not 'ORDER BY attr asc'). Use DESC only for descending."
+  },
+  {
     match: /unexpected '(traverse|expand|step)'/i,
     hint: "TRAVERSE, EXPAND and STEP are top-level clauses, not functions. They appear at the same level as WHERE and SHOW, in the order: WHERE → TRAVERSE → ORDER BY → SHOW. If you want to count or list related nodes inside a SHOW clause, use NODECOUNT() or NODES() instead."
   },
@@ -326,6 +331,28 @@ const DSL_EXAMPLES: Record<string, DslExample[]> = {
       "title": "Count communicating software peers",
       "query": "SEARCH SoftwareInstance WHERE type MATCHES \"(?i)Database Server$\" SHOW name, NODECOUNT(TRAVERSE :ObservedCommunication::SoftwareInstance) AS peer_count",
       "explanation": "NODECOUNT counts peers reached via ObservedCommunication without returning a potentially large peer list."
+    }
+  ],
+  "ordering": [
+    {
+      "title": "Sort ascending (default — no ASC keyword)",
+      "query": "SEARCH Host ORDER BY name SHOW name, os",
+      "explanation": "Ascending is the DEFAULT. There is NO 'ASC' keyword in Discovery DSL — writing 'ORDER BY name asc' is a SYNTAX ERROR. Just omit it for ascending."
+    },
+    {
+      "title": "Sort descending with DESC",
+      "query": "SEARCH Host ORDER BY ram DESC SHOW name, ram",
+      "explanation": "DESC is the ONLY sort modifier. It follows the attribute. Ascending requires no keyword."
+    },
+    {
+      "title": "Multi-key sort",
+      "query": "SEARCH Person ORDER BY surname DESC, name SHOW name, surname",
+      "explanation": "Comma-separated keys. Each key may have its own DESC; ascending keys carry no keyword. Sorting is by the first key, ties broken by the next."
+    },
+    {
+      "title": "Sort by a traversed/bound attribute (oldest EOS first)",
+      "query": "SEARCH SoftwareInstance WHERE (#ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.end_support_date is defined) ORDER BY #ElementWithDetail:SupportDetail:SoftwareDetail:SupportDetail.end_support_date SHOW name, type",
+      "explanation": "ORDER BY accepts key expressions (traversed attributes), not just direct attributes. Placed AFTER WHERE/TRAVERSE and BEFORE SHOW. No ASC for ascending."
     }
   ],
   "lifecycle": [
@@ -458,6 +485,11 @@ export function validateDiscoveryQuery(query: string): QueryValidationResult {
   if (/\bcount\s*\(\s*traverse/i.test(query)) {
     errors.push("count(traverse ...) is not valid Discovery DSL.");
     hints.push("Use NODECOUNT(TRAVERSE ...) inside SHOW instead of wrapping TRAVERSE in count().");
+  }
+
+  if (/order\s+by\b[^]*\basc\b/i.test(query)) {
+    errors.push("'ASC' is not valid Discovery DSL.");
+    hints.push("Ascending is the default — remove 'asc'. Only 'DESC' is a valid sort modifier.");
   }
 
   const lookupIndex = keywordIndex(query, "LOOKUP");
