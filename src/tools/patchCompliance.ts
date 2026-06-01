@@ -3,6 +3,7 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { kpiGrid } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { flatRowsOutputSchema } from "./outputSchemas.js";
+codex/add-two-new-compliance-and-os-lifecycle-tools-s96vnx
 import { rowsToMarkdownTable } from "./shared/markdownTable.js";
 
 export const patchComplianceSchema = z.object({
@@ -10,6 +11,7 @@ export const patchComplianceSchema = z.object({
   complianceMode: z.enum(["all", "any"]).default("all"),
   osContains: z.string().min(1).optional(),
   hostsSoftwareMatching: z.string().optional().transform((value) => (value && value.trim() !== "" ? value : undefined)),
+
   hostingFilter: z.enum(["with", "without", "any"]).default("any"),
   limit: z.number().int().min(1).max(1000).default(100)
 }).strict();
@@ -108,6 +110,7 @@ export function patchComplianceTools(client: DiscoveryClient) {
   return {
     discovery_patch_compliance_report: {
       description: "Run a Windows host patch compliance report directly in Discovery. Starts from Host nodes (virtual and bare-metal), optionally filters by OS regex and by hosted SoftwareInstance type/name regex. NOTE: hostsSoftwareMatching is ONLY used when hostingFilter is 'with' or 'without'. When hostingFilter='any' (default), OMIT hostsSoftwareMatching entirely — do not pass an empty string. Only set hostsSoftwareMatching together with hostingFilter='with' (hosts that RUN matching software) or 'without' (hosts that do NOT). Then checks Patch nodes whose name equals every/any KB in kbList. Returns visual KPIs plus non-compliant hosts with missing KBs. USE THIS DIRECTLY; do not delegate to discovery_search_data.",
+
       schema: patchComplianceSchema,
       outputSchema: flatRowsOutputSchema,
       handler: async (input: PatchComplianceInput) => {
@@ -145,6 +148,7 @@ export function patchComplianceTools(client: DiscoveryClient) {
         const rowsTable = rowsToMarkdownTable(summaryRows);
         const textSummary = [result.summary, rowsTable].filter((part) => part.trim() !== "").join("\n\n");
         return renderVisual(svg, { name: "patch_compliance_report", textSummary, structuredContent: result });
+
       },
       isVisual: true as const
     }

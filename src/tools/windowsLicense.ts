@@ -90,18 +90,22 @@ export interface LicensedHost extends ResolvedHost {
   licensePacks?: number;
   windowsWorkloads: number;
   recommendedEdition: "standard" | "datacenter" | "none" | "undetermined";
+
   requiredWindowsVersion?: string;
   costStandard?: number;
   costDatacenter?: number;
 }
 
 export interface OptimizationOpportunity {
+
   type: "redundant_standard_on_datacenter_host" | "underloaded_datacenter_host" | "consolidation_candidate" | "windows_affinity_pod" | "baremetal_to_datacenter_migration" | "version_consolidation_via_downgrade";
+
   scope: { hostId?: string; clusterId?: string; hostName?: string; clusterName?: string };
   currentCost: number;
   optimizedCost: number;
   saving: number;
   evidence: string;
+
   rationale: string;
 }
 
@@ -137,6 +141,7 @@ export interface ClusterLicensingRow {
   savingDowngrade: number;
   partial: boolean;
   undeterminedHostIds: string[];
+
 }
 
 export interface WindowsLicenseReport {
@@ -144,6 +149,7 @@ export interface WindowsLicenseReport {
   hosts: LicensedHost[];
   optimizationOpportunities: OptimizationOpportunity[];
   parameters: LicenseParameters & { priceAssumptions: PriceAssumptions };
+
   versionLicensing: VersionLicensingRow[];
   editionBreakdown: EditionBreakdown;
   clusterLicensing: ClusterLicensingRow[];
@@ -153,9 +159,11 @@ export interface WindowsLicenseReport {
     licenseableHosts: number;
     licenseableCores: number;
     estimatedMedianCost: number;
+
     savingsAcquired: number;
     savingsConsolidation: number;
     savingsBaremetalMigration: number;
+
     potentialSavings: number;
     undeterminedHosts: number;
   };
