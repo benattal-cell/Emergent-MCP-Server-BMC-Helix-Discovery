@@ -13,6 +13,9 @@ export type ResolveTargetResult =
   | { status: "unique"; id: string; name: string; kind: string }
   | { status: "ambiguous"; candidates: ResolvedCandidate[] };
 
+export const RESOLVABLE_TARGET_KINDS = ["BusinessService", "BusinessApplicationInstance", "Host", "SoftwareInstance"] as const;
+export type ResolvableTargetKind = typeof RESOLVABLE_TARGET_KINDS[number];
+
 const LIVE_KINDS = ["BusinessService", "BusinessApplicationInstance", "Host"] as const;
 
 export function looksLikeNodeId(value: string): boolean {
@@ -73,7 +76,7 @@ async function liveLookup(client: DiscoveryClient, target: string): Promise<Reso
   return [...candidates.values()];
 }
 
-export async function resolveTarget(client: DiscoveryClient, input: string): Promise<ResolveTargetResult> {
+export async function resolveTarget(client: DiscoveryClient, input: string, options: { targetKind?: ResolvableTargetKind } = {}): Promise<ResolveTargetResult> {
   const target = input.trim();
   if (looksLikeNodeId(target)) return { status: "node_id", id: target };
 
@@ -84,7 +87,7 @@ export async function resolveTarget(client: DiscoveryClient, input: string): Pro
   const liveCandidates = await liveLookup(client, target);
   for (const candidate of liveCandidates) addCandidate(candidates, candidate);
 
-  const resolved = [...candidates.values()];
+  const resolved = [...candidates.values()].filter((candidate) => !options.targetKind || candidate.kind === options.targetKind);
   if (cachedTypeMatches.length > 0 && resolved.length === 0) return { status: "none", target };
   if (resolved.length === 0) return { status: "none", target };
   if (resolved.length === 1) return { status: "unique", ...resolved[0] };

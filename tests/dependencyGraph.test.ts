@@ -71,6 +71,10 @@ describe("discovery_dependency_map", () => {
     expect(result.isError).toBe(true);
     expect(result.structuredContent).toMatchObject({ status: "ambiguous" });
     expect(result.structuredContent.candidates).toHaveLength(2);
+    expect(result.content[0].text).toContain("[id: bs-1]");
+    expect(result.content[0].text).toContain("[id: host-1]");
+    expect(result.content[0].text).toContain("targetKind=<kind>");
+    expect(result.content[0].text).toContain("target=<id exact>");
     expect(result.content.some((block) => block.type === "image" || block.resource)).toBe(false);
     expect(client.getNodeGraph).not.toHaveBeenCalled();
   });

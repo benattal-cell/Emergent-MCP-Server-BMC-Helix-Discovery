@@ -2,14 +2,15 @@ import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
 import { buildServiceArchitectureHtml, buildServiceArchitectureSvg, type ServiceEdge, type ServiceNode } from "../svg/serviceArchitectureHtml.js";
 import { renderVisual, type VisualContentBlock } from "../svg/renderer.js";
-import { resolveTarget, type ResolveTargetResult } from "../discovery/resolveTarget.js";
+import { RESOLVABLE_TARGET_KINDS, resolveTarget, type ResolveTargetResult } from "../discovery/resolveTarget.js";
 import { serviceArchitectureOutputSchema } from "./outputSchemas.js";
 
 export const serviceArchitectureSchema = z.object({
   serviceName: z.string().min(1),
+  targetKind: z.enum(RESOLVABLE_TARGET_KINDS).optional(),
   depth: z.number().int().min(0).default(2),
   title: z.string().min(1).optional(),
-  kindFilter: z.array(z.string().min(1)).optional(),
+  kindFilter: z.array(z.string().min(1)).optional().describe("Restricts which CI kinds are displayed in the architecture graph (to reduce clutter). It does NOT affect how serviceName is resolved — use targetKind for that."),
   maxNodes: z.number().int().min(5).max(500).default(100)
 }).strict();
 
@@ -148,19 +149,19 @@ function resolutionError(target: string, resolution: Extract<ResolveTargetResult
     const text = `Rien trouvé pour ${target}.`;
     return { content: [{ type: "text", text }], structuredContent: { status: "none", target }, isError: true };
   }
-  const candidatesText = resolution.candidates.map((candidate) => `${candidate.name} (${candidate.kind})`).join(", ");
-  const text = `Cible ambiguë pour ${target}. Candidats: ${candidatesText}.`;
+  const candidatesText = resolution.candidates.map((candidate) => `${candidate.name} (${candidate.kind}) [id: ${candidate.id}]`).join(", ");
+  const text = `Cible ambiguë pour ${target}. Candidats: ${candidatesText}. Pour choisir, rappelez l'outil avec targetKind=<kind> OU target=<id exact>.`;
   return { content: [{ type: "text", text }], structuredContent: { status: "ambiguous", target, candidates: resolution.candidates }, isError: true };
 }
 
 export function serviceArchitectureTools(client: DiscoveryClient) {
   return {
     discovery_service_architecture: {
-      description: "Generate one or more self-contained D3 hierarchical architecture diagrams from a BusinessService or BusinessApplicationInstance name. Resolves node ids automatically via HAS SUBWORD lookup, generates one diagram per match. Returns native MCP visual content: PNG image, SVG resource, and self-contained D3 HTML resource. Use kindFilter to restrict node kinds and avoid graph explosion on large services (e.g. [\"BusinessService\",\"BusinessApplicationInstance\",\"Host\",\"SoftwareInstance\"]). Prefer discovery_dependency_map for mesh/topology/blast-radius graphs.",
+      description: "Generate one or more self-contained D3 hierarchical architecture diagrams from a BusinessService, BusinessApplicationInstance, Host or SoftwareInstance name, or from an exact Discovery nodeId. Use targetKind to disambiguate NAME resolution, or pass serviceName=<id exact>. Returns native MCP visual content: PNG image, SVG resource, and self-contained D3 HTML resource. kindFilter restricts which CI kinds are DISPLAYED in the architecture graph (to reduce clutter). It does NOT affect how serviceName is resolved — use targetKind for that. Prefer discovery_dependency_map for mesh/topology/blast-radius graphs.",
       schema: serviceArchitectureSchema,
       outputSchema: serviceArchitectureOutputSchema,
       handler: async (input: z.infer<typeof serviceArchitectureSchema>) => {
-        const resolution = await resolveTarget(client, input.serviceName);
+        const resolution = await resolveTarget(client, input.serviceName, { targetKind: input.targetKind });
         if (resolution.status === "none" || resolution.status === "ambiguous") return resolutionError(input.serviceName, resolution);
         const root = resolution.status === "node_id"
           ? { id: resolution.id, name: input.serviceName }

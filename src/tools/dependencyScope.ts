@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
 import { renderTopologyVisual } from "../svg/topologyVisual.js";
-import { resolveTarget, type ResolveTargetResult } from "../discovery/resolveTarget.js";
+import { RESOLVABLE_TARGET_KINDS, resolveTarget, type ResolveTargetResult } from "../discovery/resolveTarget.js";
 import { dependencyScopeOutputSchema } from "./outputSchemas.js";
 import { SVG_VISUAL_DESCRIPTION } from "./visualInstructions.js";
 
 export const dependencyScopeSchema = z.object({
-  target: z.string().min(1)
+  target: z.string().min(1),
+  targetKind: z.enum(RESOLVABLE_TARGET_KINDS).optional()
 }).strict();
 
 interface ScopeResult {
@@ -27,8 +28,8 @@ function resolutionError(target: string, resolution: Extract<ResolveTargetResult
     const text = `Rien trouvé pour ${target}.`;
     return { content: [{ type: "text", text }], structuredContent: { status: "none", target }, isError: true };
   }
-  const candidatesText = resolution.candidates.map((candidate) => `${candidate.name} (${candidate.kind})`).join(", ");
-  const text = `Cible ambiguë pour ${target}. Candidats: ${candidatesText}.`;
+  const candidatesText = resolution.candidates.map((candidate) => `${candidate.name} (${candidate.kind}) [id: ${candidate.id}]`).join(", ");
+  const text = `Cible ambiguë pour ${target}. Candidats: ${candidatesText}. Pour choisir, rappelez l'outil avec targetKind=<kind> OU target=<id exact>.`;
   return { content: [{ type: "text", text }], structuredContent: { status: "ambiguous", target, candidates: resolution.candidates }, isError: true };
 }
 
@@ -43,12 +44,12 @@ function inferDirection(link: Record<string, unknown>, focusId: string): "in" | 
 export function dependencyScopeTools(client: DiscoveryClient) {
   return {
     discovery_dependency_scope: {
-      description: "Lightweight probe. Given a NAME (BusinessService, BusinessApplicationInstance, Host or SoftwareInstance) OR a Discovery nodeId, returns ONLY the SIZE of the topology around it — node counts by kind, relation counts by kind, in/out fan — WITHOUT drawing the graph. Use it BEFORE discovery_dependency_map to estimate graph size and pick a sensible depth. For the actual visual graph, use discovery_dependency_map. Returns a statistics summary card to render inline (not the interactive graph).",
+      description: "Lightweight probe. Given a NAME (BusinessService, BusinessApplicationInstance, Host or SoftwareInstance) OR a Discovery nodeId, returns ONLY the SIZE of the topology around it (node/relation counts by kind, in/out fan) WITHOUT drawing the graph. Use BEFORE discovery_dependency_map to estimate size and pick a depth. For the actual visual graph, use discovery_dependency_map. Returns a statistics summary card to render inline. Use targetKind to disambiguate NAME resolution, or pass target=<id exact>.",
       schema: dependencyScopeSchema,
       outputSchema: dependencyScopeOutputSchema,
       visualInstruction: SVG_VISUAL_DESCRIPTION,
       handler: async (input: z.infer<typeof dependencyScopeSchema>) => {
-        const resolution = await resolveTarget(client, input.target);
+        const resolution = await resolveTarget(client, input.target, { targetKind: input.targetKind });
         if (resolution.status === "none" || resolution.status === "ambiguous") return resolutionError(input.target, resolution);
         const id = resolution.status === "node_id" ? resolution.id : resolution.id;
         const name = resolution.status === "node_id" ? undefined : resolution.name;
