@@ -4,9 +4,9 @@ import { kpiGrid } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { dslQueryOutputSchema, flatRowsOutputSchema } from "./outputSchemas.js";
 import { appendRowsMarkdownSummary } from "./shared/markdownTable.js";
+import { DAY_IN_NANOS } from "./shared/time.js";
 
 const riskWindowDaysDefault = 182;
-const DAY_IN_NANOS = 864000000000;
 
 const softwareTypeEnum = z.enum(["software", "OS", "hardware"]);
 

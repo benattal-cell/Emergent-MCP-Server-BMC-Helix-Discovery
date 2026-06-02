@@ -8,6 +8,16 @@ const baseInput = {
 };
 
 describe("buildLifecycleQuery", () => {
+  it("builds the risk-window from riskWindowDays", () => {
+    const query = buildLifecycleQuery({
+      ...baseInput,
+      riskWindowDays: 30
+    });
+
+    expect(query).toContain("currentTime() + 2592000000000000");
+    expect(query).toContain("EOS less than 30 days away");
+  });
+
   it("uses nodecount traversal and has subword for hostNameContains", () => {
     const query = buildLifecycleQuery({
       ...baseInput,
