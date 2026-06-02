@@ -183,7 +183,6 @@ const elements = [
 const cy = cytoscape({
   container: document.getElementById("cy"),
   elements,
-  wheelSensitivity: 0.2,
   style: [
     { selector: "node", style: {
       "background-color": "data(color)",
