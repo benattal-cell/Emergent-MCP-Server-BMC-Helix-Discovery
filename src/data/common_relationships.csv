@@ -1,0 +1,55 @@
+# discovery_common_relationships.csv;;;;;;
+# Référentiel curé des chemins de traversée RÉELLEMENT utilisés (pas l'espace du possible de la taxonomy).;;;;;;
+# Source de vérité = connaissance métier; PAS génération auto depuis la taxonomy.;;;;;
+#;;;;;;
+# Logique de matching attendue côté assistant :;;;;;;
+#   1) FILTRE  : keywords (présence d'au moins un mot; fr/en) → quelles lignes sont candidates;;;;;
+#   2) DÉCIDE  : from_kind / to_kind → la ligne dont les kinds collent à l'objet résolu et à la cible;;;;;;
+#   3) TIE-BREAK : priority (golden > common > occasional);;;;;;
+# Le nombre de keywords ne compte JAMAIS — c'est un aimant; pas un score.;;;;;
+#;;;;;;
+# À COMPLÉTER PAR L'UTILISATEUR : les colonnes from_kind; traverse_spec; to_kind.;;;;
+# Garder la vérification taxonomy pour tout chemin ABSENT de ce fichier.;;;;;;
+#;;;;;;
+section;from_kind;traverse_spec;to_kind;priority;keywords;note
+itom;BusinessService;Definition:DefinitionContainment:IncludedItem:;BusinessApplicationInstance;golden;service,business service,service métier,service map,cartographie service,carto,composition service, application;Point d'entrée cartographie : service métier → applications qui le composent
+itom;BusinessService;Definition:DefinitionContainment:IncludedItem:;Cluster;golden;service, business service, cluster, mod�le de service, carto, composition service, membre;association entre des clusters (haute disponibilit�) et un service
+itom;BusinessService;SoftwareContainer:SoftwareContainment:ContainedSoftware:;LoadBalancerService;golden;VIP, load balancer service, pool, IP, URL, service, application;Url ou IP associ� au service
+itom;BusinessService;SoftwareContainer:SoftwareContainment:ContainedSoftware:;SoftwareInstance;golden;application,businessapp,bai,brique applicative,composant application,application instance;Application métier → SoftwareInstances qui la composent
+itom;BusinessService;Definition:DefinitionContainment:IncludedItem:;BusinessService;golden;service,business service,service métier,service map,cartographie service,carto,composition service;Point d'entrée cartographie : service métier � service m�tier qui le composent
+itom;BusinessService;Definition:DefinitionContainment:IncludedItem:;Host;golden;service, h�te, host, serveurs, ressource, compute, server;Hosts h�bergeant le service
+itom;BusinessService;Definition:DefinitionContainment:IncludedItem:;TechnicalService;golden;service,business service,service métier,service map,cartographie service,carto,composition service, service technique, technical service;Point d'entrée cartographie : service métier � service technique qui le composent
+itom;Host;Host:HostedSoftware:RunningSoftware:;SoftwareInstance;golden;host,hôte,serveur,server,logiciel,software,running software,logiciel installé,logiciel d'un hôte;Hôte → logiciels hébergés / exécutés dessus
+itom;SoftwareInstance;ServiceProvide:SoftwareService:Service:;Cluster;golden;vcenter,centre virtuel,virtualisation,virtu,vmware,cluster vcenter;vCenter (SoftwareInstance) → ses clusters · racine = SoftwareInstance, PAS un Host
+itom;Cluster;HostContainer:HostContainment:ContainedHost:;Host;golden;cluster,esx,esxi,hyperviseur,hypervisor,hôte esx,noeud cluster,membre cluster;Cluster → hôtes ESX contenus
+itom;VirtualMachine;HostContainer:HostContainment:ContainedHost:;Host;golden;vm,machine virtuelle,virtual machine,hôte physique,physical host,placement,sur quel hôte,où tourne;VM → hôte physique qui l'héberge (placement virtu)
+itom;SoftwareInstance;Connecting:ObservedCommunication:Listening:;SoftwareInstance;golden;communication,dépendance,depends on,dépend de,flux,peer,qui communique,observed communication,trafic réseau applicatif;SoftwareInstance → SoftwareInstance via communications observées (dépendances applicatives)
+itom;SoftwareInstance;ElementWithDetail:Detail:Detail;Detail;common;paramater, database, configuration, parametre, base de donn�es;Configuration de la basede donn�es  souvent utile pour la compliance licence entre autres
+itom;SoftwareInstance;ElementWithDetail:Detail:Detail;Database;common;base de données,database,bdd,db,instance oracle,sql server,schéma,datafile;Instance de base de données → hôte / SI qui la porte
+itom;Host;Mounter:FileSystemMount:MountedFileSystem:;FileSystem;common;disque,disk,partition,filesystem,système de fichiers,volume disque,stockage local;Avoir acc�s aux informations des filesystems d'un  h�te
+itom;FileSystem;Consumer:StorageUse:Provider:;DiskDrive;common;diskdrive, space allocation, mounted;avoir acc�s aux informations du disque associ� � un Filesystem
+itom;StorageDevice;Manager:Management:ManagedElement:;ManagedStorageSystem;common;stockage,storage,san, device, system, nas;System de Stockage et Device associ�
+itom;ManagedStorageSystem;Container:Containment:ContainedPool:;StoragePool;common;storagepool, pool, storage, stockage, capacit�, allocation;acc�s au pool de stockage sur un system de stockage
+itom;ManagedStorageSystem;Provider:StorageUse:Consumer:;Host;common;storage, stockage, system, host, consumer, allocation;connaitre les hosts qui consomment ce syst�me de stockage
+itom;Host;DeviceWithInterface:DeviceInterface:InterfaceOfDevice:;NetworkInterface;occasional;ip, mac adress, mac, network, vlan;Hôte → interfaces / adresses réseau
+itam;Host;Host:Detail:Hardware:;ProcessorInfo;golden;cpu,coeurs,cores,socket,processeur,licence,licensing,métré,métrage,hardware,matériel;Hôte → matériel (CPU / cœurs / sockets) pour le métrage de licences
+itam;Host;ContainedHost:HostContainment:HostContainer:;VirtualMachine;golden;licence,licensing,vm par hôte,hôte physique,métrage,sous-capacité,sub-capacity,oracle,microsoft,comptage licence;Hôte physique → VMs hébergées (comptage licences en sous-capacité)
+itam;SoftwareInstance;ElementWithDetail:SupportDetail:SoftwareDetail:;SupportDetail;golden;éditeur,publisher,vendor,fournisseur,marque,fabricant logiciel,version logiciel;SoftwareInstance → éditeur / version (référentiel licences & gouvernance)
+itam;SoftwareInstance;ElementWithDetail:SupportDetail:SoftwareDetail:;SupportDetail;golden;fin de vie,eol,eosl,end of life,obsolescence,support,supportabilité,version obsolète,cycle de vie logiciel,lifecycle;SoftwareInstance → données de cycle de vie (EOL / EOSL) du logiciel
+itam;Host;ElementWithDetail:SupportDetail:OSDetail:;SupportDetail;golden;os,système d'exploitation,operating system,windows,linux,fin de support os,eol os,version os,patch level os;Hôte → OS et son cycle de vie / support
+itam;Host;Host:HostedSoftware:InstalledSoftware:;Patch;common;patch,correctif,kb,mise à jour,update,conformité,patch compliance,windows update,niveau de patch;Hôte Windows → correctifs / patchs installés (conformité)
+itam;Host;Host:HostedSoftware:InstalledSoftware:;Package;common;package, linux, unix, version, obsolescence, installation, software, windows;Host et ses packages install�s. Version disponible
+itam;Host;OwnItem:Ownership::;Person;common;propriétaire,owner,business owner,responsable,équipe propriétaire,rattachement métier;CI → propriétaire / responsable métier
+itam;Host;ElementInLocation:Location:Location:;Location;common;location, localisation, position, datacenter, pays, country, place;Localisation d'un h�te
+discovery;Host;Hardware:ReferenceData:ReferenceData:;HardwareReferenceData;golden;hardware,matériel,modèle machine,hardware reference,référence matériel,specs,caractéristiques machine;Hôte → HardwareReferenceData (specs matérielles · vraie source de résolution, pas un fallback)
+discovery;Host/NetworkDevice/Printer/SNMPDevice/CloudProvider;:::;DiscoveryAccess;occasional;scan,découverte,discovery access,scanné,credential,sondé,dernier scan,fraîcheur,scan status;CI → infos de scan / découverte (fraîcheur, accès) · un graphe vide = trou de scan, pas un défaut de modèle
+discovery;Host/NetworkDevice/Printer/SNMPDevice/CloudProvider;:::;DiscoveryAccess;occasional;detail,inféré,inferred,élément inféré,donnée brute,detail node,bas niveau;Nœud Detail → éléments inférés (exploration bas niveau, rare)
+#;;;;;;
+# === ANTI-PATTERNS (lignes de garde; à ne PAS suivre) ===;;;;;
+# anti;"vCenter ≠ Host : le vCenter est un SoftwareInstance — ne jamais cibler ""Host vCenter → InferredElement""";;;;;
+# anti;vCenter → ESX passe TOUJOURS par Cluster (vCenter→Cluster→Host); jamais en direct;;;;
+# anti;Graphe service/architecture : racine = BusinessService puis BusinessApplicationInstance — JAMAIS SoftwareInstance/Host en racine (explosion du graphe à depth 2+);;;;;
+# anti;discovery_search_data n'est pas un fallback générique — il a un rôle défini; ne pas l'improviser pour un cas couvert ici;;;;
+# anti;Données partielles = problème de scan/permissions, pas une contrainte de design : ne pas concevoir autour;;;;;
+# anti;Pour le comptage d'un nombre d'installation d'un produit il suffit de chercher le nombre de Package, ou si vous cherchez les softwares qui tournent sur la machine les SoftwareInstance;;;;;
+# anti;Pour connaitre le propri�taire, business owner, ou mainteneur c'est les champs ;;;;;
