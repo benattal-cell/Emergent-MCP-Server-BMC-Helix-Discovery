@@ -10,6 +10,7 @@ import { queryTools } from "./tools/query.js";
 import { dataSearchTools } from "./tools/dataSearch.js";
 import { hostTools } from "./tools/hosts.js";
 import { taxonomyTools } from "./tools/taxonomy.js";
+import { commonRelationshipsTools } from "./tools/commonRelationships.js";
 import { cveTools } from "./tools/cve.js";
 import { graphTools } from "./tools/graph.js";
 import { lifecycleTools } from "./tools/lifecycle.js";
@@ -164,6 +165,7 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...dataSearchTools(client),
     ...hostTools(client),
     ...taxonomyTools(client),
+    ...commonRelationshipsTools(),
     ...cveTools(client, config),
     ...graphTools(client),
     ...lifecycleTools(client),
