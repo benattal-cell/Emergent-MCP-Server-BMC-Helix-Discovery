@@ -237,7 +237,7 @@ function measure(name){return Math.max(120, String(name||'').length*7+24)}
 function setTipRows(d){const rows=[["Type",d.data.type],["Port",d.data.port],["Vendor",d.data.publisher],["Duplicate",d.data.duplicateOf?'duplicated from '+d.data.duplicateOf:null]].filter(([,v])=>v!==undefined&&v!==null&&String(v).trim()!==''); const extra=document.querySelector('#tip .tip-extra'); extra.innerHTML=''; rows.forEach(([label,value])=>{const row=document.createElement('div');row.className='tip-row';const l=document.createElement('span');l.className='tip-label';l.textContent=label+' :';const v=document.createElement('span');v.textContent=String(value);row.appendChild(l);row.appendChild(v);extra.appendChild(row);});}
 if(window.__D3_BUNDLE_MISSING__||typeof d3==='undefined'){document.getElementById('missing').style.display='block'}else{
 const root=d3.hierarchy(PAYLOAD.tree);const width=Math.max(1000,(PAYLOAD.leafCount||1)*220);const height=Math.max(620,(PAYLOAD.maxDepth+1)*130+160);const svg=d3.select('#chart').attr('viewBox',[0,0,width,height]);svg.select('#static-graph').remove();const g=svg.append('g');
-const zoom=d3.zoom().scaleExtent([0.1,4]).on('zoom',(ev)=>g.attr('transform',ev.transform));svg.call(zoom);
+const zoom=d3.zoom().scaleExtent([0.05,12]).on('zoom',(ev)=>g.attr('transform',ev.transform));svg.call(zoom);
 d3.tree().size([width-160,height-180])(root);root.each(d=>{d.x+=80;d.y+=110});
 g.selectAll('path.link').data(root.links()).join('path').attr('class','link').attr('d',d3.linkVertical().x(d=>d.x).y(d=>d.y));
 const node=g.selectAll('g.node').data(root.descendants()).join('g').attr('class','node').attr('transform',d=>'translate('+d.x+','+d.y+')');
