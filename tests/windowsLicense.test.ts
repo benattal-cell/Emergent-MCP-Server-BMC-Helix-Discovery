@@ -82,8 +82,8 @@ describe("Windows license version parsing", () => {
 
   it("orders R2 families above their base versions", async () => {
     const report = await buildWindowsLicenseReportFromHosts([
-      host("cluster-2008", { clusterId: "cluster-order", clusterName: "Cluster Order", processorInfoNumCores: 40, windowsVmCount: 2, guestWindowsOsList: ["Microsoft Windows Server 2008 Standard", "Microsoft Windows Server 2008 R2 Enterprise"] }),
-      host("cluster-2012", { clusterId: "cluster-order", clusterName: "Cluster Order", processorInfoNumCores: 40, windowsVmCount: 2, guestWindowsOsList: ["Microsoft Windows Server 2012 Standard", "Microsoft Windows Server 2012 R2 Standard"] })
+      host("cluster-2008", { clusterId: "cluster-order", clusterName: "Cluster Order", processorInfoNumCores: 40, windowsVmCount: 2, windowsVmOsVersions: ["Microsoft Windows Server 2008 Standard", "Microsoft Windows Server 2008 R2 Enterprise"] }),
+      host("cluster-2012", { clusterId: "cluster-order", clusterName: "Cluster Order", processorInfoNumCores: 40, windowsVmCount: 2, windowsVmOsVersions: ["Microsoft Windows Server 2012 Standard", "Microsoft Windows Server 2012 R2 Standard"] })
     ], params, { costRows, cpuLookup: vi.fn().mockResolvedValue(null) });
 
     expect(report.hosts.find((candidate) => candidate.id === "cluster-2008")?.requiredWindowsVersion).toBe("2008 R2");
@@ -239,6 +239,21 @@ describe("Windows license calculations", () => {
     expect(report.markdownReport).toContain("## Hôtes à vérifier (scan/permissions)");
   });
 
+  it("uses injected ESX guest OS versions to select the highest required Windows version", async () => {
+    const report = await buildWindowsLicenseReportFromHosts([
+      host("esx-injected-versions", {
+        processorInfoNumCores: 40,
+        windowsVmCount: 2,
+        windowsVmOsVersions: [
+          "Microsoft Windows Server 2016 Datacenter",
+          "Microsoft Windows Server 2019 Standard"
+        ]
+      })
+    ], params, { costRows, cpuLookup: vi.fn().mockResolvedValue(null) });
+
+    expect(report.hosts.find((h) => h.id === "esx-injected-versions")).toMatchObject({ requiredWindowsVersion: "2019" });
+  });
+
   it("attaches a business rationale to every optimization opportunity type", () => {
     const licensed = calculateLicenses([
       { ...host("redundant-rationale", { windowsVmCount: 20, hasDatacenterLicense: true, hasStandardLicenses: true }), cores: 40, processors: 2, coreSource: "processorinfo.num_cores" },
@@ -262,10 +277,10 @@ describe("Windows license calculations", () => {
 
   it("builds strict cluster licensing costs and downgrade consolidation opportunity", async () => {
     const report = await buildWindowsLicenseReportFromHosts([
-      host("cluster-esx-1", { clusterId: "cluster-strict", clusterName: "Cluster Strict", processorInfoNumCores: 40, windowsVmCount: 2, guestWindowsOsList: ["Microsoft Windows Server 2012 R2 Standard"], guestWindowsVcpus: 16 }),
-      host("cluster-esx-2", { clusterId: "cluster-strict", clusterName: "Cluster Strict", processorInfoNumCores: 40, windowsVmCount: 2, guestWindowsOsList: ["Microsoft Windows Server 2016 Datacenter"], guestWindowsVcpus: 16 }),
-      host("cluster-esx-3", { clusterId: "cluster-strict", clusterName: "Cluster Strict", processorInfoNumCores: 40, windowsVmCount: 2, guestWindowsOsList: ["Microsoft Windows Server 2019 Standard"], guestWindowsVcpus: 16 }),
-      host("cluster-esx-4", { clusterId: "cluster-strict", clusterName: "Cluster Strict", processorInfoNumCores: 40, windowsVmCount: 2, guestWindowsOsList: ["Microsoft Windows Server 2012 R2 Standard"], guestWindowsVcpus: 16 })
+      host("cluster-esx-1", { clusterId: "cluster-strict", clusterName: "Cluster Strict", processorInfoNumCores: 40, windowsVmCount: 2, windowsVmOsVersions: ["Microsoft Windows Server 2012 R2 Standard"], guestWindowsVcpus: 16 }),
+      host("cluster-esx-2", { clusterId: "cluster-strict", clusterName: "Cluster Strict", processorInfoNumCores: 40, windowsVmCount: 2, windowsVmOsVersions: ["Microsoft Windows Server 2016 Datacenter"], guestWindowsVcpus: 16 }),
+      host("cluster-esx-3", { clusterId: "cluster-strict", clusterName: "Cluster Strict", processorInfoNumCores: 40, windowsVmCount: 2, windowsVmOsVersions: ["Microsoft Windows Server 2019 Standard"], guestWindowsVcpus: 16 }),
+      host("cluster-esx-4", { clusterId: "cluster-strict", clusterName: "Cluster Strict", processorInfoNumCores: 40, windowsVmCount: 2, windowsVmOsVersions: ["Microsoft Windows Server 2012 R2 Standard"], guestWindowsVcpus: 16 })
     ], params, { costRows, cpuLookup: vi.fn().mockResolvedValue(null) });
 
     const cluster = report.clusterLicensing.find((row) => row.clusterId === "cluster-strict");
@@ -317,7 +332,7 @@ describe("Windows license calculations", () => {
     expect(opportunities.some((opportunity) => opportunity.type === "baremetal_to_datacenter_migration")).toBe(false);
   });
 
-  it("builds the three validated inventory source queries", () => {
+  it("builds the validated inventory source queries", () => {
     const queries = buildWindowsLicenseQueries();
 
     expect(queries.esx).toContain('SEARCH SoftwareInstance WHERE type HAS SUBWORD "vCenter"');
@@ -329,9 +344,14 @@ describe("Windows license calculations", () => {
     expect(queries.esx).toContain("NODES(TRAVERSE Host:HostedSoftware:RunningSoftware:VirtualMachine");
     expect(queries.esx).toContain("AS 'windows_vm_vcpus'");
     expect(queries.esx).toContain("AS 'windows_vm_guest_os'");
-    expect(queries.esx).toContain("guest_windows_os_list");
-    expect(queries.esx).toContain("guest_windows_vcpus");
+    expect(queries.esx).not.toContain("guest_windows_os_list");
+    expect(queries.esx).not.toContain("guest_windows_vcpus");
     expect(queries.esx).toContain('WHERE os HAS SUBWORD "ESX" or os HAS SUBWORD "ESXi"');
+    expect(queries.esxGuestVersions).toContain("TRAVERSE Host:HostedSoftware:RunningSoftware:VirtualMachine");
+    expect(queries.esxGuestVersions).toContain("TRAVERSE HostContainer:HostContainment:ContainedHost:Host WHERE os_type = \"Windows\"");
+    expect(queries.esxGuestVersions.indexOf("TRAVERSE Host:HostedSoftware:RunningSoftware:VirtualMachine")).toBeLessThan(queries.esxGuestVersions.lastIndexOf("TRAVERSE HostContainer:HostContainment:ContainedHost:Host"));
+    expect(queries.esxGuestVersions).toContain("AS 'esx_id'");
+    expect(queries.esxGuestVersions).toContain("AS 'guest_windows_os'");
     expect(queries.esx).toContain("#Hardware:ReferenceData:ReferenceData:HardwareReferenceData.model");
     expect(queries.esx).not.toContain("#Host:Hardware:ReferenceData");
   });

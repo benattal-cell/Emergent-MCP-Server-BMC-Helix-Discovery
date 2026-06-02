@@ -50,7 +50,6 @@ export interface PhysicalHostInventoryRow {
   windowsVmVcpuCount?: number;
   windowsVmGuestOs?: string[];
   windowsVmOsVersions?: string[];
-  guestWindowsOsList?: string[];
   guestWindowsVcpus?: number;
   hasStandardLicenses?: boolean;
   hasDatacenterLicense?: boolean;
@@ -206,12 +205,6 @@ function hostShowColumns(role: PhysicalHostInventoryRow["role"]): string {
     "#:HostContainment::Cluster.#id AS 'cluster_id'",
     "#:HostContainment::Cluster.name AS 'cluster_name'"
   ];
-  if (role === "esx") {
-    columns.push(
-      `NODES(TRAVERSE Host:HostedSoftware:RunningSoftware:VirtualMachine TRAVERSE HostContainer:HostContainment:ContainedHost:Host WHERE os_type = "Windows").os AS 'guest_windows_os_list'`,
-      `NODES(TRAVERSE Host:HostedSoftware:RunningSoftware:VirtualMachine TRAVERSE HostContainer:HostContainment:ContainedHost:Host WHERE os_type = "Windows").num_cores AS 'guest_windows_vcpus'`
-    );
-  }
   return columns.join(", ");
 }
 
@@ -219,6 +212,7 @@ export function buildWindowsLicenseQueries(vcenterTypeContains = "vCenter") {
   const vcenter = escDouble(vcenterTypeContains);
   return {
     esx: `SEARCH SoftwareInstance WHERE type HAS SUBWORD "${vcenter}" TRAVERSE ServiceProvider:SoftwareService:Service:Cluster TRAVERSE HostContainer:HostContainment:ContainedHost:Host WHERE os HAS SUBWORD "ESX" or os HAS SUBWORD "ESXi" SHOW ${hostShowColumns("esx")}`,
+    esxGuestVersions: `SEARCH SoftwareInstance WHERE type HAS SUBWORD "${vcenter}" TRAVERSE ServiceProvider:SoftwareService:Service:Cluster TRAVERSE HostContainer:HostContainment:ContainedHost:Host WHERE os HAS SUBWORD "ESX" or os HAS SUBWORD "ESXi" TRAVERSE Host:HostedSoftware:RunningSoftware:VirtualMachine TRAVERSE HostContainer:HostContainment:ContainedHost:Host WHERE os_type = "Windows" SHOW #ContainedHost:HostContainment:HostContainer:VirtualMachine.#RunningSoftware:HostedSoftware:Host:Host.#id AS 'esx_id', os AS 'guest_windows_os'`,
     baremetal: `SEARCH Host WHERE os_type = "Windows" AND NOT virtual SHOW ${hostShowColumns("baremetal")}`,
     hyperv: `SEARCH Host WHERE NODECOUNT(TRAVERSE Host:HostedSoftware:RunningSoftware:VirtualMachine WHERE type HAS SUBWORD "Hyper-V" or vm_type HAS SUBWORD "Hyper-V" or vm MATCHES "(?i).*Hyper-V.*") > 0 SHOW ${hostShowColumns("hyperv")}`
   };
@@ -296,8 +290,7 @@ export function normalizeInventoryRow(row: Record<string, unknown>, fallbackRole
       ...stringList(rowValue(row, ["windows_vm_guest_os", "Windows VM Guest OS"])),
       ...stringList(rowValue(row, ["windows_vm_os", "Windows VM OS"]))
     ],
-    windowsVmOsVersions: stringList(rowValue(row, ["windows_vm_os", "guest_windows_os_list", "Windows VM OS"])),
-    guestWindowsOsList: stringList(rowValue(row, ["guest_windows_os_list", "Guest Windows OS List"])),
+    windowsVmOsVersions: stringList(rowValue(row, ["windows_vm_os", "Windows VM OS"])),
     guestWindowsVcpus: numberValue(rowValue(row, ["guest_windows_vcpus", "Guest Windows vCPUs"]), "sum") ?? 0
   };
 }
@@ -315,7 +308,6 @@ export function dedupeHosts(hosts: PhysicalHostInventoryRow[]): PhysicalHostInve
       windowsVmVcpuCount: Math.max(host.windowsVmVcpuCount ?? 0, existing.windowsVmVcpuCount ?? 0),
       windowsVmGuestOs: [...new Set([...(existing.windowsVmGuestOs ?? []), ...(host.windowsVmGuestOs ?? [])])],
       windowsVmOsVersions: [...new Set([...(existing.windowsVmOsVersions ?? []), ...(host.windowsVmOsVersions ?? [])])],
-      guestWindowsOsList: [...new Set([...(existing.guestWindowsOsList ?? []), ...(host.guestWindowsOsList ?? [])])],
       guestWindowsVcpus: Math.max(host.guestWindowsVcpus ?? 0, existing.guestWindowsVcpus ?? 0),
       totalVmCount: Math.max(host.totalVmCount ?? 0, existing.totalVmCount ?? 0)
     });
@@ -488,7 +480,7 @@ function highestWindowsVersion(versions: string[]): string | undefined {
 export function requiredWindowsVersionForHost(host: PhysicalHostInventoryRow): string {
   const candidates: string[] = [];
   if (host.role === "baremetal" || host.role === "hyperv") candidates.push(...stringList(host.os));
-  if (host.role === "esx" || host.role === "hyperv") candidates.push(...(host.guestWindowsOsList ?? []), ...(host.windowsVmOsVersions ?? []), ...(host.windowsVmGuestOs ?? []));
+  if (host.role === "esx" || host.role === "hyperv") candidates.push(...(host.windowsVmOsVersions ?? []), ...(host.windowsVmGuestOs ?? []));
   const versions = candidates.map(detectWindowsVersion).filter((version): version is string => Boolean(version));
   if (versions.length === 0) return "indéterminée";
   return highestWindowsVersion(versions) ?? "indéterminée";
@@ -678,7 +670,6 @@ function sortedStrings(values: Iterable<string>): string[] {
 
 function hostWindowsOsValues(host: LicensedHost): string[] {
   return [
-    ...(host.guestWindowsOsList ?? []),
     ...(host.windowsVmOsVersions ?? []),
     ...(host.windowsVmGuestOs ?? []),
     ...(host.role === "baremetal" || host.role === "hyperv" ? stringList(host.os) : [])
@@ -980,6 +971,26 @@ async function inventoryRows(client: DiscoveryClient, query: string, role: Physi
   return (result.rows as Array<Record<string, unknown>>).map((row) => normalizeInventoryRow(row, role)).filter((row): row is PhysicalHostInventoryRow => row !== null);
 }
 
+async function esxGuestVersionMap(client: DiscoveryClient, query: string, maxRows: number): Promise<Map<string, string[]>> {
+  const result = await client.searchData(query, {
+    entityLabel: "versions Windows invitées par ESX",
+    appliedFilters: { windowsLicense: true, role: "esxGuestVersions" },
+    maxRows,
+    pageSize: WINDOWS_LICENSE_PAGE_SIZE
+  });
+  const versionsByEsx = new Map<string, string[]>();
+  for (const row of result.rows as Array<Record<string, unknown>>) {
+    const esxId = firstString(rowValue(row, ["esx_id", "ESX ID", "id"]));
+    if (!esxId) continue;
+    const versions = stringList(rowValue(row, ["guest_windows_os", "Guest Windows OS"]));
+    if (versions.length === 0) continue;
+    const existing = versionsByEsx.get(esxId) ?? [];
+    versionsByEsx.set(esxId, [...existing, ...versions]);
+  }
+  for (const [esxId, versions] of versionsByEsx) versionsByEsx.set(esxId, [...new Set(versions)]);
+  return versionsByEsx;
+}
+
 export function windowsLicenseTools(client: DiscoveryClient) {
   return {
     discovery_windows_license_report: {
@@ -988,12 +999,17 @@ export function windowsLicenseTools(client: DiscoveryClient) {
       outputSchema: structuredOutputSchema,
       handler: async (input: WindowsLicenseInput) => {
         const queries = buildWindowsLicenseQueries();
-        const [esx, baremetal, hyperv] = await Promise.all([
+        const [esx, baremetal, hyperv, esxGuestVersions] = await Promise.all([
           inventoryRows(client, queries.esx, "esx", input.maxRows),
           inventoryRows(client, queries.baremetal, "baremetal", input.maxRows),
-          inventoryRows(client, queries.hyperv, "hyperv", input.maxRows)
+          inventoryRows(client, queries.hyperv, "hyperv", input.maxRows),
+          esxGuestVersionMap(client, queries.esxGuestVersions, input.maxRows)
         ]);
-        const report = await buildWindowsLicenseReportFromHosts([...esx, ...baremetal, ...hyperv], input);
+        const esxWithGuestVersions = esx.map((host) => ({
+          ...host,
+          windowsVmOsVersions: esxGuestVersions.get(host.id) ?? []
+        }));
+        const report = await buildWindowsLicenseReportFromHosts([...esxWithGuestVersions, ...baremetal, ...hyperv], input);
         const svg = kpiGrid("Windows licensing", [
           { label: "Hôtes licenciables", value: String(report.totals.licenseableHosts), hint: `${report.totals.physicalHosts} physiques` },
           { label: "Cœurs licenciables", value: String(report.totals.licenseableCores), hint: input.priceProfile },
