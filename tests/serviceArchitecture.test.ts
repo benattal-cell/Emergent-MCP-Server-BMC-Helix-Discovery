@@ -35,6 +35,7 @@ describe("buildServiceArchitectureHtml", () => {
     expect(html).toContain("D3 bundle unavailable or scripts disabled; showing the server-rendered static architecture diagram.");
     expect(html).toContain("d3.tree()");
     expect(html).toContain("linkVertical");
+    expect(html).toContain("scaleExtent([0.05,12])");
     expect(html).toContain("append('rect')");
     expect(html).toContain('["Type",d.data.type]');
     expect(html).toContain('["Port",d.data.port]');
@@ -61,58 +62,101 @@ describe("buildServiceArchitectureHtml", () => {
 });
 
 describe("discovery_service_architecture", () => {
-  it("resolves a service by name and returns a diagram", async () => {
+  it("resolves a BusinessService by name and returns a service-only dependency tree", async () => {
+    const rows = [
+      { name: "Apex-Watches.com (AWS)", id: "r", depends_on: ["Apex-CRM (VMware On-prem)", "Apex-Luxury.com", "Apex-Fitness.com"] },
+      { name: "Apex-CRM (VMware On-prem)", id: "crm", depends_on: ["Core-Infrastructure", "Core-Networks", "Core-Storage"] },
+      { name: "Apex-Luxury.com", id: "lux", depends_on: null },
+      { name: "Apex-Fitness.com", id: "fit", depends_on: null },
+      { name: "Core-Infrastructure", id: "ci", depends_on: null },
+      { name: "Core-Networks", id: "cn", depends_on: null },
+      { name: "Core-Storage", id: "cs", depends_on: null }
+    ];
     const client = {
       searchData: vi.fn().mockImplementation(async (query: string) => {
-        if (query.includes("BusinessService")) return { rows: [{ name: "Jira Production", kind: "BusinessService", "#id": "root-1" }] };
+        if (query.includes('WHERE #id = "r"')) return { rows };
+        if (query.includes("SEARCH BusinessService")) return { rows: [{ name: "Apex-Watches.com (AWS)", kind: "BusinessService", "#id": "r" }] };
         return { rows: [] };
       }),
-      getNodeGraph: vi.fn().mockImplementation(async (id: string) => id.endsWith("-si") ? { nodes: [], links: [] } : ({
-        nodes: [
-          { id, kind: "BusinessService", name: "Jira Production" },
-          { id: `${id}-si`, kind: "SoftwareInstance", name: "nginx", type: "Web Server", listening_ports: [80, 443], vendor: "NGINX" },
-          { id: `${id}-ignored`, kind: "Database", name: "ignored-db" }
-        ],
-        relationships: [
-          { src_id: `${id}-si`, tgt_id: id, kind: "HostedSoftware" },
-          { src_id: `${id}-ignored`, tgt_id: id, kind: "Detail" }
-        ]
-      }))
+      getNodeGraph: vi.fn()
     } as never;
 
     const result = await serviceArchitectureTools(client).discovery_service_architecture.handler({
-      serviceName: "Jira",
-      depth: 1,
-      title: "Jira architecture",
-      kindFilter: ["BusinessService", "SoftwareInstance"],
+      serviceName: "Apex-Watches.com",
+      depth: 3,
+      title: "Apex service architecture",
+      kindFilter: ["SoftwareInstance"],
       maxNodes: 10
     });
 
     expect(client.searchData).toHaveBeenCalledWith(
-      'SEARCH BusinessService WHERE name HAS SUBWORD "Jira" SHOW name, kind, #id',
-      { entityLabel: "resolver:BusinessService", appliedFilters: { target: "Jira", kind: "BusinessService" }, maxRows: 1000, pageSize: 250 }
+      'SEARCH BusinessService WHERE name HAS SUBWORD "Apex-Watches.com" SHOW name, kind, #id',
+      { entityLabel: "resolver:BusinessService", appliedFilters: { target: "Apex-Watches.com", kind: "BusinessService" }, maxRows: 1000, pageSize: 250 }
     );
-    expect(Array.isArray(result.content)).toBe(true);
-    expect(Array.isArray(result.structuredContent)).toBe(false);
-    expect(result.structuredContent).toMatchObject({ count: 1, summary: '1 service(s) résolu(s) pour "Jira".' });
+    expect(client.searchData).toHaveBeenCalledWith(
+      `SEARCH BusinessService WHERE #id = "r"
+  EXPAND Dependant:Dependency:DependedUpon:BusinessService
+  SHOW name, #id AS id,
+       #Dependant:Dependency:DependedUpon:BusinessService.name AS depends_on`,
+      { entityLabel: "service_arch:closure", appliedFilters: { rootId: "r" }, maxRows: 1000, pageSize: 250 }
+    );
+    expect(client.getNodeGraph).not.toHaveBeenCalled();
+    expect(result.structuredContent).toMatchObject({ count: 1, summary: '1 service(s) résolu(s) pour "Apex-Watches.com".' });
     expect(result.structuredContent.diagrams).toHaveLength(1);
     expect(() => serviceArchitectureOutputSchema.parse(result.structuredContent)).not.toThrow();
-    expect(result.structuredContent.diagrams[0]).toMatchObject({
-      root: { id: "root-1", name: "Jira Production" },
-      summary: "Jira Production: 2 nœuds, 2 niveaux"
+
+    const diagram = result.structuredContent.diagrams[0];
+    expect(diagram).toMatchObject({
+      root: { id: "r", name: "Apex-Watches.com (AWS)" },
+      summary: "Apex-Watches.com (AWS): 7 nœuds, 3 niveaux",
+      truncated: false,
+      crossLinks: []
     });
-    const svgResource = result.content.find((block: { resource?: { mimeType?: string } }) => block.resource?.mimeType === "image/svg+xml");
+    expect(diagram.nodes).toHaveLength(7);
+    expect(new Set(diagram.nodes.map((node: { id: string }) => node.id)).size).toBe(7);
+    expect(diagram.edges).toHaveLength(6);
+
+    const distances = new Map<string, number>([["r", 0]]);
+    for (const edge of diagram.edges as Array<{ from: string; to: string }>) {
+      distances.set(edge.to, (distances.get(edge.from) ?? 0) + 1);
+    }
+    expect(Math.max(...distances.values())).toBe(2);
+
     const htmlResource = result.content.find((block: { resource?: { mimeType?: string } }) => block.resource?.mimeType === "text/html");
     const textBlock = result.content.find((block: { type?: string; text?: string }) => block.type === "text");
-    expect(svgResource?.resource.text).toContain("Jira architecture");
-    expect(svgResource?.resource.text).toContain('id="static-graph"');
-    expect(svgResource?.resource.text).toContain("nginx");
-    expect(htmlResource?.resource.text).toContain("Jira architecture");
-    expect(htmlResource?.resource.text).toContain("nginx");
-    expect(htmlResource?.resource.text).toContain("80, 443");
-    expect(htmlResource?.resource.text).toContain("NGINX");
-    expect(htmlResource?.resource.text).not.toContain("ignored-db");
-    expect(textBlock?.text).toContain("Jira Production: 2 nœuds, 2 niveaux");
+    expect(htmlResource?.resource.text).toContain("Apex service architecture");
+    expect(htmlResource?.resource.text).toContain("Core-Storage");
+    expect(textBlock?.text).toContain("Apex-Watches.com (AWS): 7 nœuds, 3 niveaux");
+  });
+
+  it("keeps the first parent in the rendered tree and exposes extra parents as crossLinks", async () => {
+    const rows = [
+      { name: "Root Service", id: "r", depends_on: ["Parent A", "Parent B"] },
+      { name: "Parent A", id: "a", depends_on: ["Core-Storage"] },
+      { name: "Parent B", id: "b", depends_on: ["Core-Storage"] },
+      { name: "Core-Storage", id: "cs", depends_on: null }
+    ];
+    const client = {
+      searchData: vi.fn().mockImplementation(async (query: string) => {
+        if (query.includes('WHERE #id = "r"')) return { rows };
+        if (query.includes("SEARCH BusinessService")) return { rows: [{ name: "Root Service", kind: "BusinessService", "#id": "r" }] };
+        return { rows: [] };
+      }),
+      getNodeGraph: vi.fn()
+    } as never;
+
+    const result = await serviceArchitectureTools(client).discovery_service_architecture.handler({ serviceName: "Root", depth: 3 });
+    const diagram = result.structuredContent.diagrams[0];
+
+    expect(diagram.nodes).toHaveLength(4);
+    expect(diagram.edges).toEqual(expect.arrayContaining([
+      { from: "r", to: "a", kind: "Dependency" },
+      { from: "r", to: "b", kind: "Dependency" },
+      { from: "a", to: "cs", kind: "Dependency" }
+    ]));
+    expect(diagram.edges).not.toContainEqual({ from: "b", to: "cs", kind: "Dependency" });
+    expect(diagram.crossLinks).toEqual([{ from: "b", to: "cs", kind: "Dependency" }]);
+    expect(client.getNodeGraph).not.toHaveBeenCalled();
   });
 
   it("falls back to BusinessApplicationInstance and returns a clear error when no service matches", async () => {
@@ -126,6 +170,27 @@ describe("discovery_service_architecture", () => {
     expect(client.searchData).toHaveBeenCalledTimes(4);
     expect(result).toMatchObject({ isError: true, structuredContent: { status: "none", target: "Missing" } });
     expect(result.content[0]).toEqual({ type: "text", text: "Rien trouvé pour Missing." });
+    expect(client.getNodeGraph).not.toHaveBeenCalled();
+  });
+
+  it("redirects non-BusinessService targets to the dependency map without rendering a tree", async () => {
+    const client = {
+      searchData: vi.fn().mockImplementation(async (query: string) => {
+        if (query.includes("SEARCH Host")) return { rows: [{ name: "jira-host", kind: "Host", "#id": "host-1" }] };
+        return { rows: [] };
+      }),
+      getNodeGraph: vi.fn()
+    } as never;
+
+    const result = await serviceArchitectureTools(client).discovery_service_architecture.handler({ serviceName: "jira-host", targetKind: "Host" });
+
+    expect(result).toMatchObject({
+      isError: false,
+      structuredContent: { status: "redirect", recommendedTool: "discovery_dependency_map", layout: "hierarchical" }
+    });
+    expect(result.content[0].text).toContain("réservée aux BusinessService");
+    expect(result.content[0].text).toContain("discovery_dependency_map");
+    expect(result.content.some((block: { type?: string; resource?: unknown }) => block.type === "image" || block.resource)).toBe(false);
     expect(client.getNodeGraph).not.toHaveBeenCalled();
   });
 

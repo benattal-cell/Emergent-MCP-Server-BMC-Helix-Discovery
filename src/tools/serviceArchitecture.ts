@@ -8,48 +8,11 @@ import { serviceArchitectureOutputSchema } from "./outputSchemas.js";
 export const serviceArchitectureSchema = z.object({
   serviceName: z.string().min(1),
   targetKind: z.enum(RESOLVABLE_TARGET_KINDS).optional(),
-  depth: z.number().int().min(0).default(2),
+  depth: z.number().int().min(1).max(4).default(3),
   title: z.string().min(1).optional(),
-  kindFilter: z.array(z.string().min(1)).optional().describe("Restricts which CI kinds are displayed in the architecture graph (to reduce clutter). It does NOT affect how serviceName is resolved — use targetKind for that."),
+  kindFilter: z.array(z.string().min(1)).optional().describe("Ignored in service-only mode; discovery_service_architecture always renders BusinessService dependency trees only."),
   maxNodes: z.number().int().min(5).max(500).default(100)
 }).strict();
-
-function formatOptionalAttribute(value: unknown): string | undefined {
-  if (typeof value === "string") return value.trim() === "" ? undefined : value;
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) {
-    const items = value
-      .map((item) => (typeof item === "string" || typeof item === "number" || typeof item === "boolean" ? String(item) : undefined))
-      .filter((item): item is string => item !== undefined && item.trim() !== "");
-    return items.length > 0 ? items.join(", ") : undefined;
-  }
-  return undefined;
-}
-
-function readNode(raw: Record<string, unknown>): ServiceNode | null {
-  const id = typeof raw.id === "string" ? raw.id : undefined;
-  if (!id) return null;
-  const kind = typeof raw.kind === "string" ? raw.kind : "Unknown";
-  const name = typeof raw.name === "string" ? raw.name : (typeof raw.short_name === "string" ? raw.short_name : id);
-  const type = formatOptionalAttribute(raw.type);
-  const port = formatOptionalAttribute(raw.port) ?? formatOptionalAttribute(raw.listening_ports);
-  const publisher = formatOptionalAttribute(raw.publisher) ?? formatOptionalAttribute(raw.vendor);
-  return { id, kind, name, ...(type ? { type } : {}), ...(port ? { port } : {}), ...(publisher ? { publisher } : {}) };
-}
-
-function readEdge(raw: Record<string, unknown>): ServiceEdge | null {
-  const from = typeof raw.src_id === "string" ? raw.src_id : (typeof raw.from === "string" ? raw.from : undefined);
-  const to = typeof raw.tgt_id === "string" ? raw.tgt_id : (typeof raw.to === "string" ? raw.to : undefined);
-  if (!from || !to) return null;
-  const kind = typeof raw.kind === "string" ? raw.kind : "rel";
-  return { from, to, kind };
-}
-
-function graphLinkContainers(graph: Record<string, unknown>): Array<Record<string, unknown>> {
-  return [graph.links, graph.edges, graph.relationships].flatMap((container) =>
-    Array.isArray(container) ? container as Array<Record<string, unknown>> : []
-  );
-}
 
 function orientEdgesFromRoot(edges: ServiceEdge[], rootId: string): ServiceEdge[] {
   const adjacency = new Map<string, ServiceEdge[]>();
@@ -80,63 +43,132 @@ function orientEdgesFromRoot(edges: ServiceEdge[], rootId: string): ServiceEdge[
   });
 }
 
+function normalizeDependsOn(value: unknown): string[] {
+  const values = Array.isArray(value) ? value : [value];
+  return values
+    .map((item) => (typeof item === "string" || typeof item === "number" || typeof item === "boolean" ? String(item).trim() : ""))
+    .filter((item) => item.length > 0);
+}
+
+function rowString(row: Record<string, unknown>, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = row[key];
+    if (typeof value === "string" && value.trim() !== "") return value.trim();
+    if (typeof value === "number" || typeof value === "boolean") return String(value);
+  }
+  return undefined;
+}
+
+function escapeDiscoveryDoubleQuoted(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+function computeDistances(edges: ServiceEdge[], rootId: string): Map<string, number> {
+  const outgoing = new Map<string, string[]>();
+  for (const edge of edges) outgoing.set(edge.from, [...(outgoing.get(edge.from) ?? []), edge.to]);
+
+  const distances = new Map<string, number>([[rootId, 0]]);
+  const queue = [rootId];
+  for (let index = 0; index < queue.length; index += 1) {
+    const current = queue[index];
+    for (const next of outgoing.get(current) ?? []) {
+      if (distances.has(next)) continue;
+      distances.set(next, (distances.get(current) ?? 0) + 1);
+      queue.push(next);
+    }
+  }
+  return distances;
+}
+
+function selectTreeEdges(
+  edges: ServiceEdge[],
+  distances: Map<string, number>,
+  retainedNodeIds: Set<string>
+): { treeEdges: ServiceEdge[]; crossLinks: ServiceEdge[] } {
+  const incoming = new Map<string, ServiceEdge[]>();
+  for (const edge of edges) {
+    if (!retainedNodeIds.has(edge.from) || !retainedNodeIds.has(edge.to)) continue;
+    if (!distances.has(edge.from) || !distances.has(edge.to)) continue;
+    incoming.set(edge.to, [...(incoming.get(edge.to) ?? []), edge]);
+  }
+
+  const treeEdges: ServiceEdge[] = [];
+  const crossLinks: ServiceEdge[] = [];
+  for (const child of [...incoming.keys()].sort((a, b) => (distances.get(a) ?? 0) - (distances.get(b) ?? 0))) {
+    const parents = incoming.get(child) ?? [];
+    parents.sort((a, b) => (distances.get(a.from) ?? Number.MAX_SAFE_INTEGER) - (distances.get(b.from) ?? Number.MAX_SAFE_INTEGER));
+    const [winner, ...extras] = parents;
+    if (winner) treeEdges.push(winner);
+    crossLinks.push(...extras);
+  }
+  return { treeEdges, crossLinks };
+}
+
 async function collectArchitectureGraph(
   client: DiscoveryClient,
   rootId: string,
-  depth: number,
-  kindFilter?: string[],
-  maxNodes = 100
-): Promise<{ nodes: ServiceNode[]; edges: ServiceEdge[]; levels: number }> {
+  depth: number
+): Promise<{ nodes: ServiceNode[]; edges: ServiceEdge[]; levels: number; crossLinks: ServiceEdge[]; truncated: boolean }> {
+  const cappedDepth = Math.min(4, Math.max(1, depth));
+  const query = `SEARCH BusinessService WHERE #id = "${escapeDiscoveryDoubleQuoted(rootId)}"
+  EXPAND Dependant:Dependency:DependedUpon:BusinessService
+  SHOW name, #id AS id,
+       #Dependant:Dependency:DependedUpon:BusinessService.name AS depends_on`;
+  const result = await client.searchData(query, {
+    entityLabel: "service_arch:closure",
+    appliedFilters: { rootId },
+    maxRows: 1000,
+    pageSize: 250
+  });
+
   const nodes = new Map<string, ServiceNode>();
-  const rawEdges: ServiceEdge[] = [];
-  const seenRawEdge = new Set<string>();
-  const visited = new Set<string>();
-  const distances = new Map<string, number>([[rootId, 0]]);
-  const allowedKinds = kindFilter && kindFilter.length > 0 ? new Set(kindFilter) : null;
-  let frontier: string[] = [rootId];
-
-  for (let d = 0; d <= depth && frontier.length > 0 && nodes.size < maxNodes; d += 1) {
-    const next = new Set<string>();
-    for (const id of frontier) {
-      if (visited.has(id) || nodes.size >= maxNodes) continue;
-      visited.add(id);
-      const raw = await client.getNodeGraph(id);
-      const graph = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
-      const rawNodes = Array.isArray(graph.nodes) ? graph.nodes as Array<Record<string, unknown>> : [];
-      const rawLinks = graphLinkContainers(graph);
-
-      for (const rawNode of rawNodes) {
-        if (nodes.size >= maxNodes) break;
-        const node = readNode(rawNode);
-        if (!node) continue;
-        if (allowedKinds && !allowedKinds.has(node.kind)) continue;
-        if (!nodes.has(node.id)) nodes.set(node.id, node);
-      }
-
-      for (const rawLink of rawLinks) {
-        const edge = readEdge(rawLink);
-        if (!edge) continue;
-        const key = `${edge.from}>${edge.to}>${edge.kind}`;
-        if (!seenRawEdge.has(key)) {
-          seenRawEdge.add(key);
-          rawEdges.push(edge);
-        }
-
-        if (d >= depth) continue;
-        const neighbor = edge.from === id ? edge.to : (edge.to === id ? edge.from : undefined);
-        if (!neighbor || visited.has(neighbor) || !nodes.has(neighbor)) continue;
-        if (!distances.has(neighbor)) distances.set(neighbor, d + 1);
-        next.add(neighbor);
-      }
+  const nameToId = new Map<string, string>();
+  const rows = result.rows as Array<Record<string, unknown>>;
+  for (const row of rows) {
+    const id = rowString(row, ["id", "#id", "key", "node_id"]);
+    const name = rowString(row, ["name", "Name"]);
+    if (!id || !name) continue;
+    if (!nodes.has(id)) nodes.set(id, { id, name, kind: "BusinessService" });
+    if (!nameToId.has(name)) {
+      nameToId.set(name, id);
+    } else if (nameToId.get(name) !== id) {
+      process.stderr.write(`${JSON.stringify({ level: "warning", message: "BusinessService name collision in service architecture closure", name, keptId: nameToId.get(name), ignoredId: id })}\n`);
     }
-    frontier = [...next];
   }
 
-  if (!nodes.has(rootId) && !allowedKinds) nodes.set(rootId, { id: rootId, kind: "Root", name: rootId });
-  const collectedEdges = rawEdges.filter((edge) => nodes.has(edge.from) && nodes.has(edge.to));
-  const edges = orientEdgesFromRoot(collectedEdges, rootId);
-  const levels = Math.max(1, ...[...nodes.keys()].map((id) => (distances.get(id) ?? 0) + 1));
-  return { nodes: [...nodes.values()], edges, levels };
+  const rawEdges: ServiceEdge[] = [];
+  const seenEdges = new Set<string>();
+  for (const row of rows) {
+    const parentName = rowString(row, ["name", "Name"]);
+    if (!parentName) continue;
+    const parentId = nameToId.get(parentName);
+    if (!parentId) continue;
+    for (const childName of normalizeDependsOn(row.depends_on)) {
+      const childId = nameToId.get(childName);
+      if (!childId) continue;
+      const edge: ServiceEdge = { from: parentId, to: childId, kind: "Dependency" };
+      const key = `${edge.from}>${edge.to}>${edge.kind}`;
+      if (seenEdges.has(key)) continue;
+      seenEdges.add(key);
+      rawEdges.push(edge);
+    }
+  }
+
+  const orientedEdges = orientEdgesFromRoot(rawEdges, rootId);
+  const distances = computeDistances(orientedEdges, rootId);
+  const retainedNodeIds = new Set([...nodes.keys()].filter((id) => {
+    const distance = distances.get(id);
+    return distance !== undefined && distance <= cappedDepth;
+  }));
+  const truncated = [...nodes.keys()].some((id) => {
+    const distance = distances.get(id);
+    return distance !== undefined && distance > cappedDepth;
+  });
+  const { treeEdges, crossLinks } = selectTreeEdges(orientedEdges, distances, retainedNodeIds);
+  const retainedNodes = [...nodes.values()].filter((node) => retainedNodeIds.has(node.id));
+  const levels = Math.max(1, ...retainedNodes.map((node) => (distances.get(node.id) ?? 0) + 1));
+
+  return { nodes: retainedNodes, edges: treeEdges, levels, crossLinks, truncated };
 }
 
 function resourceSlug(value: string): string {
@@ -157,27 +189,36 @@ function resolutionError(target: string, resolution: Extract<ResolveTargetResult
 export function serviceArchitectureTools(client: DiscoveryClient) {
   return {
     discovery_service_architecture: {
-      description: "Generate one or more self-contained D3 hierarchical architecture diagrams from a BusinessService, BusinessApplicationInstance, Host or SoftwareInstance name, or from an exact Discovery nodeId. Use targetKind to disambiguate NAME resolution, or pass serviceName=<id exact>. Returns native MCP visual content: PNG image, SVG resource, and self-contained D3 HTML resource. kindFilter restricts which CI kinds are DISPLAYED in the architecture graph (to reduce clutter). It does NOT affect how serviceName is resolved — use targetKind for that. Prefer discovery_dependency_map for mesh/topology/blast-radius graphs.",
+      description: "Generate a service-only hierarchical dependency tree between BusinessService nodes. This tool renders only BusinessService → BusinessService dependencies; for Host, SoftwareInstance, BusinessApplicationInstance, mesh, topology, or blast-radius architecture views, use discovery_dependency_map with layout=\"hierarchical\". depth defaults to 3 and is capped at 4. kindFilter is ignored because this mode is always BusinessService-only.",
       schema: serviceArchitectureSchema,
       outputSchema: serviceArchitectureOutputSchema,
       handler: async (input: z.infer<typeof serviceArchitectureSchema>) => {
         const resolution = await resolveTarget(client, input.serviceName, { targetKind: input.targetKind });
         if (resolution.status === "none" || resolution.status === "ambiguous") return resolutionError(input.serviceName, resolution);
+        if (resolution.status === "unique" && resolution.kind !== "BusinessService") {
+          const text = `La vue architecture hiérarchique discovery_service_architecture est réservée aux BusinessService. Pour afficher l'architecture de ${resolution.name} (${resolution.kind}), utilisez discovery_dependency_map avec layout="hierarchical".`;
+          return {
+            content: [{ type: "text", text }],
+            structuredContent: { status: "redirect", target: input.serviceName, resolved: resolution, recommendedTool: "discovery_dependency_map", layout: "hierarchical" },
+            isError: false
+          };
+        }
         const root = resolution.status === "node_id"
           ? { id: resolution.id, name: input.serviceName }
           : { id: resolution.id, name: resolution.name };
 
         const rendered = await Promise.all([root].map(async (root) => {
-          const { nodes, edges, levels } = await collectArchitectureGraph(client, root.id, input.depth, input.kindFilter, input.maxNodes);
+          const { nodes, edges, levels, crossLinks, truncated } = await collectArchitectureGraph(client, root.id, input.depth);
           const title = input.title ?? `Service architecture · ${root.name}`;
-          const summary = `${root.name}: ${nodes.length} nœuds, ${levels} niveaux${nodes.length >= input.maxNodes ? " (truncated)" : ""}`;
+          const summary = `${root.name}: ${nodes.length} nœuds, ${levels} niveaux${truncated ? " (truncated)" : ""}`;
           const structuredContent = {
             root: { id: root.id, name: root.name },
             summary,
             nodes,
             edges,
             levels,
-            truncated: nodes.length >= input.maxNodes
+            crossLinks,
+            truncated
           };
           const svg = buildServiceArchitectureSvg(nodes, edges, root.id, title);
           const html = buildServiceArchitectureHtml(nodes, edges, root.id, title);
