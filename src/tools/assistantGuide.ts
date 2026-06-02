@@ -405,7 +405,8 @@ const GLOBAL_RULES_FR = [
   "RÈGLE 2: Si l'utilisateur mentionne un éditeur (Microsoft, Oracle...) ou un produit (Windows Server, JBoss...), passe-le DIRECTEMENT en paramètre `publisherContains` / `productContains` à `discovery_lifecycle_report`. Pas d'enchaînement.",
   "RÈGLE 3: La réponse de chaque outil contient généralement un champ `summary` avec le chiffre clé. Cite-le textuellement avant tout détail.",
   "RÈGLE 4: Pour les outils retournant plusieurs représentations (ex: discovery_dependency_map), choisis la représentation la plus riche que ton client supporte. Le HTML interactif est autoportant — propose-le en téléchargement si possible.",
-  "RÈGLE 5: Pour du DSL brut, appelle d'abord `discovery_dsl_examples` ou `discovery_validate_query`; puis seulement `discovery_search_data` si aucun outil spécialisé ne suffit."
+  "RÈGLE 5: Pour du DSL brut, appelle d'abord `discovery_dsl_examples` ou `discovery_validate_query`; puis seulement `discovery_search_data` si aucun outil spécialisé ne suffit.",
+  "RÈGLE 6: Avant d'écrire un TRAVERSE DSL, appeler `discovery_common_relationships` avec les mots-clés de la demande pour récupérer le chemin golden et sa direction ; ne retomber sur `discovery_taxonomy_*` que pour un chemin ABSENT du référentiel."
 ];
 
 const GLOBAL_RULES_EN = [
@@ -419,7 +420,8 @@ const GLOBAL_RULES_EN = [
   "RULE 2: If the user mentions a vendor (Microsoft, Oracle...) or a product (Windows Server, JBoss...), pass it DIRECTLY as `publisherContains` / `productContains` to `discovery_lifecycle_report`. No chaining.",
   "RULE 3: Tool responses usually include a `summary` field with the headline count. Quote it verbatim before any detail.",
   "RULE 4: For tools returning multiple representations (e.g. discovery_dependency_map), choose the richest representation your client supports. The interactive HTML is self-contained — offer it as a downloadable artifact when possible.",
-  "RULE 5: For raw DSL, call `discovery_dsl_examples` or `discovery_validate_query` first; then call `discovery_search_data` only if no specialized tool is enough."
+  "RULE 5: For raw DSL, call `discovery_dsl_examples` or `discovery_validate_query` first; then call `discovery_search_data` only if no specialized tool is enough.",
+  "RULE 6: Before writing a TRAVERSE DSL, call `discovery_common_relationships` with the request keywords to retrieve the golden path and direction; fall back to `discovery_taxonomy_*` only for a path ABSENT from the referential."
 ];
 
 function previewList(values: string[], max = 12): string {
