@@ -120,15 +120,15 @@ The CSV is the source of truth; no live cloud pricing or currency conversion is 
 
 ## Discovery DSL authoring helpers
 
-`discovery_search_data` is no longer exposed as an MCP tool. The guarded `discovery_data_search` tool is now the only exposed DSL path for exploratory raw BMC Discovery DSL: it requires explicit user confirmation, validates the candidate query locally, then verifies referenced kinds against the live taxonomy before executing. Its description includes the DSL reference for clause ordering, traversal syntax, key expressions, `NODECOUNT`, named traversals, string literals, canonical examples, and recovery hints.
+`discovery_execute_dsl` is the guarded DSL execution tool for exploratory raw BMC Discovery DSL: it requires no user confirmation, validates the candidate query locally, then verifies referenced kinds against the live taxonomy before executing. Its description includes the DSL reference for clause ordering, traversal syntax, key expressions, `NODECOUNT`, named traversals, string literals, canonical examples, and recovery hints.
 
-Use these companion tools before executing raw DSL through `discovery_data_search`:
+Use these companion tools before executing raw DSL through `discovery_execute_dsl`:
 
 - `discovery_dsl_examples`: returns static curated query snippets for topics such as `traversal`, `communication`, `lifecycle`, `containment`, `cluster`, `host_software`, `database`, `counting`, `named_traversal`, and `lookup`.
 - `discovery_validate_query`: performs a local pre-flight check for common mistakes (`count(traverse ...)`, `LOOKUP` with `WHERE`, and clause ordering issues) without calling Discovery.
 - `discovery_common_relationships`: returns curated real `TRAVERSE` paths from `src/data/common_relationships.csv` so callers can use `traverseSpec` (or `traverseReversed` when `matchedDirection` is `reverse`) instead of inventing relationships.
 
-When `discovery_data_search` fails validation or taxonomy checks, its response keeps the existing `stage` / `executed` / `errors` / `hints` fields and additively includes `relationshipHints` plus `antiPatterns` from `common_relationships.csv`. When Discovery still returns a 400 DSL syntax error at execution time, the guarded response includes the original message, a contextual hint when a known pattern matches, the submitted query, and the same curated relationship hints.
+When `discovery_execute_dsl` fails validation or taxonomy checks, its response keeps the existing `stage` / `executed` / `errors` / `hints` fields and additively includes `relationshipHints` plus `antiPatterns` from `common_relationships.csv`. When Discovery still returns a 400 DSL syntax error at execution time, the guarded response includes the original message, a contextual hint when a known pattern matches, the submitted query, and the same curated relationship hints.
 
 ## `discovery_find_orphans` examples
 

@@ -21,7 +21,7 @@ export const rawGetSchema = z.object({
 }).strict();
 
 
-export const SEARCH_DATA_DESCRIPTION = [
+export const EXECUTE_DSL_DESCRIPTION = [
   "Execute a raw BMC Discovery DSL query and return flattened results.",
   "",
   "Prefer specialized tools (discovery_find_hosts, discovery_find_software_instances,",
@@ -516,13 +516,13 @@ export function validateDiscoveryQuery(query: string): QueryValidationResult {
 export function queryTools(client: DiscoveryClient) {
   return {
     discovery_dsl_examples: {
-      description: "Return curated, static BMC Discovery DSL examples for a topic. Use this as a companion to discovery_data_search when drafting raw DSL queries. No Discovery API call is made.",
+      description: "Return curated, static BMC Discovery DSL examples for a topic. Use this as a companion to discovery_execute_dsl when drafting raw DSL queries. No Discovery API call is made.",
       schema: dslExamplesSchema,
       outputSchema: structuredOutputSchema,
       handler: async (input: z.infer<typeof dslExamplesSchema>) => getDslExamples(input.topic)
     },
     discovery_validate_query: {
-      description: "Validate common BMC Discovery DSL mistakes locally without executing the query. This is a lightweight pre-flight helper for discovery_data_search; it catches clause-ordering traps, LOOKUP+WHERE, and count(traverse ...) patterns.",
+      description: "Validate common BMC Discovery DSL mistakes locally without executing the query. This is a lightweight pre-flight helper for discovery_execute_dsl; it catches clause-ordering traps, LOOKUP+WHERE, and count(traverse ...) patterns.",
       schema: validateQuerySchema,
       outputSchema: structuredOutputSchema,
       handler: async (input: z.infer<typeof validateQuerySchema>) => validateDiscoveryQuery(input.query)

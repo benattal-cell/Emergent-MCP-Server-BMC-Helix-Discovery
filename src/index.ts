@@ -7,7 +7,7 @@ import { DiscoveryClient } from "./discoveryClient.js";
 import { normalizeApiError } from "./utils/errors.js";
 import { aboutTools } from "./tools/about.js";
 import { queryTools } from "./tools/query.js";
-import { dataSearchTools } from "./tools/dataSearch.js";
+import { executeDslTools } from "./tools/executeDsl.js";
 import { hostTools } from "./tools/hosts.js";
 import { taxonomyTools } from "./tools/taxonomy.js";
 import { commonRelationshipsTools } from "./tools/commonRelationships.js";
@@ -162,7 +162,7 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
   const tools = {
     ...aboutTools(client, config.apiVersion),
     ...queryTools(client),
-    ...dataSearchTools(client),
+    ...executeDslTools(client),
     ...hostTools(client),
     ...taxonomyTools(client),
     ...commonRelationshipsTools(),

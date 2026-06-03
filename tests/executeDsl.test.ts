@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { dataSearchTools } from "../src/tools/dataSearch.js";
+import { executeDslTools } from "../src/tools/executeDsl.js";
 
 function fakeClient() {
   return {
@@ -13,10 +13,10 @@ function fakeClient() {
   } as never;
 }
 
-describe("discovery_data_search", () => {
+describe("discovery_execute_dsl", () => {
   it("executes a valid query directly without userConfirmed or provenance", async () => {
     const client = fakeClient();
-    const tool = dataSearchTools(client).discovery_data_search;
+    const tool = executeDslTools(client).discovery_execute_dsl;
 
     const result = await tool.handler({
       request: "Explore hosts",
@@ -32,7 +32,7 @@ describe("discovery_data_search", () => {
 
   it("keeps blocking invalid DSL during query validation without confirmation", async () => {
     const client = fakeClient();
-    const tool = dataSearchTools(client).discovery_data_search;
+    const tool = executeDslTools(client).discovery_execute_dsl;
 
     const result = await tool.handler({
       request: "Explore hosts",
@@ -46,7 +46,7 @@ describe("discovery_data_search", () => {
 
   it("adds curated relationship hints and anti-patterns on Gate 1 validation failure", async () => {
     const client = fakeClient();
-    const tool = dataSearchTools(client).discovery_data_search;
+    const tool = executeDslTools(client).discovery_execute_dsl;
 
     const result = await tool.handler({
       request: "vcenter esx cluster",
@@ -63,7 +63,7 @@ describe("discovery_data_search", () => {
 
   it("blocks an unknown primary kind from taxonomy", async () => {
     const client = fakeClient();
-    const tool = dataSearchTools(client).discovery_data_search;
+    const tool = executeDslTools(client).discovery_execute_dsl;
 
     const result = await tool.handler({
       request: "Explore made-up kind",
@@ -77,7 +77,7 @@ describe("discovery_data_search", () => {
 
   it("adds curated relationship hints on Gate 2 taxonomy failure", async () => {
     const client = fakeClient();
-    const tool = dataSearchTools(client).discovery_data_search;
+    const tool = executeDslTools(client).discovery_execute_dsl;
 
     const result = await tool.handler({
       request: "vcenter esx cluster",
@@ -93,7 +93,7 @@ describe("discovery_data_search", () => {
 
   it("ignores deprecated provenance and still keeps validation and taxonomy gates", async () => {
     const client = fakeClient();
-    const tool = dataSearchTools(client).discovery_data_search;
+    const tool = executeDslTools(client).discovery_execute_dsl;
 
     const result = await tool.handler({
       request: "Run lifecycle DSL from builder",

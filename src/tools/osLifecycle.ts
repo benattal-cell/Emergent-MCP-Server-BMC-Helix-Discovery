@@ -112,7 +112,7 @@ function appliedFiltersFor(input: OsLifecycleInput): Record<string, unknown> {
 export function osLifecycleTools(client: DiscoveryClient) {
   return {
     discovery_os_lifecycle_report: {
-      description: "Run an operating-system lifecycle report directly in Discovery. Starts from Host nodes, traverses OS SupportDetail only, returns host OS/vendor/virtual plus EOS/EOSS/EOES/EOL/default dates and failure_reason. A missing date with failure_reason containing 'not pertinent' is classified as not pertinent, not as missing data. USE THIS DIRECTLY; do not delegate to discovery_search_data.",
+      description: "Run an operating-system lifecycle report directly in Discovery. Starts from Host nodes, traverses OS SupportDetail only, returns host OS/vendor/virtual plus EOS/EOSS/EOES/EOL/default dates and failure_reason. A missing date with failure_reason containing 'not pertinent' is classified as not pertinent, not as missing data. USE THIS DIRECTLY; do not delegate to discovery_execute_dsl.",
       schema: osLifecycleSchema,
       outputSchema: flatRowsOutputSchema,
       handler: async (input: OsLifecycleInput) => {

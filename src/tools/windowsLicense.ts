@@ -994,7 +994,7 @@ async function esxGuestVersionMap(client: DiscoveryClient, query: string, maxRow
 export function windowsLicenseTools(client: DiscoveryClient) {
   return {
     discovery_windows_license_report: {
-      description: "Build and execute a Windows Server licensing report by physical host (ESX, baremetal Windows, Hyper-V). Resolves physical cores with a 7-step cascade, calculates Standard vs Datacenter costs from the IT cost CSV, precomputes optimization opportunities, returns KPI SVG and a recommendationPrompt for the LLM. USE THIS DIRECTLY; do not delegate to discovery_search_data.",
+      description: "Build and execute a Windows Server licensing report by physical host (ESX, baremetal Windows, Hyper-V). Resolves physical cores with a 7-step cascade, calculates Standard vs Datacenter costs from the IT cost CSV, precomputes optimization opportunities, returns KPI SVG and a recommendationPrompt for the LLM. USE THIS DIRECTLY; do not delegate to discovery_execute_dsl.",
       schema: windowsLicenseSchema,
       outputSchema: structuredOutputSchema,
       handler: async (input: WindowsLicenseInput) => {

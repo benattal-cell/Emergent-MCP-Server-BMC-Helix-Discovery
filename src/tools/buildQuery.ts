@@ -300,7 +300,7 @@ export function buildQueryTools(client: DiscoveryClient) {
         "À utiliser pour TOUT besoin non couvert par un outil paramétré de niveau 1 (find_hosts, lifecycle_report, etc.).",
         "Le LLM fournit : searchKind, des conditions where[] (opérateurs FERMÉS : has_subword par défaut), des traversals[] (mode 'wildcard' = :::Kind par défaut, ou 'csv_path' = chemin validé du référentiel common_relationships pour les sauts qui changent le set comme vCenter→Cluster→Host), et un show modal (fields / summary / high_detail / aggregates NODECOUNT / explode).",
         "NODECOUNT s'exprime soit en colonne (show.aggregates), soit en PRÉDICAT dans un where (left.type='nodecount', opérateurs numériques) — ex. 'ESX avec plus de 10 VM Windows'.",
-        "Cet outil N'EXÉCUTE PAS : il valide la syntaxe (clause-ordering, etc.) puis l'existence des kinds en taxonomy, et renvoie { dslQuery, ... }. Présenter dslQuery à l'utilisateur (qui peut la modifier), puis l'exécuter via discovery_data_search.",
+        "Cet outil N'EXÉCUTE PAS : il valide la syntaxe (clause-ordering, etc.) puis l'existence des kinds en taxonomy, et renvoie { dslQuery, ... }. Présenter dslQuery à l'utilisateur (qui peut la modifier), puis l'exécuter via discovery_execute_dsl.",
         "Un chemin csv_path absent du référentiel est REFUSÉ (avec suggestions) — jamais inventé."
       ].join(" "),
       schema: buildQuerySchema,
@@ -350,8 +350,8 @@ export function buildQueryTools(client: DiscoveryClient) {
 
         const nextAction =
           language === "fr"
-            ? "Présente dslQuery à l'utilisateur pour validation ou modification, puis exécute-la via discovery_data_search."
-            : "Show dslQuery to the user for validation or edits, then execute it via discovery_data_search.";
+            ? "Présente dslQuery à l'utilisateur pour validation ou modification, puis exécute-la via discovery_execute_dsl."
+            : "Show dslQuery to the user for validation or edits, then execute it via discovery_execute_dsl.";
 
         return {
           status: validation.valid && unknownKinds.length === 0 ? "ready" : "needs_review",
