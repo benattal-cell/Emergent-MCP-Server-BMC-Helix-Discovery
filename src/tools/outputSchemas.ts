@@ -21,7 +21,6 @@ export const scalarResultOutputSchema = z.object({
 
 export const dslQueryOutputSchema = z.object({
   dslQuery: z.string(),
-  provenance: z.enum(["curated", "exploratory"]).optional(),
   riskWindowDays: z.number().optional(),
   urlEncodedQuery: z.string().optional()
 }).passthrough();
