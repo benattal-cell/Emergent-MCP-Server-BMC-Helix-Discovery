@@ -14,7 +14,7 @@ function fakeClient() {
 }
 
 describe("discovery_data_search", () => {
-  it("requires explicit user confirmation before any execution", async () => {
+  it("executes a valid query directly without userConfirmed or provenance", async () => {
     const client = fakeClient();
     const tool = dataSearchTools(client).discovery_data_search;
 
@@ -23,19 +23,20 @@ describe("discovery_data_search", () => {
       query: "SEARCH Host SHOW name"
     });
 
-    expect(result.stage).toBe("confirmation_required");
-    expect(result.executed).toBe(false);
-    expect(client.queryJson).not.toHaveBeenCalled();
+    expect(result.stage).toBe("executed");
+    expect(result.executed).toBe(true);
+    expect(result.preflight).toMatchObject({ queryValidated: true, taxonomyChecked: true });
+    expect(client.queryJson).toHaveBeenCalledTimes(1);
+    expect(client.queryJson).toHaveBeenCalledWith("SEARCH Host SHOW name", 100, expect.any(Object));
   });
 
-  it("blocks invalid DSL during query validation", async () => {
+  it("keeps blocking invalid DSL during query validation without confirmation", async () => {
     const client = fakeClient();
     const tool = dataSearchTools(client).discovery_data_search;
 
     const result = await tool.handler({
       request: "Explore hosts",
-      query: "SEARCH Host ORDER BY name asc SHOW name",
-      userConfirmed: true
+      query: "SEARCH Host ORDER BY name asc SHOW name"
     });
 
     expect(result.stage).toBe("query_validation");
@@ -49,8 +50,7 @@ describe("discovery_data_search", () => {
 
     const result = await tool.handler({
       request: "vcenter esx cluster",
-      query: "SEARCH SoftwareInstance ORDER BY name asc SHOW name",
-      userConfirmed: true
+      query: "SEARCH SoftwareInstance ORDER BY name asc SHOW name"
     });
 
     expect(result.stage).toBe("query_validation");
@@ -67,8 +67,7 @@ describe("discovery_data_search", () => {
 
     const result = await tool.handler({
       request: "Explore made-up kind",
-      query: "SEARCH FooBarKind SHOW name",
-      userConfirmed: true
+      query: "SEARCH FooBarKind SHOW name"
     });
 
     expect(result.stage).toBe("taxonomy");
@@ -82,8 +81,7 @@ describe("discovery_data_search", () => {
 
     const result = await tool.handler({
       request: "vcenter esx cluster",
-      query: "SEARCH FooBarKind SHOW name",
-      userConfirmed: true
+      query: "SEARCH FooBarKind SHOW name"
     });
 
     expect(result.stage).toBe("taxonomy");
@@ -93,7 +91,7 @@ describe("discovery_data_search", () => {
     expect(client.queryJson).not.toHaveBeenCalled();
   });
 
-  it("allows curated provenance without confirmation while keeping validation and taxonomy gates", async () => {
+  it("ignores deprecated provenance and still keeps validation and taxonomy gates", async () => {
     const client = fakeClient();
     const tool = dataSearchTools(client).discovery_data_search;
 
@@ -103,25 +101,8 @@ describe("discovery_data_search", () => {
       provenance: "curated"
     });
 
-    expect(result.stage).not.toBe("confirmation_required");
     expect(result.stage).toBe("taxonomy");
     expect(result.executed).toBe(false);
     expect(client.queryJson).not.toHaveBeenCalled();
-  });
-
-  it("executes valid confirmed queries with known primary kinds", async () => {
-    const client = fakeClient();
-    const tool = dataSearchTools(client).discovery_data_search;
-
-    const result = await tool.handler({
-      request: "Explore hosts",
-      query: "SEARCH Host SHOW name",
-      userConfirmed: true
-    });
-
-    expect(result.stage).toBe("executed");
-    expect(result.executed).toBe(true);
-    expect(result.preflight).toMatchObject({ queryValidated: true, taxonomyChecked: true });
-    expect(client.queryJson).toHaveBeenCalledTimes(1);
   });
 });

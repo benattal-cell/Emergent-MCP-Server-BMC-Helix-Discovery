@@ -147,14 +147,13 @@ export function lifecycleTools(client: DiscoveryClient) {
       isVisual: true as const
     },
     discovery_build_lifecycle_query: {
-      description: "Construit le DSL lifecycle sans l'exécuter. Pour l'exécuter, passer le dslQuery retourné à discovery_data_search avec provenance='curated' (pas de userConfirmed requis). Pour le cas standard, préférer discovery_lifecycle_report qui exécute en un appel.",
+      description: "Construit le DSL lifecycle sans l'exécuter. Pour l'exécuter, passer le dslQuery retourné à discovery_data_search pour l'exécuter. Pour le cas standard, préférer discovery_lifecycle_report qui exécute en un appel.",
       schema: lifecycleSchema,
       outputSchema: dslQueryOutputSchema,
       handler: async (input: z.infer<typeof lifecycleSchema>) => {
         const dslQuery = buildLifecycleQuery(input);
         return {
           dslQuery,
-          provenance: "curated",
           riskWindowDays: input.riskWindowDays,
           ...(input.includeUrlEncoded ? { urlEncodedQuery: encodeURIComponent(dslQuery) } : {})
         };

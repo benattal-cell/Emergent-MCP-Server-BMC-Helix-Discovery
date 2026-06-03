@@ -9,8 +9,10 @@ const dataSearchSchema = z
   .object({
     request: z.string().min(1),
     query: z.string().min(1),
-    userConfirmed: z.boolean().default(false),
-    provenance: z.enum(["curated", "exploratory"]).default("exploratory"),
+    // deprecated: ignoré, conservé pour compat appelants
+    userConfirmed: z.boolean().optional(),
+    // deprecated: ignoré, conservé pour compat appelants
+    provenance: z.enum(["curated", "exploratory"]).optional(),
     limit: z.number().int().min(1).max(500).optional(),
     language: z.enum(["fr", "en"]).optional()
   })
@@ -93,9 +95,9 @@ export function dataSearchTools(client: DiscoveryClient) {
   return {
     discovery_data_search: {
       description: [
-        "GUARDED exploratory DSL search for NON-STANDARD use cases only. Call this ONLY after discovery_tool_guide shows that NO specialized (level-1) tool covers the need AND the user has explicitly agreed to a data-search attempt. Pass userConfirmed=true only once the user said yes. provenance=\"curated\" must be passed ONLY when the `query` comes word-for-word from a build_* tool in the same turn; never for hand-written DSL (otherwise keep \"exploratory\" + userConfirmed). This tool REFUSES to run until (1) the candidate query passes local DSL validation and (2) the node kinds it references exist in the live taxonomy. On validation/taxonomy failure, it automatically suggests curated real TRAVERSE paths from src/data/common_relationships.csv in relationshipHints so the caller can repair the query instead of inventing relationships. Raw DSL search_data is no longer exposed; this guarded tool is the only DSL path.",
+        "Exécute une requête DSL BMC Discovery et renvoie les lignes. Valide la syntaxe puis la taxonomy AVANT d'exécuter ; en cas d'erreur, renvoie un message actionnable (erreurs + chemins TRAVERSE suggérés depuis common_relationships) à corriger et relancer. Utiliser data_search quand aucun outil paramétré de niveau 1 ne couvre le besoin. Les outils paramétrés (find_hosts, lifecycle_report, etc.) restent préférés quand ils existent car ils ajoutent dédup, rôle dérivé et KPI visuels.",
         "",
-        "Reference DSL block for this guarded path:",
+        "Reference DSL block for this data_search path:",
         ...SEARCH_DATA_DESCRIPTION
       ].join("\n"),
       schema: dataSearchSchema,
@@ -104,21 +106,6 @@ export function dataSearchTools(client: DiscoveryClient) {
         const lang =
           input.language ??
           (/[àâçéèêëîïôûùü]|requête|données|vulnérabilit/i.test(input.request) ? "fr" : "en");
-
-        // --- Gate 0 : confirmation explicite de l'utilisateur (filet de sécurité Porte A) ---
-        if (input.provenance !== "curated" && !input.userConfirmed) {
-          return {
-            stage: "confirmation_required",
-            executed: false,
-            request: input.request,
-            query: input.query,
-            message: msg(
-              lang,
-              "Ce cas n'est pas une capacité standard. Demande explicitement à l'utilisateur s'il veut tenter une exploration data search (DSL), puis rappelle discovery_data_search avec userConfirmed=true.",
-              "This is not a standard capability. Ask the user explicitly whether to attempt a data-search (DSL) exploration, then call discovery_data_search again with userConfirmed=true."
-            )
-          };
-        }
 
         // --- Gate 1 : validation de la requête (local, aucun appel API) ---
         const validation = validateDiscoveryQuery(input.query);

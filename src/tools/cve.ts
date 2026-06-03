@@ -185,7 +185,7 @@ export function cveTools(client: DiscoveryClient, config: Pick<AppConfig, "nvdAp
       }
     },
     discovery_build_cve_software_query: {
-      description: "Build the Discovery DSL query that finds software instances matching a list of CPEs without executing it. To execute it, pass the returned dslQuery to discovery_data_search with provenance='curated' (no userConfirmed required). Use this AFTER getting CPEs from discovery_get_cve_cpes_from_nvd, or prefer discovery_cve_executive_summary for the standard one-call flow.",
+      description: "Build the Discovery DSL query that finds software instances matching a list of CPEs without executing it. To execute it, pass the returned dslQuery to discovery_data_search to execute it. Use this AFTER getting CPEs from discovery_get_cve_cpes_from_nvd, or prefer discovery_cve_executive_summary for the standard one-call flow.",
       schema: z.object({ cpeStrings: z.array(cpeSchema).min(1), includeUrlEncoded: z.boolean().default(false) }).strict(),
       outputSchema: dslQueryOutputSchema,
       handler: async (input: { cpeStrings: string[]; includeUrlEncoded: boolean }) => {
@@ -193,7 +193,6 @@ export function cveTools(client: DiscoveryClient, config: Pick<AppConfig, "nvdAp
         return {
           cpeCount: input.cpeStrings.length,
           dslQuery: dsl,
-          provenance: "curated",
           ...(input.includeUrlEncoded ? { urlEncodedQuery: encodeURIComponent(dsl) } : {})
         };
       }
@@ -208,7 +207,7 @@ export function cveTools(client: DiscoveryClient, config: Pick<AppConfig, "nvdAp
       }
     },
     discovery_cve_full_inventory_prompt: {
-      description: "Prepare the full impacted-inventory call. Use this AFTER discovery_cve_executive_summary if the user said yes to seeing the full impacted inventory (every host, version, service, owner). Returns a recommendedInput ready to pass to discovery_data_search with provenance='curated'.",
+      description: "Prepare the full impacted-inventory call. Use this AFTER discovery_cve_executive_summary if the user said yes to seeing the full impacted inventory (every host, version, service, owner). Returns a recommendedInput ready to pass to discovery_data_search for execution.",
       schema: z.object({ cveId: cveIdSchema, cpeStrings: z.array(cpeSchema).min(1), limit: z.number().int().min(1).max(500).default(200), language: languageSchema, question: z.string().optional() }).strict(),
       outputSchema: structuredOutputSchema,
       handler: async (input: { cveId: string; cpeStrings: string[]; limit: number; language?: "fr" | "en"; question?: string }) => {
@@ -219,7 +218,7 @@ export function cveTools(client: DiscoveryClient, config: Pick<AppConfig, "nvdAp
           cveId: input.cveId.toUpperCase(),
           objective: t.fullInventoryObjective,
           runWithTool: "discovery_data_search",
-          recommendedInput: { query: dsl, limit: input.limit, provenance: "curated" },
+          recommendedInput: { query: dsl, limit: input.limit },
           expectedColumns: t.expectedColumns
         };
       }
