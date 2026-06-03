@@ -93,6 +93,22 @@ describe("discovery_data_search", () => {
     expect(client.queryJson).not.toHaveBeenCalled();
   });
 
+  it("allows curated provenance without confirmation while keeping validation and taxonomy gates", async () => {
+    const client = fakeClient();
+    const tool = dataSearchTools(client).discovery_data_search;
+
+    const result = await tool.handler({
+      request: "Run lifecycle DSL from builder",
+      query: "SEARCH FooBarKind SHOW name",
+      provenance: "curated"
+    });
+
+    expect(result.stage).not.toBe("confirmation_required");
+    expect(result.stage).toBe("taxonomy");
+    expect(result.executed).toBe(false);
+    expect(client.queryJson).not.toHaveBeenCalled();
+  });
+
   it("executes valid confirmed queries with known primary kinds", async () => {
     const client = fakeClient();
     const tool = dataSearchTools(client).discovery_data_search;

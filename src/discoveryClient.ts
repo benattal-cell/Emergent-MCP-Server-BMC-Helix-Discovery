@@ -100,9 +100,6 @@ export class DiscoveryClient {
     return this.request("GET", this.versionedPath(`/data/nodes/${encodeURIComponent(nodeId)}/graph${suffix}`), undefined, true);
   }
 
-  async getTopologyServices(payload: unknown): Promise<unknown> {
-    return this.request("POST", this.versionedPath(`/topology/services`), payload, true);
-  }
 
   async queryJson(query: string, limit?: number, options: { entityLabel?: string; appliedFilters?: Record<string, unknown> } = {}): Promise<FlatQueryResult> {
     return this.searchData(query, { ...(limit === undefined ? {} : { limit }), format: "object", ...options });

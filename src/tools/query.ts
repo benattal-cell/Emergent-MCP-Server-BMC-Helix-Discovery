@@ -1,15 +1,12 @@
 import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
-import { flatRowsOutputSchema, structuredOutputSchema } from "./outputSchemas.js";
+import { structuredOutputSchema } from "./outputSchemas.js";
 import { ApiError } from "../utils/errors.js";
 
 export const queryJsonSchema = z.object({
   query: z.string().min(1)
 }).strict();
 
-export const queryTreeSchema = z.object({
-  query: z.string().min(1)
-}).strict();
 
 export const dslExamplesSchema = z.object({
   topic: z.string().min(1)
@@ -23,9 +20,6 @@ export const rawGetSchema = z.object({
   path: z.string().min(1).refine((value) => value.startsWith("/api/"), "path must start with /api/")
 }).strict();
 
-export const topologyServicesSchema = z.object({
-  payload: z.record(z.unknown())
-}).strict();
 
 export const SEARCH_DATA_DESCRIPTION = [
   "Execute a raw BMC Discovery DSL query and return flattened results.",
@@ -521,12 +515,6 @@ export function validateDiscoveryQuery(query: string): QueryValidationResult {
 
 export function queryTools(client: DiscoveryClient) {
   return {
-    discovery_search_tree_data: {
-      description: "ADVANCED FALLBACK. Executes the same raw Discovery DSL dialect in tree (hierarchical) format instead of flat. Use only when nested parent-child results are explicitly required in one shot. For flat guarded DSL execution use discovery_data_search, or better, a specialized tool.",
-      schema: queryTreeSchema,
-      outputSchema: flatRowsOutputSchema,
-      handler: async (input: z.infer<typeof queryTreeSchema>) => client.searchData(input.query, { format: "tree", entityLabel: "résultats hiérarchiques", appliedFilters: {} })
-    },
     discovery_dsl_examples: {
       description: "Return curated, static BMC Discovery DSL examples for a topic. Use this as a companion to discovery_data_search when drafting raw DSL queries. No Discovery API call is made.",
       schema: dslExamplesSchema,
@@ -538,12 +526,6 @@ export function queryTools(client: DiscoveryClient) {
       schema: validateQuerySchema,
       outputSchema: structuredOutputSchema,
       handler: async (input: z.infer<typeof validateQuerySchema>) => validateDiscoveryQuery(input.query)
-    },
-    discovery_topology_services: {
-      description: "ADVANCED. Call the Discovery /topology/services endpoint with a free-form payload. Use only when explicitly asked for topology/service-map data and no higher-level tool fits. Requires knowledge of the Discovery topology API. Do NOT use as a fallback for inventory or compliance queries.",
-      schema: topologyServicesSchema,
-      outputSchema: structuredOutputSchema,
-      handler: async (input: z.infer<typeof topologyServicesSchema>) => client.getTopologyServices(input.payload)
     }
   };
 }

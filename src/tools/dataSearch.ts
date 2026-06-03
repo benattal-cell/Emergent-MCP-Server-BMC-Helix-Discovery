@@ -10,6 +10,7 @@ const dataSearchSchema = z
     request: z.string().min(1),
     query: z.string().min(1),
     userConfirmed: z.boolean().default(false),
+    provenance: z.enum(["curated", "exploratory"]).default("exploratory"),
     limit: z.number().int().min(1).max(500).optional(),
     language: z.enum(["fr", "en"]).optional()
   })
@@ -92,7 +93,7 @@ export function dataSearchTools(client: DiscoveryClient) {
   return {
     discovery_data_search: {
       description: [
-        "GUARDED exploratory DSL search for NON-STANDARD use cases only. Call this ONLY after discovery_tool_guide shows that NO specialized (level-1) tool covers the need AND the user has explicitly agreed to a data-search attempt. Pass userConfirmed=true only once the user said yes. This tool REFUSES to run until (1) the candidate query passes local DSL validation and (2) the node kinds it references exist in the live taxonomy. On validation/taxonomy failure, it automatically suggests curated real TRAVERSE paths from src/data/common_relationships.csv in relationshipHints so the caller can repair the query instead of inventing relationships. Raw DSL search_data is no longer exposed; this guarded tool is the only DSL path.",
+        "GUARDED exploratory DSL search for NON-STANDARD use cases only. Call this ONLY after discovery_tool_guide shows that NO specialized (level-1) tool covers the need AND the user has explicitly agreed to a data-search attempt. Pass userConfirmed=true only once the user said yes. provenance=\"curated\" must be passed ONLY when the `query` comes word-for-word from a build_* tool in the same turn; never for hand-written DSL (otherwise keep \"exploratory\" + userConfirmed). This tool REFUSES to run until (1) the candidate query passes local DSL validation and (2) the node kinds it references exist in the live taxonomy. On validation/taxonomy failure, it automatically suggests curated real TRAVERSE paths from src/data/common_relationships.csv in relationshipHints so the caller can repair the query instead of inventing relationships. Raw DSL search_data is no longer exposed; this guarded tool is the only DSL path.",
         "",
         "Reference DSL block for this guarded path:",
         ...SEARCH_DATA_DESCRIPTION
@@ -105,7 +106,7 @@ export function dataSearchTools(client: DiscoveryClient) {
           (/[àâçéèêëîïôûùü]|requête|données|vulnérabilit/i.test(input.request) ? "fr" : "en");
 
         // --- Gate 0 : confirmation explicite de l'utilisateur (filet de sécurité Porte A) ---
-        if (!input.userConfirmed) {
+        if (input.provenance !== "curated" && !input.userConfirmed) {
           return {
             stage: "confirmation_required",
             executed: false,
