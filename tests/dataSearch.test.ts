@@ -43,6 +43,24 @@ describe("discovery_data_search", () => {
     expect(client.queryJson).not.toHaveBeenCalled();
   });
 
+  it("adds curated relationship hints and anti-patterns on Gate 1 validation failure", async () => {
+    const client = fakeClient();
+    const tool = dataSearchTools(client).discovery_data_search;
+
+    const result = await tool.handler({
+      request: "vcenter esx cluster",
+      query: "SEARCH SoftwareInstance ORDER BY name asc SHOW name",
+      userConfirmed: true
+    });
+
+    expect(result.stage).toBe("query_validation");
+    expect(result.executed).toBe(false);
+    expect(result.relationshipHints).toEqual(expect.any(Array));
+    expect(result.relationshipHints.length).toBeGreaterThan(0);
+    expect(result.antiPatterns).toEqual(expect.any(Array));
+    expect(client.queryJson).not.toHaveBeenCalled();
+  });
+
   it("blocks an unknown primary kind from taxonomy", async () => {
     const client = fakeClient();
     const tool = dataSearchTools(client).discovery_data_search;
@@ -55,6 +73,23 @@ describe("discovery_data_search", () => {
 
     expect(result.stage).toBe("taxonomy");
     expect(result.executed).toBe(false);
+    expect(client.queryJson).not.toHaveBeenCalled();
+  });
+
+  it("adds curated relationship hints on Gate 2 taxonomy failure", async () => {
+    const client = fakeClient();
+    const tool = dataSearchTools(client).discovery_data_search;
+
+    const result = await tool.handler({
+      request: "vcenter esx cluster",
+      query: "SEARCH FooBarKind SHOW name",
+      userConfirmed: true
+    });
+
+    expect(result.stage).toBe("taxonomy");
+    expect(result.executed).toBe(false);
+    expect(result.relationshipHints).toEqual(expect.any(Array));
+    expect(result.relationshipHints.length).toBeGreaterThan(0);
     expect(client.queryJson).not.toHaveBeenCalled();
   });
 

@@ -39,7 +39,7 @@ interface RelationshipEntry {
   originalIndex: number;
 }
 
-interface RelationshipResult {
+export interface RelationshipResult {
   section: string;
   fromKinds: string[];
   toKinds: string[];
@@ -132,9 +132,13 @@ function parseCommonRelationshipsCsv(csvText: string): RelationshipDataset {
   return { entries, antiPatterns };
 }
 
+let commonRelationshipsCache: RelationshipDataset | null = null;
+
 function loadCommonRelationships(): RelationshipDataset {
+  if (commonRelationshipsCache) return commonRelationshipsCache;
   const buffer = readFileSync(resolveCsvPath());
-  return parseCommonRelationshipsCsv(decodeCsv(buffer));
+  commonRelationshipsCache = parseCommonRelationshipsCsv(decodeCsv(buffer));
+  return commonRelationshipsCache;
 }
 
 function tokenizeKeywords(input: string | undefined): string[] {
@@ -208,6 +212,42 @@ function toResult(entry: RelationshipEntry, tokens: string[], kind: string | und
   };
 }
 
+export interface CommonRelationshipsMatch {
+  results: RelationshipResult[];
+  antiPatterns: string[];
+}
+
+export function matchCommonRelationships(input: {
+  keywords?: string;
+  kind?: string;
+  section?: "itom" | "itam" | "discovery";
+  limit?: number;
+}): CommonRelationshipsMatch {
+  const dataset = loadCommonRelationships();
+  const tokens = tokenizeKeywords(input.keywords);
+  const hasKeywords = tokens.length > 0;
+
+  let candidates = dataset.entries;
+
+  if (!hasKeywords && !input.kind) {
+    candidates = candidates.filter((entry) => entry.priority === "golden");
+  } else if (hasKeywords) {
+    candidates = candidates.filter((entry) => findMatchedKeywords(entry.keywords, tokens).length > 0);
+  }
+
+  if (input.section) {
+    const section: Section = input.section;
+    candidates = candidates.filter((entry) => entry.section === section);
+  }
+
+  const results = [...candidates]
+    .sort((left, right) => priorityRank(left.priority) - priorityRank(right.priority) || left.originalIndex - right.originalIndex)
+    .slice(0, input.limit ?? 12)
+    .map((entry) => toResult(entry, tokens, input.kind));
+
+  return { results, antiPatterns: dataset.antiPatterns };
+}
+
 export function commonRelationshipsTools() {
   return {
     discovery_common_relationships: {
@@ -218,44 +258,16 @@ export function commonRelationshipsTools() {
       visualInstruction: "",
       isVisual: true,
       handler: async (input: z.infer<typeof commonRelationshipsSchema>) => {
-        const dataset = loadCommonRelationships();
-        const tokens = tokenizeKeywords(input.keywords);
-        const normalizedKind = input.kind?.trim().toLowerCase();
-        const hasKeywords = tokens.length > 0;
-        const hasKind = Boolean(normalizedKind);
-
-        let candidates = dataset.entries;
-
-        if (!hasKeywords && !hasKind) {
-          candidates = candidates.filter((entry) => entry.priority === "golden");
-        } else if (hasKeywords) {
-          candidates = candidates.filter((entry) => findMatchedKeywords(entry.keywords, tokens).length > 0);
-        }
-
-        if (normalizedKind) {
-          candidates = candidates.filter((entry) =>
-            [...entry.fromKinds, ...entry.toKinds].some((candidate) => candidate.toLowerCase() === normalizedKind)
-          );
-        }
-
-        if (input.section) {
-          const section: Section = input.section;
-          candidates = candidates.filter((entry) => entry.section === section);
-        }
-
-        const results = [...candidates]
-          .sort((left, right) => priorityRank(left.priority) - priorityRank(right.priority) || left.originalIndex - right.originalIndex)
-          .slice(0, input.limit ?? 12)
-          .map((entry) => toResult(entry, tokens, input.kind));
+        const { results, antiPatterns } = matchCommonRelationships(input);
 
         const structuredContent = {
           results,
           count: results.length,
-          antiPatterns: dataset.antiPatterns
+          antiPatterns
         };
 
         return {
-          content: [{ type: "text", text: formatResultsText(results, dataset.antiPatterns, input) }],
+          content: [{ type: "text", text: formatResultsText(results, antiPatterns, input) }],
           structuredContent
         };
       }

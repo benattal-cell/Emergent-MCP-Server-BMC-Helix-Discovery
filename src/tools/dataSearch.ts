@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
+import { ApiError } from "../utils/errors.js";
 import { structuredOutputSchema } from "./outputSchemas.js";
-import { validateDiscoveryQuery } from "./query.js";
+import { matchCommonRelationships } from "./commonRelationships.js";
+import { SEARCH_DATA_DESCRIPTION, enrichDslError, extractDiscoveryErrorMessage, validateDiscoveryQuery } from "./query.js";
 
 const dataSearchSchema = z
   .object({
@@ -54,8 +56,21 @@ async function getKnownKinds(client: DiscoveryClient): Promise<Set<string> | nul
 }
 
 function extractPrimaryKind(query: string): string | null {
-  const m = /\bsearch\s+([A-Za-z][A-Za-z0-9_]*)/i.exec(query);
-  return m ? m[1] : null;
+  return primarySearchKind(query) ?? null;
+}
+
+function primarySearchKind(query: string): string | undefined {
+  const m = /\bSEARCH\s+([A-Za-z][A-Za-z0-9_]*)/i.exec(query);
+  return m?.[1];
+}
+
+function relationshipHints(request: string, query: string) {
+  const { results, antiPatterns } = matchCommonRelationships({
+    keywords: request,
+    kind: primarySearchKind(query),
+    limit: 8
+  });
+  return { relationshipHints: results, antiPatterns };
 }
 
 function extractTraversalKinds(query: string): string[] {
@@ -76,8 +91,12 @@ function msg(language: "fr" | "en" | undefined, fr: string, en: string): string 
 export function dataSearchTools(client: DiscoveryClient) {
   return {
     discovery_data_search: {
-      description:
-        "GUARDED exploratory DSL search for NON-STANDARD use cases only. Call this ONLY after discovery_tool_guide shows that NO specialized (level-1) tool covers the need AND the user has explicitly agreed to a data-search attempt. Pass userConfirmed=true only once the user said yes. This tool REFUSES to run until (1) the candidate query passes local DSL validation and (2) the node kinds it references exist in the live taxonomy. On failure it returns what to fix in a `stage` field and does NOT execute. NEVER use raw discovery_search_data for a non-standard case — use this instead.",
+      description: [
+        "GUARDED exploratory DSL search for NON-STANDARD use cases only. Call this ONLY after discovery_tool_guide shows that NO specialized (level-1) tool covers the need AND the user has explicitly agreed to a data-search attempt. Pass userConfirmed=true only once the user said yes. This tool REFUSES to run until (1) the candidate query passes local DSL validation and (2) the node kinds it references exist in the live taxonomy. On validation/taxonomy failure, it automatically suggests curated real TRAVERSE paths from src/data/common_relationships.csv in relationshipHints so the caller can repair the query instead of inventing relationships. Raw DSL search_data is no longer exposed; this guarded tool is the only DSL path.",
+        "",
+        "Reference DSL block for this guarded path:",
+        ...SEARCH_DATA_DESCRIPTION
+      ].join("\n"),
       schema: dataSearchSchema,
       outputSchema: structuredOutputSchema,
       handler: async (input: z.infer<typeof dataSearchSchema>) => {
@@ -110,10 +129,11 @@ export function dataSearchTools(client: DiscoveryClient) {
             errors: validation.errors,
             hints: validation.hints,
             query: input.query,
+            ...relationshipHints(input.request, input.query),
             message: msg(
               lang,
-              "La requête comporte des erreurs de syntaxe/clause. Corrige-la puis relance discovery_data_search.",
-              "The query has syntax/clause errors. Fix it then call discovery_data_search again."
+              "La requête comporte des erreurs de syntaxe/clause. Corrige-la puis relance discovery_data_search. Des chemins de traversée curés correspondant à ta demande sont fournis dans relationshipHints — utilise traverseSpec (ou traverseReversed si matchedDirection='reverse') au lieu d'inventer une relation.",
+              "The query has syntax/clause errors. Fix it then call discovery_data_search again. Curated traversal paths matching your request are provided in relationshipHints — use traverseSpec (or traverseReversed when matchedDirection='reverse') instead of inventing a relationship."
             )
           };
         }
@@ -139,10 +159,11 @@ export function dataSearchTools(client: DiscoveryClient) {
               suggestions,
               knownKindsSample: [...known].slice(0, 30),
               query: input.query,
+              ...relationshipHints(input.request, input.query),
               message: msg(
                 lang,
-                `Le kind « ${primary} » n'existe pas dans la taxonomy de cette instance. Choisis un kind valide (voir suggestions/knownKindsSample) ou appelle discovery_taxonomy_node_kinds, corrige la requête puis relance.`,
-                `Kind "${primary}" does not exist in this instance's taxonomy. Pick a valid kind (see suggestions/knownKindsSample) or call discovery_taxonomy_node_kinds, fix the query, then retry.`
+                `Le kind « ${primary} » n'existe pas dans la taxonomy live de cette instance. Les chemins curés fournis ci-dessous dans relationshipHints utilisent des kinds réels ; choisis un kind valide (voir suggestions/knownKindsSample) ou appelle discovery_taxonomy_node_kinds, corrige la requête puis relance.`,
+                `Kind "${primary}" does not exist in this instance's live taxonomy. The curated paths below in relationshipHints use real kinds; pick a valid kind (see suggestions/knownKindsSample) or call discovery_taxonomy_node_kinds, fix the query, then retry.`
               )
             };
           }
@@ -167,10 +188,26 @@ export function dataSearchTools(client: DiscoveryClient) {
         }
 
         // --- Exécution ---
-        const result = await client.queryJson(input.query, input.limit ?? 100, {
-          entityLabel: msg(lang, "résultats data search", "data search results"),
-          appliedFilters: {}
-        });
+        let result: unknown;
+        try {
+          result = await client.queryJson(input.query, input.limit ?? 100, {
+            entityLabel: msg(lang, "résultats data search", "data search results"),
+            appliedFilters: {}
+          });
+        } catch (error) {
+          if (error instanceof ApiError && error.status === 400) {
+            const message = extractDiscoveryErrorMessage(error);
+            return {
+              stage: "executed",
+              executed: false,
+              code: "DSL_SYNTAX_ERROR",
+              ...enrichDslError(message),
+              submitted_query: input.query,
+              ...relationshipHints(input.request, input.query)
+            };
+          }
+          throw error;
+        }
 
         return {
           stage: "executed",

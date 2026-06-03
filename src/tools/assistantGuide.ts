@@ -264,10 +264,10 @@ const sections: GuideSection[] = [
         useCaseEn: "SQL databases without application clients, hosts with no hosted software, pools with no backend, or full audit depending on caller-provided noise_filters."
       },
       {
-        tool: "discovery_search_data",
-        purpose: "Exécuter le DSL généré ou inspecter une requête brute seulement si aucun outil spécialisé ne couvre le besoin.",
+        tool: "discovery_data_search",
+        purpose: "Chemin DSL gardé après accord utilisateur ; valide la requête puis la taxonomy.",
         useCase: "Toujours conserver generated_dsl_query dans le résultat pour expliquer et debugger une analyse de gouvernance.",
-        purposeEn: "Execute generated DSL or inspect a raw query only when no specialized tool covers the need.",
+        purposeEn: "Guarded DSL path after user consent; validates query then taxonomy.",
         useCaseEn: "Always keep generated_dsl_query in the result to explain and debug a governance analysis."
       }
     ]
@@ -288,9 +288,9 @@ const sections: GuideSection[] = [
       {
         tool: "discovery_validate_query",
         purpose: "Valider localement les pièges courants sans exécuter la requête Discovery.",
-        useCase: "À appeler avant discovery_search_data si la requête contient TRAVERSE, LOOKUP, ORDER BY ou NODECOUNT.",
+        useCase: "À appeler avant discovery_data_search si la requête contient TRAVERSE, LOOKUP, ORDER BY ou NODECOUNT.",
         purposeEn: "Locally validate common traps without executing the Discovery query.",
-        useCaseEn: "Call before discovery_search_data if the query contains TRAVERSE, LOOKUP, ORDER BY, or NODECOUNT."
+        useCaseEn: "Call before discovery_data_search if the query contains TRAVERSE, LOOKUP, ORDER BY, or NODECOUNT."
       },
       {
         tool: "discovery_data_search",
@@ -298,13 +298,6 @@ const sections: GuideSection[] = [
         useCase: "Chemin exploratoire recommandé quand aucun outil niveau 1 ne couvre le besoin ; utiliser userConfirmed=true uniquement après accord utilisateur.",
         purposeEn: "Guarded entry point for non-standard cases after explicit user consent: validates DSL and then taxonomy before execution.",
         useCaseEn: "Recommended exploratory path when no level-1 tool covers the need; use userConfirmed=true only after user consent."
-      },
-      {
-        tool: "discovery_search_data",
-        purpose: "Exécuter une requête DSL brute et retourner des résultats aplatis avec erreurs DSL enrichies.",
-        useCase: "Réservé aux appels internes (ex: flux CVE) ou aux requêtes où discovery_search_data est explicitement nommé ; pour les cas non standard, utiliser discovery_data_search.",
-        purposeEn: "Execute a raw DSL query and return flattened results with enriched DSL errors.",
-        useCaseEn: "Reserved for internal calls (e.g. CVE flow) or requests where discovery_search_data is explicitly named; for non-standard cases, use discovery_data_search."
       },
       {
         tool: "discovery_search_tree_data",
@@ -398,14 +391,14 @@ const GLOBAL_RULES_FR = [
   "R-A1: AVANT tout appel d'outil, si l'intention ne correspond pas clairement à un outil de niveau 1 (vulnérabilités/CVE, dépendances/graphe, architecture, obsolescence), pose UNE question pour clarifier. Ne rien appeler.",
   "R-A2: Si le tool exige un OBJET et qu'aucun objet n'est nommé, demande lequel avant d'appeler l'outil.",
   "R-A3: Si l'objet nommé est absent À LA FOIS du registre nominatif (services/apps/hosts) ET des types SoftwareInstance connus, demande DE QUEL TYPE d'objet il s'agit plutôt que de deviner ou de lancer un data_search.",
-  "R-A4: Ne JAMAIS improviser une requête discovery_search_data pour contourner une ambiguïté.",
+  "R-A4: Ne JAMAIS improviser une requête DSL brute pour contourner une ambiguïté.",
   "R-A5: Après lecture de ce guide, classe la demande. Si AUCUN outil spécialisé (niveau 1) ne couvre le besoin, ne bascule PAS en silence sur le DSL. Annonce à l'utilisateur que ce n'est pas une capacité standard et DEMANDE-lui s'il veut que tu tentes une exploration data search.",
-  "R-A6: Uniquement après accord explicite de l'utilisateur, utilise discovery_data_search (JAMAIS discovery_search_data brut) avec userConfirmed=true et la requête candidate. Ce tool valide la requête PUIS la taxonomy avant d'exécuter ; selon le champ `stage` qu'il renvoie (confirmation_required / query_validation / taxonomy / executed), corrige et relance. Une fois en chemin data search, ne réappelle pas discovery_tool_guide.",
+  "R-A6: Uniquement après accord explicite de l'utilisateur, utilise discovery_data_search (le seul chemin DSL ; raw search_data n'est pas exposé) avec userConfirmed=true et la requête candidate. Ce tool valide la requête PUIS la taxonomy avant d'exécuter ; selon le champ `stage` qu'il renvoie (confirmation_required / query_validation / taxonomy / executed), corrige et relance. Une fois en chemin data search, ne réappelle pas discovery_tool_guide.",
   "RÈGLE 1: N'invente JAMAIS du DSL Discovery (search/show) si un outil spécialisé couvre le besoin. Utilise d'abord les outils paramétrés ci-dessous.",
   "RÈGLE 2: Si l'utilisateur mentionne un éditeur (Microsoft, Oracle...) ou un produit (Windows Server, JBoss...), passe-le DIRECTEMENT en paramètre `publisherContains` / `productContains` à `discovery_lifecycle_report`. Pas d'enchaînement.",
   "RÈGLE 3: La réponse de chaque outil contient généralement un champ `summary` avec le chiffre clé. Cite-le textuellement avant tout détail.",
   "RÈGLE 4: Pour les outils retournant plusieurs représentations (ex: discovery_dependency_map), choisis la représentation la plus riche que ton client supporte. Le HTML interactif est autoportant — propose-le en téléchargement si possible.",
-  "RÈGLE 5: Pour du DSL brut, appelle d'abord `discovery_dsl_examples` ou `discovery_validate_query`; puis seulement `discovery_search_data` si aucun outil spécialisé ne suffit.",
+  "RÈGLE 5: Pour du DSL brut, appelle d'abord `discovery_dsl_examples` ou `discovery_validate_query`; puis utilise le `discovery_data_search` gardé (`discovery_search_data` brut n'est plus exposé).",
   "RÈGLE 6: Avant d'écrire un TRAVERSE DSL, appeler `discovery_common_relationships` avec les mots-clés de la demande pour récupérer le chemin golden et sa direction ; ne retomber sur `discovery_taxonomy_*` que pour un chemin ABSENT du référentiel."
 ];
 
@@ -413,14 +406,14 @@ const GLOBAL_RULES_EN = [
   "R-A1: BEFORE any tool call, if the intent does not clearly map to a level-1 tool (vulnerabilities/CVE, dependencies/graph, architecture, obsolescence), ask ONE clarifying question. Do not call anything.",
   "R-A2: If the tool requires an OBJECT and no object is named, ask which one before calling the tool.",
   "R-A3: If the named object is absent from BOTH the nominal registry (services/apps/hosts) and known SoftwareInstance types, ask WHAT TYPE of object it is instead of guessing or launching data_search.",
-  "R-A4: NEVER improvise a discovery_search_data query to work around ambiguity.",
+  "R-A4: NEVER improvise a raw DSL query to work around ambiguity.",
   "R-A5: After reading this guide, classify the request. If NO specialized (level-1) tool covers the need, do NOT silently fall back to DSL. Tell the user this is not a standard capability and ASK whether they want you to attempt a data-search exploration.",
-  "R-A6: Only after the user explicitly agrees, use discovery_data_search (NEVER raw discovery_search_data) with userConfirmed=true and the candidate query. This tool validates the query THEN the taxonomy before executing; based on the returned `stage` (confirmation_required / query_validation / taxonomy / executed), fix and retry. Once on the data-search path, do not call discovery_tool_guide again.",
+  "R-A6: Only after the user explicitly agrees, use discovery_data_search (the only DSL path; raw search_data is not exposed) with userConfirmed=true and the candidate query. This tool validates the query THEN the taxonomy before executing; based on the returned `stage` (confirmation_required / query_validation / taxonomy / executed), fix and retry. Once on the data-search path, do not call discovery_tool_guide again.",
   "RULE 1: NEVER invent Discovery DSL (search/show) when a specialized tool covers the need. Use the parameterized tools below first.",
   "RULE 2: If the user mentions a vendor (Microsoft, Oracle...) or a product (Windows Server, JBoss...), pass it DIRECTLY as `publisherContains` / `productContains` to `discovery_lifecycle_report`. No chaining.",
   "RULE 3: Tool responses usually include a `summary` field with the headline count. Quote it verbatim before any detail.",
   "RULE 4: For tools returning multiple representations (e.g. discovery_dependency_map), choose the richest representation your client supports. The interactive HTML is self-contained — offer it as a downloadable artifact when possible.",
-  "RULE 5: For raw DSL, call `discovery_dsl_examples` or `discovery_validate_query` first; then call `discovery_search_data` only if no specialized tool is enough.",
+  "RULE 5: For raw DSL, call `discovery_dsl_examples` or `discovery_validate_query` first; then use the guarded `discovery_data_search` (raw `discovery_search_data` is no longer exposed).",
   "RULE 6: Before writing a TRAVERSE DSL, call `discovery_common_relationships` with the request keywords to retrieve the golden path and direction; fall back to `discovery_taxonomy_*` only for a path ABSENT from the referential."
 ];
 
