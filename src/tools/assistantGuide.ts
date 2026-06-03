@@ -265,17 +265,24 @@ const sections: GuideSection[] = [
     keywords: ["dsl", "query", "requête", "search data", "search_data", "traverse", "traversal", "nodecount", "nodes", "lookup", "syntax", "syntaxe", "example", "exemple", "validate", "validation"],
     items: [
       {
+        tool: "discovery_build_query",
+        purpose: "Composer une requête DSL à partir d'une intention structurée (le LLM n'écrit pas le DSL). Valide syntaxe + taxonomy, refuse les chemins de traversée inconnus, n'exécute pas.",
+        useCase: "Tout besoin non couvert par un outil paramétré : ex. 'les ESX avec plus de 10 VM Windows' → searchKind=Host + condition NODECOUNT > 10 sur traversal VirtualMachine.",
+        purposeEn: "Compose a DSL query from structured intent (the LLM does not write DSL). Validates syntax + taxonomy, refuses unknown traversal paths, does not execute.",
+        useCaseEn: "Any need not covered by a parameterized tool: e.g. 'ESX hosts with more than 10 Windows VMs' → searchKind=Host + NODECOUNT > 10 condition over a VirtualMachine traversal."
+      },
+      {
         tool: "discovery_data_search",
-        purpose: "Exécuter une requête DSL ; valide syntaxe + taxonomy avant exécution.",
-        useCase: "Chemin DSL légitime quand aucun outil niveau 1 ne couvre le besoin ; corriger et relancer selon le stage renvoyé.",
-        purposeEn: "Execute a DSL query; validates syntax + taxonomy before execution.",
-        useCaseEn: "Legitimate DSL path when no level-1 tool covers the need; fix and retry based on the returned stage."
+        purpose: "Exécuter une dslQuery validée — typiquement celle produite par discovery_build_query après accord utilisateur.",
+        useCase: "Après présentation de la dslQuery à l'utilisateur, exécuter la requête validée et conserver generated_dsl_query dans le résultat.",
+        purposeEn: "Execute a validated dslQuery — typically one produced by discovery_build_query after user approval.",
+        useCaseEn: "After showing the dslQuery to the user, execute the validated query and keep generated_dsl_query in the result."
       },
       {
         tool: "discovery_dsl_examples",
-        purpose: "OPTIONNEL — Fournir des exemples DSL statiques par thème avant d'écrire une requête brute.",
+        purpose: "OPTIONNEL — Fournir des exemples DSL statiques par thème.",
         useCase: "Demander topic='traversal', 'counting', 'lookup', 'database', etc. seulement en cas de doute de syntaxe.",
-        purposeEn: "OPTIONAL — Return static DSL examples by topic before drafting a raw query.",
+        purposeEn: "OPTIONAL — Return static DSL examples by topic.",
         useCaseEn: "Ask for topic='traversal', 'counting', 'lookup', 'database', etc. only when syntax is uncertain."
       },
       {
@@ -371,14 +378,14 @@ const GLOBAL_RULES_FR = [
   "R-A2: Si le tool exige un OBJET et qu'aucun objet n'est nommé, demande lequel avant d'appeler l'outil.",
   "R-A3: Si l'objet nommé est absent À LA FOIS du registre nominatif (services/apps/hosts) ET des types SoftwareInstance connus, demande DE QUEL TYPE d'objet il s'agit plutôt que de deviner ou de lancer un data_search.",
   "R-A4: Ne JAMAIS improviser une requête DSL brute pour contourner une ambiguïté.",
-  "R-A5: Si aucun outil paramétré de niveau 1 ne couvre le besoin, c'est un cas DSL légitime : rédige toi-même la requête DSL (en t'appuyant sur discovery_common_relationships pour les chemins TRAVERSE et sur les règles DSL de la description de data_search) et exécute-la via discovery_data_search. Pas de demande de confirmation.",
-  "R-A6: discovery_data_search valide la syntaxe puis la taxonomy avant d'exécuter ; selon le `stage` renvoyé (query_validation / taxonomy / executed), corrige la requête et relance. Les outils discovery_dsl_examples et discovery_validate_query sont des aides OPTIONNELLES à n'appeler que si tu doutes d'une syntaxe complexe (EXPAND, STEP IN/OUT, named traversal).",
+  "R-A5: Si aucun outil paramétré de niveau 1 ne couvre le besoin, NE rédige PAS de DSL toi-même. Appelle discovery_build_query en lui fournissant l'intention structurée (searchKind, conditions where avec opérateurs fermés, traversals depuis le référentiel, show). Il compose et valide la requête.",
+  "R-A6: discovery_build_query renvoie une dslQuery SANS l'exécuter. Présente-la à l'utilisateur (il peut la modifier), puis exécute-la via discovery_data_search. discovery_dsl_examples et discovery_validate_query restent des aides OPTIONNELLES, jamais une étape obligatoire.",
   "RÈGLE 1: N'invente JAMAIS du DSL Discovery (search/show) si un outil spécialisé couvre le besoin. Utilise d'abord les outils paramétrés ci-dessous.",
   "RÈGLE 2: Si l'utilisateur mentionne un éditeur (Microsoft, Oracle...) ou un produit (Windows Server, JBoss...), passe-le DIRECTEMENT en paramètre `publisherContains` / `productContains` à `discovery_lifecycle_report`. Pas d'enchaînement.",
   "RÈGLE 3: La réponse de chaque outil contient généralement un champ `summary` avec le chiffre clé. Cite-le textuellement avant tout détail.",
   "RÈGLE 4: Pour les outils retournant plusieurs représentations (ex: discovery_dependency_map), choisis la représentation la plus riche que ton client supporte. Le HTML interactif est autoportant — propose-le en téléchargement si possible.",
-  "RÈGLE 5: Pour du DSL brut, utilise `discovery_data_search` ; `discovery_dsl_examples` et `discovery_validate_query` sont des aides optionnelles si tu doutes d'une syntaxe complexe.",
-  "RÈGLE 6: Avant d'écrire un TRAVERSE DSL, appeler `discovery_common_relationships` avec les mots-clés de la demande pour récupérer le chemin golden et sa direction ; ne retomber sur `discovery_taxonomy_*` que pour un chemin ABSENT du référentiel."
+  "RÈGLE 5: Pour du DSL brut, utilise `discovery_build_query` pour composer et valider l'intention structurée ; exécute ensuite seulement la dslQuery validée via `discovery_data_search` après présentation à l'utilisateur.",
+  "RÈGLE 6: Les chemins de traversal doivent venir du référentiel via `discovery_build_query`/`common_relationships`; ne retomber sur `discovery_taxonomy_*` que pour un chemin ABSENT du référentiel."
 ];
 
 const GLOBAL_RULES_EN = [
@@ -386,14 +393,14 @@ const GLOBAL_RULES_EN = [
   "R-A2: If the tool requires an OBJECT and no object is named, ask which one before calling the tool.",
   "R-A3: If the named object is absent from BOTH the nominal registry (services/apps/hosts) and known SoftwareInstance types, ask WHAT TYPE of object it is instead of guessing or launching data_search.",
   "R-A4: NEVER improvise a raw DSL query to work around ambiguity.",
-  "R-A5: If no level-1 parameterized tool covers the need, this is a legitimate DSL case: write the DSL query yourself (using discovery_common_relationships for TRAVERSE paths and the DSL rules in the data_search description) and execute it via discovery_data_search. Do not ask for confirmation.",
-  "R-A6: discovery_data_search validates syntax and then taxonomy before executing; based on the returned `stage` (query_validation / taxonomy / executed), fix the query and retry. discovery_dsl_examples and discovery_validate_query are OPTIONAL helpers to call only when you are unsure about complex syntax (EXPAND, STEP IN/OUT, named traversal).",
+  "R-A5: If no level-1 parameterized tool covers the need, do NOT write DSL yourself. Call discovery_build_query with structured intent (searchKind, where conditions with closed operators, traversals from the referential, show). It composes and validates the query.",
+  "R-A6: discovery_build_query returns a dslQuery WITHOUT executing it. Show it to the user (they can edit it), then execute it via discovery_data_search. discovery_dsl_examples and discovery_validate_query remain OPTIONAL helpers, never a mandatory step.",
   "RULE 1: NEVER invent Discovery DSL (search/show) when a specialized tool covers the need. Use the parameterized tools below first.",
   "RULE 2: If the user mentions a vendor (Microsoft, Oracle...) or a product (Windows Server, JBoss...), pass it DIRECTLY as `publisherContains` / `productContains` to `discovery_lifecycle_report`. No chaining.",
   "RULE 3: Tool responses usually include a `summary` field with the headline count. Quote it verbatim before any detail.",
   "RULE 4: For tools returning multiple representations (e.g. discovery_dependency_map), choose the richest representation your client supports. The interactive HTML is self-contained — offer it as a downloadable artifact when possible.",
-  "RULE 5: For raw DSL, use `discovery_data_search`; `discovery_dsl_examples` and `discovery_validate_query` are optional helpers when you are unsure about complex syntax.",
-  "RULE 6: Before writing a TRAVERSE DSL, call `discovery_common_relationships` with the request keywords to retrieve the golden path and direction; fall back to `discovery_taxonomy_*` only for a path ABSENT from the referential."
+  "RULE 5: For raw DSL, use `discovery_build_query` to compose and validate structured intent; only then execute the validated dslQuery through `discovery_data_search` after showing it to the user.",
+  "RULE 6: Traversal paths must come from the referential through `discovery_build_query`/`common_relationships`; fall back to `discovery_taxonomy_*` only for a path ABSENT from the referential."
 ];
 
 function previewList(values: string[], max = 12): string {
