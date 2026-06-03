@@ -21,7 +21,6 @@ import { assistantGuideTools } from "./tools/assistantGuide.js";
 import { dependencyMapTools } from "./tools/dependencyMap.js";
 import { dependencyScopeTools } from "./tools/dependencyScope.js";
 import { serviceArchitectureTools } from "./tools/serviceArchitecture.js";
-import { hostCardTools } from "./tools/visualHostCard.js";
 import { orphansTools } from "./tools/orphans.js";
 import { itCostTools } from "./tools/itCosts/index.js";
 import { createOAuthServer } from "./oauth.js";
@@ -173,7 +172,6 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...osLifecycleTools(client),
     ...windowsLicenseTools(client),
     ...assistantGuideTools(),
-    ...hostCardTools(client),
     ...dependencyScopeTools(client),
     ...dependencyMapTools(client),
     ...serviceArchitectureTools(client),

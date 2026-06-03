@@ -64,9 +64,9 @@ describe("DSL helper ergonomics", () => {
     const tools = queryTools({} as never);
 
     expect(tools).not.toHaveProperty("discovery_search_data");
-    expect(tools).toHaveProperty("discovery_search_tree_data");
+    expect(tools).not.toHaveProperty("discovery_search_tree_data");
     expect(tools).toHaveProperty("discovery_dsl_examples");
     expect(tools).toHaveProperty("discovery_validate_query");
-    expect(tools).toHaveProperty("discovery_topology_services");
+    expect(tools).not.toHaveProperty("discovery_topology_services");
   });
 });

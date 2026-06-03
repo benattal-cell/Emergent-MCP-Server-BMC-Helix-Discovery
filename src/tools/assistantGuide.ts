@@ -168,7 +168,7 @@ const sections: GuideSection[] = [
     id: "inventory",
     title: "Inventaire hôtes / logiciels",
     titleEn: "Host / software inventory",
-    keywords: ["host", "hôte", "serveur", "server", "machine", "software", "logiciel", "soft", "application", "instance", "count", "combien", "inventaire", "inventory", "linux", "windows", "rhel", "carte hôte", "host card"],
+    keywords: ["host", "hôte", "serveur", "server", "machine", "software", "logiciel", "soft", "application", "instance", "count", "combien", "inventaire", "inventory", "linux", "windows", "rhel"],
     items: [
       {
         tool: "discovery_find_hosts",
@@ -190,13 +190,6 @@ const sections: GuideSection[] = [
         useCase: "Que tourne-t-il sur SAP-PROD-01 ?",
         purposeEn: "List software installed on a given host.",
         useCaseEn: "What's running on SAP-PROD-01?"
-      },
-      {
-        tool: "discovery_host_card",
-        purpose: "Rendre une carte visuelle synthétique d'un hôte.",
-        useCase: "Quand l'utilisateur veut une fiche lisible/visuelle pour un serveur précis.",
-        purposeEn: "Render a concise visual card for a host.",
-        useCaseEn: "When the user wants a readable visual profile for a specific server."
       }
     ]
   },
@@ -240,13 +233,6 @@ const sections: GuideSection[] = [
         useCase: "Après discovery_get_node_graph, produire une synthèse compréhensible pour CMDB/IT architecture.",
         purposeEn: "Summarize a raw graph into a CMDB/IT-architecture view (CI classes, relationships, volumes).",
         useCaseEn: "After discovery_get_node_graph, produce a summary understandable for CMDB/IT architecture."
-      },
-      {
-        tool: "discovery_topology_services",
-        purpose: "Appeler l'endpoint Discovery /topology/services avec un payload connu.",
-        useCase: "Seulement si l'utilisateur demande explicitement des données de service/topologie et fournit ou connaît le payload attendu.",
-        purposeEn: "Call the Discovery /topology/services endpoint with a known payload.",
-        useCaseEn: "Only when the user explicitly asks for service/topology data and provides or knows the expected payload."
       }
     ]
   },
@@ -298,13 +284,6 @@ const sections: GuideSection[] = [
         useCase: "Chemin exploratoire recommandé quand aucun outil niveau 1 ne couvre le besoin ; utiliser userConfirmed=true uniquement après accord utilisateur.",
         purposeEn: "Guarded entry point for non-standard cases after explicit user consent: validates DSL and then taxonomy before execution.",
         useCaseEn: "Recommended exploratory path when no level-1 tool covers the need; use userConfirmed=true only after user consent."
-      },
-      {
-        tool: "discovery_search_tree_data",
-        purpose: "Exécuter une requête DSL brute au format hiérarchique/tree.",
-        useCase: "Rare : seulement si le client a besoin d'une structure imbriquée plutôt qu'un tableau aplati.",
-        purposeEn: "Execute a raw DSL query in hierarchical/tree format.",
-        useCaseEn: "Rare: only if the client needs nested structure rather than a flattened table."
       }
     ]
   },

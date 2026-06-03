@@ -147,13 +147,14 @@ export function lifecycleTools(client: DiscoveryClient) {
       isVisual: true as const
     },
     discovery_build_lifecycle_query: {
-      description: "ADVANCED. Build a customizable lifecycle DSL query without executing it. Returns the DSL string ready to be passed to discovery_search_data. PREFER `discovery_lifecycle_report` for normal use cases — it now accepts the same filters AND executes the query in one call. Use this build tool only when you need to inspect or transform the DSL before running it.",
+      description: "Construit le DSL lifecycle sans l'exécuter. Pour l'exécuter, passer le dslQuery retourné à discovery_data_search avec provenance='curated' (pas de userConfirmed requis). Pour le cas standard, préférer discovery_lifecycle_report qui exécute en un appel.",
       schema: lifecycleSchema,
       outputSchema: dslQueryOutputSchema,
       handler: async (input: z.infer<typeof lifecycleSchema>) => {
         const dslQuery = buildLifecycleQuery(input);
         return {
           dslQuery,
+          provenance: "curated",
           riskWindowDays: input.riskWindowDays,
           ...(input.includeUrlEncoded ? { urlEncodedQuery: encodeURIComponent(dslQuery) } : {})
         };
