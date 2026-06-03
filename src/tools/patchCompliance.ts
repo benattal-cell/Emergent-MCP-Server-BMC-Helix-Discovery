@@ -108,7 +108,7 @@ function appliedFiltersFor(input: PatchComplianceInput): Record<string, unknown>
 export function patchComplianceTools(client: DiscoveryClient) {
   return {
     discovery_patch_compliance_report: {
-      description: "Run a Windows host patch compliance report directly in Discovery. Starts from Host nodes (virtual and bare-metal), optionally filters by OS regex and by hosted SoftwareInstance type/name regex. NOTE: hostsSoftwareMatching is ONLY used when hostingFilter is 'with' or 'without'. When hostingFilter='any' (default), OMIT hostsSoftwareMatching entirely — do not pass an empty string. Only set hostsSoftwareMatching together with hostingFilter='with' (hosts that RUN matching software) or 'without' (hosts that do NOT). Then checks Patch nodes whose name equals every/any KB in kbList. Returns visual KPIs plus non-compliant hosts with missing KBs. USE THIS DIRECTLY; do not delegate to discovery_search_data.",
+      description: "Run a Windows host patch compliance report directly in Discovery. Starts from Host nodes (virtual and bare-metal), optionally filters by OS regex and by hosted SoftwareInstance type/name regex. NOTE: hostsSoftwareMatching is ONLY used when hostingFilter is 'with' or 'without'. When hostingFilter='any' (default), OMIT hostsSoftwareMatching entirely — do not pass an empty string. Only set hostsSoftwareMatching together with hostingFilter='with' (hosts that RUN matching software) or 'without' (hosts that do NOT). Then checks Patch nodes whose name equals every/any KB in kbList. Returns visual KPIs plus non-compliant hosts with missing KBs. USE THIS DIRECTLY; do not delegate to discovery_execute_dsl.",
 
       schema: patchComplianceSchema,
       outputSchema: flatRowsOutputSchema,

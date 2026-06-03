@@ -49,7 +49,7 @@ discovery;Host/NetworkDevice/Printer/SNMPDevice/CloudProvider;:::;DiscoveryAcces
 # anti;"vCenter ≠ Host : le vCenter est un SoftwareInstance — ne jamais cibler ""Host vCenter → InferredElement""";;;;;
 # anti;vCenter → ESX passe TOUJOURS par Cluster (vCenter→Cluster→Host); jamais en direct;;;;
 # anti;Graphe service/architecture : racine = BusinessService puis BusinessApplicationInstance — JAMAIS SoftwareInstance/Host en racine (explosion du graphe à depth 2+);;;;;
-# anti;discovery_search_data n'est pas un fallback générique — il a un rôle défini; ne pas l'improviser pour un cas couvert ici;;;;
+# anti;discovery_execute_dsl n'est pas un fallback générique — il a un rôle défini; ne pas l'improviser pour un cas couvert ici;;;;
 # anti;Données partielles = problème de scan/permissions, pas une contrainte de design : ne pas concevoir autour;;;;;
 # anti;Pour le comptage d'un nombre d'installation d'un produit il suffit de chercher le nombre de Package, ou si vous cherchez les softwares qui tournent sur la machine les SoftwareInstance;;;;;
 # anti;Pour connaitre le propri�taire, business owner, ou mainteneur c'est les champs ;;;;;

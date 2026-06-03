@@ -3,9 +3,9 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { ApiError } from "../utils/errors.js";
 import { structuredOutputSchema } from "./outputSchemas.js";
 import { matchCommonRelationships } from "./commonRelationships.js";
-import { SEARCH_DATA_DESCRIPTION, enrichDslError, extractDiscoveryErrorMessage, validateDiscoveryQuery } from "./query.js";
+import { EXECUTE_DSL_DESCRIPTION, enrichDslError, extractDiscoveryErrorMessage, validateDiscoveryQuery } from "./query.js";
 
-const dataSearchSchema = z
+const executeDslSchema = z
   .object({
     request: z.string().min(1),
     query: z.string().min(1),
@@ -91,18 +91,20 @@ function msg(language: "fr" | "en" | undefined, fr: string, en: string): string 
   return (language ?? "fr") === "fr" ? fr : en;
 }
 
-export function dataSearchTools(client: DiscoveryClient) {
+export function executeDslTools(client: DiscoveryClient) {
   return {
-    discovery_data_search: {
+    discovery_execute_dsl: {
       description: [
-        "Exécute une dslQuery BMC Discovery déjà validée/acceptée et renvoie les lignes. Valide encore la syntaxe puis la taxonomy AVANT d'exécuter ; en cas d'erreur, renvoie un message actionnable (erreurs + chemins TRAVERSE suggérés depuis common_relationships) à corriger et relancer. Pour composer un besoin non couvert par un outil paramétré, utiliser d'abord discovery_build_query : data_search est un pur exécuteur et ne demande jamais confirmation.",
+        "Execute a raw BMC Discovery DSL query and return rows. This is THE tool to run any validated dslQuery — typically one produced by discovery_build_query, but any well-formed DSL works. Two safety gates run before execution: (1) local syntax validation (clause ordering, LOOKUP+WHERE, count(traverse), ASC keyword), (2) taxonomy check on referenced node kinds. On gate failure, returns actionable errors plus curated TRAVERSE paths from common_relationships to fix and retry. No user confirmation required — it is a pure executor.",
         "",
-        "Reference DSL block for this data_search path:",
-        ...SEARCH_DATA_DESCRIPTION
+        "Exécute une requête DSL BMC Discovery brute et renvoie les lignes. C'est L'outil pour exécuter toute dslQuery validée — typiquement issue de discovery_build_query, mais tout DSL bien formé fonctionne.",
+        "",
+        "Reference DSL block for this execute_dsl path:",
+        ...EXECUTE_DSL_DESCRIPTION
       ].join("\n"),
-      schema: dataSearchSchema,
+      schema: executeDslSchema,
       outputSchema: structuredOutputSchema,
-      handler: async (input: z.infer<typeof dataSearchSchema>) => {
+      handler: async (input: z.infer<typeof executeDslSchema>) => {
         const lang =
           input.language ??
           (/[àâçéèêëîïôûùü]|requête|données|vulnérabilit/i.test(input.request) ? "fr" : "en");
@@ -120,8 +122,8 @@ export function dataSearchTools(client: DiscoveryClient) {
             ...relationshipHints(input.request, input.query),
             message: msg(
               lang,
-              "La requête comporte des erreurs de syntaxe/clause. Corrige-la puis relance discovery_data_search. Des chemins de traversée curés correspondant à ta demande sont fournis dans relationshipHints — utilise traverseSpec (ou traverseReversed si matchedDirection='reverse') au lieu d'inventer une relation.",
-              "The query has syntax/clause errors. Fix it then call discovery_data_search again. Curated traversal paths matching your request are provided in relationshipHints — use traverseSpec (or traverseReversed when matchedDirection='reverse') instead of inventing a relationship."
+              "La requête comporte des erreurs de syntaxe/clause. Corrige-la puis relance discovery_execute_dsl. Des chemins de traversée curés correspondant à ta demande sont fournis dans relationshipHints — utilise traverseSpec (ou traverseReversed si matchedDirection='reverse') au lieu d'inventer une relation.",
+              "The query has syntax/clause errors. Fix it then call discovery_execute_dsl again. Curated traversal paths matching your request are provided in relationshipHints — use traverseSpec (or traverseReversed when matchedDirection='reverse') instead of inventing a relationship."
             )
           };
         }
@@ -179,7 +181,7 @@ export function dataSearchTools(client: DiscoveryClient) {
         let result: unknown;
         try {
           result = await client.queryJson(input.query, input.limit ?? 100, {
-            entityLabel: msg(lang, "résultats data search", "data search results"),
+            entityLabel: msg(lang, "résultats execute DSL", "execute DSL results"),
             appliedFilters: {}
           });
         } catch (error) {

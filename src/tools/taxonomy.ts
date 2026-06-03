@@ -38,7 +38,7 @@ export function taxonomyTools(client: DiscoveryClient) {
       handler: async (input: z.infer<typeof kindSchema>) => client.getTaxonomyNodeKindFieldLists(input.kind)
     },
     discovery_taxonomy_node_fields: {
-      description: "Return all fields (attributes) of a node kind for a given field list. Use this BEFORE writing a discovery_search_data query to know the exact attribute names available on a kind.",
+      description: "Return all fields (attributes) of a node kind for a given field list. Use this BEFORE writing a discovery_execute_dsl query to know the exact attribute names available on a kind.",
       schema: z.object({ kind: z.string().min(1), fieldList: z.string().min(1) }).strict(),
       outputSchema: structuredOutputSchema,
       handler: async (input: { kind: string; fieldList: string }) =>

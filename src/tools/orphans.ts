@@ -168,7 +168,7 @@ RECIPES:
 3. Hosts hosting no software (orphan hardware): target_kind=Host, inbound_relation.kind=HostedSoftware, source_kind=SoftwareInstance, direction=out, no noise filters.
 4. LoadBalancerPool with no backend: target_kind=LoadBalancerPool and choose the backend relationship/source_kind from taxonomy; do not exclude health checks unless that is explicitly part of your audit scope.
 
-Use discovery_search_data if you want to inspect or run raw Discovery DSL. Limitations: exclude_same_host is documented as a first-version limitation and cannot be removed from total_inbound because total_inbound is computed by Discovery DSL before post-processing. ObservedCommunication direction can be asymmetric depending on model/storage; the :Rel::Kind traversal avoids role assumptions and is the default form.`,
+Use discovery_execute_dsl if you want to inspect or run raw Discovery DSL. Limitations: exclude_same_host is documented as a first-version limitation and cannot be removed from total_inbound because total_inbound is computed by Discovery DSL before post-processing. ObservedCommunication direction can be asymmetric depending on model/storage; the :Rel::Kind traversal avoids role assumptions and is the default form.`,
       schema: findOrphansSchema,
       outputSchema: orphanOutputSchema,
       handler: async (input: FindOrphansInput) => {
@@ -191,7 +191,7 @@ Use discovery_search_data if you want to inspect or run raw Discovery DSL. Limit
         }, {});
         const warnings: string[] = [];
         if (input.noise_filters.exclude_same_host) warnings.push("exclude_same_host is not implemented in DSL in this version; total_inbound still includes same-host relationships.");
-        if (input.include_inbound_detail) warnings.push("include_inbound_detail requested, but this version returns count-based categorization only; use generated_dsl_query with discovery_search_data for raw DSL debugging.");
+        if (input.include_inbound_detail) warnings.push("include_inbound_detail requested, but this version returns count-based categorization only; use generated_dsl_query with discovery_execute_dsl for raw DSL debugging.");
         if (result.returnedCount < result.totalCount) warnings.push("Result set is truncated by limit; use a more restrictive target_filter or increase limit up to 2000.");
         const payload = {
           summary: {
