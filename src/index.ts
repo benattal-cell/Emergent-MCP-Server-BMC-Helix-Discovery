@@ -11,6 +11,7 @@ import { executeDslTools } from "./tools/executeDsl.js";
 import { hostTools } from "./tools/hosts.js";
 import { taxonomyTools } from "./tools/taxonomy.js";
 import { commonRelationshipsTools } from "./tools/commonRelationships.js";
+import { resolveKindTools } from "./tools/resolveKind.js";
 import { buildQueryTools } from "./tools/buildQuery.js";
 import { cveTools } from "./tools/cve.js";
 import { graphTools } from "./tools/graph.js";
@@ -166,6 +167,7 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...hostTools(client),
     ...taxonomyTools(client),
     ...commonRelationshipsTools(),
+    ...resolveKindTools(),
     ...buildQueryTools(client),
     ...cveTools(client, config),
     ...graphTools(client),
