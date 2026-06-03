@@ -1,0 +1,13 @@
+alias;kind;filter_field;filter_operator;filter_value;priority;note
+serveur;Host;;;;golden;Serveur physique ou logique Discovery (Host).
+hote;Host;;;;golden;Alias français sans accent pour Host.
+hôte;Host;;;;golden;Alias français accentué pour Host.
+host;Host;;;;golden;English alias for Host.
+esx;Host;type;has subword;ESX;golden;Serveur VMware ESX/ESXi représenté comme Host avec type ESX.
+esxi;Host;type;has subword;ESX;golden;Serveur VMware ESXi représenté comme Host avec type ESX.
+vcenter;SoftwareInstance;type;has subword;vCenter;golden;Instance logicielle VMware vCenter.
+Oracle SQL;SoftwareInstance;type;has subword;Oracle;common;Instance logicielle Oracle Database/SQL.
+serveur virtuel;Host;virtual;is;true;golden;Host virtuel: utiliser le booléen virtual is true.
+virtual server;Host;virtual;is;true;golden;Virtual Host: use virtual is true.
+load balancer;LoadBalancer;;;;golden;Kind dédié LoadBalancer lorsque disponible.
+load balancer;SoftwareInstance;type;has substring;load balancer;common;Implémentation logicielle de load balancer.

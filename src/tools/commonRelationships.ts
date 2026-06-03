@@ -58,7 +58,7 @@ interface RelationshipDataset {
   antiPatterns: string[];
 }
 
-function decodeCsv(buffer: Buffer): string {
+export function decodeCsv(buffer: Buffer): string {
   const utf8 = buffer.toString("utf8");
   return utf8.includes("\uFFFD") ? buffer.toString("latin1") : utf8;
 }

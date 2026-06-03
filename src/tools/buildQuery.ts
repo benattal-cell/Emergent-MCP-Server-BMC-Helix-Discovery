@@ -24,7 +24,7 @@ import { findTraversePath, listTraverseTargets, getAntiPatterns } from "./common
 const TRAVERSE_MODE = z.enum(["wildcard", "csv_path"]);
 
 // Opérateurs FERMÉS — le LLM choisit dans une liste, il ne tape pas de syntaxe.
-const TEXTUAL_OPERATORS = ["has_subword", "has_substring", "matches_regex", "equals", "exists", "not_exists"] as const;
+const TEXTUAL_OPERATORS = ["has_subword", "has_substring", "matches_regex", "equals", "exists", "not_exists", "is"] as const;
 const NUMERIC_OPERATORS = ["gt", "gte", "lt", "lte", "eq"] as const;
 
 type TextualOperator = (typeof TEXTUAL_OPERATORS)[number];
@@ -45,7 +45,7 @@ interface NodecountLeft {
 interface Condition {
   left: FieldLeft | NodecountLeft;
   operator: string; // validé selon left.type dans le handler
-  value?: string | number;
+  value?: string | number | boolean;
 }
 
 // Zod récursif via z.lazy + annotation explicite du type.
@@ -64,7 +64,7 @@ const conditionSchema: z.ZodType<Condition> = z.lazy(() =>
           .strict()
       ]),
       operator: z.string().min(1),
-      value: z.union([z.string(), z.number()]).optional()
+      value: z.union([z.string(), z.number(), z.boolean()]).optional()
     })
     .strict()
 );
@@ -135,7 +135,7 @@ function resolveTraverse(fromKind: string, ref: { targetKind: string; mode?: "wi
   return composeCsvTraverse(path.traverseSpec, ref.targetKind);
 }
 
-const TEXTUAL_TOKEN: Record<Exclude<TextualOperator, "exists" | "not_exists">, string> = {
+const TEXTUAL_TOKEN: Record<Exclude<TextualOperator, "exists" | "not_exists" | "is">, string> = {
   has_subword: "HAS SUBWORD",
   has_substring: "HAS SUBSTRING",
   matches_regex: "MATCHES",
@@ -150,9 +150,15 @@ const NUMERIC_TOKEN: Record<NumericOperator, string> = {
   eq: "="
 };
 
-function renderValue(value: string | number | undefined): string {
+function renderValue(value: string | number | boolean | undefined): string {
   if (typeof value === "number") return String(value);
   return `"${escapeValue(String(value ?? ""))}"`;
+}
+
+function renderBooleanValue(value: string | number | boolean | undefined): string {
+  if (typeof value === "boolean") return String(value);
+  if (value === "true" || value === "false") return value;
+  throw new Error(`L'opérateur booléen is exige une valeur true ou false.`);
 }
 
 // contextKind = kind du set sur lequel cette condition s'applique (pour les NODECOUNT internes).
@@ -164,6 +170,7 @@ function renderCondition(cond: Condition, contextKind: string): string {
     }
     if (op === "exists") return cond.left.name;
     if (op === "not_exists") return `NOT ${cond.left.name}`;
+    if (op === "is") return `${cond.left.name} is ${renderBooleanValue(cond.value)}`;
     return `${cond.left.name} ${TEXTUAL_TOKEN[op]} ${renderValue(cond.value)}`;
   }
 
