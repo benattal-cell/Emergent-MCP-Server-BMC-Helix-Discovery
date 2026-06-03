@@ -212,6 +212,53 @@ function toResult(entry: RelationshipEntry, tokens: string[], kind: string | und
   };
 }
 
+
+export interface TraversePathResult {
+  traverseSpec: string;
+  toKind: string;
+  priority: string;
+  note: string;
+}
+
+function kindMatches(candidates: string[], kind: string): boolean {
+  const normalizedKind = kind.trim().toLowerCase();
+  return candidates.some((candidate) => candidate.toLowerCase() === normalizedKind);
+}
+
+export function findTraversePath(input: { fromKind: string; toKind: string }): TraversePathResult | null {
+  const dataset = loadCommonRelationships();
+  const match = dataset.entries
+    .filter((entry) => kindMatches(entry.fromKinds, input.fromKind) && kindMatches(entry.toKinds, input.toKind))
+    .sort((left, right) => priorityRank(left.priority) - priorityRank(right.priority) || left.originalIndex - right.originalIndex)[0];
+
+  if (!match) return null;
+  const toKind = match.toKinds.find((candidate) => candidate.toLowerCase() === input.toKind.trim().toLowerCase()) ?? input.toKind;
+  return { traverseSpec: match.traverseSpec, toKind, priority: match.priority, note: match.note };
+}
+
+export function listTraverseTargets(fromKind: string): Array<{ toKind: string; priority: string; note: string }> {
+  const dataset = loadCommonRelationships();
+  const byKind = new Map<string, { toKind: string; priority: string; note: string; originalIndex: number }>();
+
+  for (const entry of dataset.entries) {
+    if (!kindMatches(entry.fromKinds, fromKind)) continue;
+    for (const toKind of entry.toKinds) {
+      const existing = byKind.get(toKind);
+      if (!existing || priorityRank(entry.priority) < priorityRank(existing.priority) || (priorityRank(entry.priority) === priorityRank(existing.priority) && entry.originalIndex < existing.originalIndex)) {
+        byKind.set(toKind, { toKind, priority: entry.priority, note: entry.note, originalIndex: entry.originalIndex });
+      }
+    }
+  }
+
+  return [...byKind.values()]
+    .sort((left, right) => priorityRank(left.priority) - priorityRank(right.priority) || left.toKind.localeCompare(right.toKind))
+    .map(({ toKind, priority, note }) => ({ toKind, priority, note }));
+}
+
+export function getAntiPatterns(): string[] {
+  return [...loadCommonRelationships().antiPatterns];
+}
+
 export interface CommonRelationshipsMatch {
   results: RelationshipResult[];
   antiPatterns: string[];

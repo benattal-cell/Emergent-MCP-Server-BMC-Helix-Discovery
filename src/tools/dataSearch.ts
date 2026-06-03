@@ -95,7 +95,7 @@ export function dataSearchTools(client: DiscoveryClient) {
   return {
     discovery_data_search: {
       description: [
-        "Exécute une requête DSL BMC Discovery et renvoie les lignes. Valide la syntaxe puis la taxonomy AVANT d'exécuter ; en cas d'erreur, renvoie un message actionnable (erreurs + chemins TRAVERSE suggérés depuis common_relationships) à corriger et relancer. Utiliser data_search quand aucun outil paramétré de niveau 1 ne couvre le besoin. Les outils paramétrés (find_hosts, lifecycle_report, etc.) restent préférés quand ils existent car ils ajoutent dédup, rôle dérivé et KPI visuels.",
+        "Exécute une dslQuery BMC Discovery déjà validée/acceptée et renvoie les lignes. Valide encore la syntaxe puis la taxonomy AVANT d'exécuter ; en cas d'erreur, renvoie un message actionnable (erreurs + chemins TRAVERSE suggérés depuis common_relationships) à corriger et relancer. Pour composer un besoin non couvert par un outil paramétré, utiliser d'abord discovery_build_query : data_search est un pur exécuteur et ne demande jamais confirmation.",
         "",
         "Reference DSL block for this data_search path:",
         ...SEARCH_DATA_DESCRIPTION
