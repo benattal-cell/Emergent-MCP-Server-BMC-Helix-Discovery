@@ -27,7 +27,7 @@ export const topologyServicesSchema = z.object({
   payload: z.record(z.unknown())
 }).strict();
 
-const SEARCH_DATA_DESCRIPTION = [
+export const SEARCH_DATA_DESCRIPTION = [
   "Execute a raw BMC Discovery DSL query and return flattened results.",
   "",
   "Prefer specialized tools (discovery_find_hosts, discovery_find_software_instances,",
@@ -284,7 +284,7 @@ export function enrichDslError(errorMessage: string): EnrichedDslError {
   return { original_message: errorMessage, hint: matched?.hint ?? null };
 }
 
-function extractDiscoveryErrorMessage(error: ApiError): string {
+export function extractDiscoveryErrorMessage(error: ApiError): string {
   const details = error.details;
   if (details && typeof details === "object" && "message" in details) {
     const message = (details as { message?: unknown }).message;
@@ -521,44 +521,20 @@ export function validateDiscoveryQuery(query: string): QueryValidationResult {
 
 export function queryTools(client: DiscoveryClient) {
   return {
-    discovery_search_data: {
-      description: SEARCH_DATA_DESCRIPTION,
-      schema: queryJsonSchema,
-      outputSchema: flatRowsOutputSchema,
-      handler: async (input: z.infer<typeof queryJsonSchema>) => {
-        try {
-          return await client.queryJson(input.query, undefined, { entityLabel: "résultats", appliedFilters: {} });
-        } catch (error) {
-          if (error instanceof ApiError && error.status === 400) {
-            const originalMessage = extractDiscoveryErrorMessage(error);
-            const enriched = enrichDslError(originalMessage);
-            return {
-              error: true,
-              status: 400,
-              code: "DSL_SYNTAX_ERROR",
-              original_message: enriched.original_message,
-              hint: enriched.hint,
-              submitted_query: input.query
-            };
-          }
-          throw error;
-        }
-      }
-    },
     discovery_search_tree_data: {
-      description: "ADVANCED FALLBACK. Same as discovery_search_data but returns results in tree (hierarchical) format instead of flat. Use only when nested parent-child results are explicitly required in one shot. For most use cases use discovery_search_data with the flat format, or better, a specialized tool.",
+      description: "ADVANCED FALLBACK. Executes the same raw Discovery DSL dialect in tree (hierarchical) format instead of flat. Use only when nested parent-child results are explicitly required in one shot. For flat guarded DSL execution use discovery_data_search, or better, a specialized tool.",
       schema: queryTreeSchema,
       outputSchema: flatRowsOutputSchema,
       handler: async (input: z.infer<typeof queryTreeSchema>) => client.searchData(input.query, { format: "tree", entityLabel: "résultats hiérarchiques", appliedFilters: {} })
     },
     discovery_dsl_examples: {
-      description: "Return curated, static BMC Discovery DSL examples for a topic. Use this as a companion to discovery_search_data when drafting raw DSL queries. No Discovery API call is made.",
+      description: "Return curated, static BMC Discovery DSL examples for a topic. Use this as a companion to discovery_data_search when drafting raw DSL queries. No Discovery API call is made.",
       schema: dslExamplesSchema,
       outputSchema: structuredOutputSchema,
       handler: async (input: z.infer<typeof dslExamplesSchema>) => getDslExamples(input.topic)
     },
     discovery_validate_query: {
-      description: "Validate common BMC Discovery DSL mistakes locally without executing the query. This is a lightweight pre-flight helper for discovery_search_data; it catches clause-ordering traps, LOOKUP+WHERE, and count(traverse ...) patterns.",
+      description: "Validate common BMC Discovery DSL mistakes locally without executing the query. This is a lightweight pre-flight helper for discovery_data_search; it catches clause-ordering traps, LOOKUP+WHERE, and count(traverse ...) patterns.",
       schema: validateQuerySchema,
       outputSchema: structuredOutputSchema,
       handler: async (input: z.infer<typeof validateQuerySchema>) => validateDiscoveryQuery(input.query)

@@ -1,5 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
-import { ApiError } from "../src/utils/errors.js";
+import { describe, expect, it } from "vitest";
 import { enrichDslError, getDslExamples, queryTools, validateDiscoveryQuery } from "../src/tools/query.js";
 
 describe("DSL helper ergonomics", () => {
@@ -61,27 +60,13 @@ describe("DSL helper ergonomics", () => {
     expect(result.errors).toEqual([]);
   });
 
-  it("returns enriched 400 DSL errors from discovery_search_data with submitted query", async () => {
-    const query = "search SoftwareInstance show name, count(traverse :ObservedCommunication::SoftwareInstance) as x";
-    const client = {
-      queryJson: vi.fn().mockRejectedValue(new ApiError("Bad request", {
-        status: 400,
-        code: "HTTP_ERROR",
-        details: { message: "Syntax error, unexpected 'traverse' on line 1" }
-      }))
-    } as never;
-    const tool = queryTools(client).discovery_search_data;
+  it("does not expose discovery_search_data as an MCP query tool", () => {
+    const tools = queryTools({} as never);
 
-    const result = await tool.handler({ query });
-
-    expect(result).toMatchObject({
-      error: true,
-      status: 400,
-      code: "DSL_SYNTAX_ERROR",
-      original_message: "Syntax error, unexpected 'traverse' on line 1",
-      submitted_query: query
-    });
-    expect((result as { hint: string | null }).hint).toContain("NODECOUNT");
-    expect(client.queryJson).toHaveBeenCalledWith(query, undefined, { entityLabel: "résultats", appliedFilters: {} });
+    expect(tools).not.toHaveProperty("discovery_search_data");
+    expect(tools).toHaveProperty("discovery_search_tree_data");
+    expect(tools).toHaveProperty("discovery_dsl_examples");
+    expect(tools).toHaveProperty("discovery_validate_query");
+    expect(tools).toHaveProperty("discovery_topology_services");
   });
 });
