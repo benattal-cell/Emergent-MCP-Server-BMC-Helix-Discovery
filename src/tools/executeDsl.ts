@@ -95,7 +95,7 @@ export function executeDslTools(client: DiscoveryClient) {
   return {
     discovery_execute_dsl: {
       description: [
-        "Execute a raw BMC Discovery DSL query and return rows. This is THE tool to run any validated dslQuery — typically one produced by discovery_build_query, but any well-formed DSL works. Two safety gates run before execution: (1) local syntax validation (clause ordering, LOOKUP+WHERE, count(traverse), ASC keyword), (2) taxonomy check on referenced node kinds. On gate failure, returns actionable errors plus curated TRAVERSE paths from common_relationships to fix and retry. No user confirmation required — it is a pure executor.",
+        "Primary DSL query executor / run query / submit query / direct query runner / execute query and return rows. Execute a raw BMC Discovery DSL query and return rows. This is THE tool to run any validated dslQuery — typically one produced by discovery_build_query, but any well-formed DSL works. Two safety gates run before execution: (1) local syntax validation (clause ordering, LOOKUP+WHERE, count(traverse), ASC keyword), (2) taxonomy check on referenced node kinds. On gate failure, returns actionable errors plus curated TRAVERSE paths from common_relationships to fix and retry. No user confirmation required — it is a pure executor.",
         "",
         "Exécute une requête DSL BMC Discovery brute et renvoie les lignes. C'est L'outil pour exécuter toute dslQuery validée — typiquement issue de discovery_build_query, mais tout DSL bien formé fonctionne.",
         "",

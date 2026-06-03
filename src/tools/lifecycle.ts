@@ -147,7 +147,7 @@ export function lifecycleTools(client: DiscoveryClient) {
       isVisual: true as const
     },
     discovery_build_lifecycle_query: {
-      description: "Construit le DSL lifecycle sans l'exécuter. Pour l'exécuter, passer le dslQuery retourné à discovery_execute_dsl pour l'exécuter. Pour le cas standard, préférer discovery_lifecycle_report qui exécute en un appel.",
+      description: "Construit le DSL lifecycle sans l'exécuter. Pour l'exécution, passer le dslQuery retourné à discovery_execute_dsl. Pour le cas standard, préférer discovery_lifecycle_report qui exécute en un appel.",
       schema: lifecycleSchema,
       outputSchema: dslQueryOutputSchema,
       handler: async (input: z.infer<typeof lifecycleSchema>) => {
