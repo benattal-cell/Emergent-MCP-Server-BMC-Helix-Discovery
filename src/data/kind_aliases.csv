@@ -1,0 +1,127 @@
+alias;kind;filter_field;filter_operator;filter_value;priority;note
+serveur;Host;;;;golden;Serveur generique
+server;Host;;;;golden;
+serveurs;Host;;;;common;Pluriel
+host;Host;;;;golden;
+hote;Host;;;;golden;
+hôte;Host;;;;common;
+machine;Host;;;;common;Peut etre physique ou virtuelle
+node;Host;;;;occasional;Tres generique
+baremetal;Host;virtual;is;false;common;Hote physique
+bare metal;Host;virtual;is;false;common;
+physique;Host;virtual;is;false;occasional;Hote physique
+esx;Host;os_vendor;has subword;Vmware;golden;Hyperviseur ESX modelise comme Host
+esxi;Host;os_vendor;has subword;Vmware;golden;
+hyperviseur;Host;;;;common;
+hypervisor;Host;;;;common;
+vcenter;SoftwareInstance;type;has subword;vCenter;golden;vCenter = SoftwareInstance (ancien nom VirtualCenter non couvert)
+vsphere;SoftwareInstance;type;has subword;vSphere;common;
+serveur virtuel;Host;virtual;is;true;golden;serveur virtualizé
+vm;VirtualMachine;;;;golden;Le guest OS est un Host separe (alt: Host WHERE virtual=true)
+vms;VirtualMachine;;;;common;
+machine virtuelle;VirtualMachine;;;;golden;
+virtual machine;VirtualMachine;;;;golden;
+cluster;Cluster;;;;golden;
+hyper-v;SoftwareInstance;type;has subword;Hyper-V;common;Hyperviseur Microsoft (mot compose)
+hyperv;SoftwareInstance;type;has subword;Hyper-V;common;
+nutanix;SoftwareInstance;type;has subword;Nutanix;occasional;A verifier selon modele
+windows;Host;os;has subword;Windows;common;OS hote (ambigu avec software Windows)
+windows server;Host;os;has subword;Windows Server;golden;Libelle multi-mots
+linux;Host;os;has subword;Linux;golden;
+rhel;Host;os;has subword;Red Hat;golden;os = Red Hat Enterprise Linux
+red hat;Host;os;has subword;Red Hat;golden;
+redhat;Host;os;has subword;Red Hat;common;
+centos;Host;os;has subword;CentOS;common;
+ubuntu;Host;os;has subword;Ubuntu;common;
+debian;Host;os;has subword;Debian;common;
+suse;Host;os;has subword;SUSE;common;
+solaris;Host;os;has subword;Solaris;common;
+aix;Host;os;has subword;AIX;common;
+base de donnees;SoftwareInstance;type;has subword;Database Server;golden;
+base de données;SoftwareInstance;type;has subword;Database Server;common;
+bdd;SoftwareInstance;type;has subword;Database Server;common;
+database;SoftwareInstance;type;has subword;Database Server;golden;
+db;SoftwareInstance;type;has subword;Database Server;common;
+oracle;SoftwareInstance;type;has subword;Oracle;common;Ambigu DB ou middleware
+oracle db;SoftwareInstance;type;has subword;Oracle Database;golden;Type reel parfois Oracle RDBMS
+oracle sql;SoftwareInstance;type;has subword;Oracle Database;golden;
+oracle database;SoftwareInstance;type;has subword;Oracle Database;golden;
+sql server;SoftwareInstance;type;has subword;SQL Server;golden;
+mssql;SoftwareInstance;type;has subword;SQL Server;common;
+mysql;SoftwareInstance;type;has subword;MySQL;golden;
+mariadb;SoftwareInstance;type;has subword;MariaDB;common;
+postgresql;SoftwareInstance;type;has subword;Postgre;golden;Couvre PostgreSQL et Postgres
+postgres;SoftwareInstance;type;has subword;Postgre;common;
+mongodb;SoftwareInstance;type;has subword;MongoDB;common;
+mongo;SoftwareInstance;type;has subword;MongoDB;occasional;
+db2;SoftwareInstance;type;has subword;DB2;common;
+sybase;SoftwareInstance;type;has subword;Sybase;occasional;
+sap hana;SoftwareInstance;type;has subword;HANA;common;
+hana;SoftwareInstance;type;has subword;HANA;occasional;
+apache;SoftwareInstance;type;has subword;Apache HTTP;common;Serveur web Apache pas Tomcat
+httpd;SoftwareInstance;type;has subword;Apache HTTP;occasional;
+nginx;SoftwareInstance;type;has subword;nginx;common;
+iis;SoftwareInstance;type;has subword;Internet Information Services;golden;
+tomcat;SoftwareInstance;type;has subword;Tomcat;golden;
+jboss;SoftwareInstance;type;has subword;JBoss;golden;WildFly couvert par ligne dediee
+wildfly;SoftwareInstance;type;has subword;WildFly;common;
+weblogic;SoftwareInstance;type;has subword;WebLogic;golden;
+websphere;SoftwareInstance;type;has subword;WebSphere;golden;
+was;SoftwareInstance;type;has subword;WebSphere;occasional;Abreviation WebSphere App Server
+sap;SoftwareInstance;type;has subword;SAP;common;
+serveur web;SoftwareInstance;type;has subword;Web Server;common;Type parfois HTTP Server
+web server;SoftwareInstance;type;has subword;Web Server;common;
+serveur applicatif;SoftwareInstance;type;has subword;Application Server;common;
+app server;SoftwareInstance;type;has subword;Application Server;common;
+middleware;SoftwareInstance;type;has subword;Application Server;occasional;Categorie large
+java;SoftwareInstance;type;has subword;Java;occasional;Runtime Java
+kafka;SoftwareInstance;type;has subword;Kafka;common;
+rabbitmq;SoftwareInstance;type;has subword;RabbitMQ;common;
+redis;SoftwareInstance;type;has subword;Redis;common;
+elasticsearch;SoftwareInstance;type;has subword;Elasticsearch;common;
+docker;SoftwareInstance;type;has subword;Docker;common;Moteur de conteneurs
+kubernetes;SoftwareInstance;type;has subword;Kubernetes;common;
+k8s;SoftwareInstance;type;has subword;Kubernetes;occasional;
+container;SoftwareInstance;type;has subword;Container;occasional;Kind Container dedie selon version Discovery
+conteneur;SoftwareInstance;type;has subword;Container;occasional;
+logiciel;SoftwareInstance;;;;golden;Instance logicielle generique
+software;SoftwareInstance;;;;golden;
+instance;SoftwareInstance;;;;common;
+soft;SoftwareInstance;;;;occasional;
+processus;SoftwareInstance;;;;occasional;
+service;BusinessService;;;;golden;Service metier
+service metier;BusinessService;;;;golden;
+business service;BusinessService;;;;golden;
+application;BusinessApplicationInstance;;;;common;Ambigu avec SoftwareInstance
+appli;BusinessApplicationInstance;;;;common;
+application metier;BusinessApplicationInstance;;;;golden;
+business application;BusinessApplicationInstance;;;;golden;
+app;BusinessApplicationInstance;;;;occasional;Ambigu
+switch;NetworkDevice;type;has subword;Switch;common;
+commutateur;NetworkDevice;type;has subword;Switch;occasional;
+router;NetworkDevice;type;has subword;Router;common;
+routeur;NetworkDevice;type;has subword;Router;common;
+firewall;NetworkDevice;type;has subword;Firewall;golden;
+pare-feu;NetworkDevice;type;has subword;Firewall;common;
+load balancer;NetworkDevice;type;has subword;Load Balancer;common;Parfois modelise en SoftwareInstance
+load balancer;SoftwareInstance;type;has subword;Load Balancer;occasional;Variante SI (HAProxy F5)
+equipement reseau;NetworkDevice;;;;golden;
+network device;NetworkDevice;;;;golden;
+stockage;StorageSystem;;;;common;
+storage;StorageSystem;;;;common;
+baie de stockage;StorageSystem;;;;golden;
+san;StorageSystem;type;has subword;SANSwitch;common;
+nas;StorageSystem;type;has subword;NAS;common;
+disque;StorageDevice;;;;occasional;
+imprimante;Printer;;;;occasional;
+printer;Printer;;;;occasional;
+Layer 3 Switch;NetworkDevice;type;has subword;Layer 3 Switch;occasional;
+PDU;SNMPManagedDevice;type;has subword;PDU;occasional;
+Infoblox;SNMPManagedDevice;vendor;has subword;Infoblox;occasional;
+container;SoftwareContainer;;;;common;
+storage volume;StorageVolume;;;;occasional;
+storage pool;StoragePool;;;;occasional;
+DRAC;ManagementController;vendor;has subword;Dell;occasional;
+CMC;ManagementController;type;has subword;Chassis Management Controller;occasional;
+contrôleur de management d’un châssis;ManagementController;type;has subword;Chassis Management Controller;occasional;
+Dell Remote Access Controller;ManagementController;vendor;has subword;Dell;occasional;
