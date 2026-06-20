@@ -10,8 +10,10 @@ Renseignez ces variables uniquement dans votre plateforme de déploiement (Emerg
 - `BMC_DISCOVERY_BASE_URL`
 - `BMC_DISCOVERY_API_VERSION` (défaut `v1.18`)
 - `BMC_DISCOVERY_TOKEN`
-- `MCP_SERVER_API_KEY`
 - `PORT` (défaut local `3000`)
+- `PUBLIC_BASE_URL` — URL publique du serveur (issuer OAuth, ex. `https://mon-serveur.up.railway.app`)
+- `OAUTH_REDIRECT_ALLOWLIST` (optionnel) — préfixes de redirect_uri autorisés, séparés par des virgules (fusionnés avec les défauts ChatGPT/OpenAI/Claude/Mistral + localhost) — voir « Authentification (OAuth 2.1) »
+- `OAUTH_LOGIN_PASSWORD` (optionnel) — si défini, `/oauth/authorize` affiche une page de consentement protégée par ce mot de passe
 - `MCP_DEFAULT_VISUAL` (défaut `true`) — voir « Sortie visuelle & optimisation »
 - `MCP_INCLUDE_SVG` (défaut `true`) — voir « Sortie visuelle & optimisation »
 
@@ -30,14 +32,16 @@ npm start
 - `GET /health` (aussi disponible via `/api/health` pour le routing Emergent Preview)
 - `POST /mcp` (aussi disponible via `/api/mcp` pour le routing Emergent Preview)
 - `GET /mcp` (Streamable HTTP)
+- `GET /.well-known/oauth-authorization-server` et `GET /.well-known/oauth-protected-resource` (découverte OAuth)
+- `POST /oauth/register` (Dynamic Client Registration), `GET/POST /oauth/authorize`, `POST /oauth/token`
 
-Toutes les requêtes `/mcp` exigent:
+Toutes les requêtes `/mcp` exigent un **access token OAuth** valide :
 
 ```http
-Authorization: Bearer <MCP_SERVER_API_KEY>
+Authorization: Bearer <access_token>
 ```
 
-Sinon réponse `401 Unauthorized`.
+Sinon réponse `401 Unauthorized` (avec un en-tête `WWW-Authenticate` pointant vers la découverte OAuth).
 
 ## Healthcheck
 
@@ -71,14 +75,28 @@ Notes de coût :
 
 ## Outils MCP exposés
 
-- `discovery_about`
-- `discovery_get_api_status`
-- `discovery_query_json`
-- `discovery_find_hosts`
-- `discovery_find_software_instances`
-- `discovery_find_host_software`
-- `discovery_start_scan` (exige `confirm=true`)
-- `discovery_raw_get` (chemins `/api/...` uniquement)
+Le serveur expose ~31 outils (préfixe `discovery_`). La liste exacte est découvrable via `tools/list`. Principaux :
+
+- Inventaire : `discovery_find_hosts`, `discovery_find_software_instances`, `discovery_find_host_software`
+- Requêtes DSL : `discovery_build_query`, `discovery_execute_dsl`, `discovery_validate_query`, `discovery_common_relationships`, `discovery_resolve_kind`
+- Modèle : `discovery_taxonomy` (introspection live, en fallback)
+- Cycle de vie / conformité : `discovery_lifecycle_report`, `discovery_os_lifecycle_report`, `discovery_patch_compliance_report`, `discovery_windows_license_report`
+- CVE : `discovery_cve_executive_summary`, `discovery_get_cve_cpes_from_nvd`, …
+- Cartographie : `discovery_dependency_map`, `discovery_dependency_scope`, `discovery_service_architecture`, `discovery_get_node_graph`
+- Coûts / Value Review : `discovery_cost_categories`, `discovery_cost_search`, `discovery_cost_estimate`, `discovery_cost_compare`
+- Métadonnées : `discovery_about`, `discovery_get_api_status`, `discovery_tool_guide`
+
+Une **resource** MCP est aussi exposée : `mcp://discovery/dsl-cookbook` (référence complète du DSL Discovery).
+
+## Authentification (OAuth 2.1)
+
+Le serveur est son propre **serveur d'autorisation** OAuth 2.1 (auto-hébergé, pas d'IdP externe). Il n'y a **plus de bearer statique**.
+
+- **Flux** : `authorization_code` + **PKCE (S256) obligatoire**, plus `refresh_token` (avec rotation).
+- **Dynamic Client Registration** : les connecteurs (ChatGPT, Claude…) s'enregistrent via `POST /oauth/register` en déclarant leurs `redirect_uris`.
+- **redirect_uri** : validés contre `OAUTH_REDIRECT_ALLOWLIST` (préfixes). Défauts inclus : `chatgpt.com`, `chat.openai.com`, `claude.ai`, `claude.com`, `chat.mistral.ai`, `localhost`. Ajoute les tiens via l'env.
+- **Consentement** : si `OAUTH_LOGIN_PASSWORD` est défini, `/oauth/authorize` affiche une page de login (mot de passe partagé) avant d'émettre un code ; sinon le flux est direct (démo sans friction).
+- **Tokens** : opaques, stockés en mémoire (suffisant pour 1 réplica ; perdus au redémarrage).
 
 ## Sécurité
 
@@ -91,24 +109,17 @@ Notes de coût :
 - `discovery_about` appelle: `BMC_DISCOVERY_BASE_URL + /api/about` (sans token).
 - Les autres appels utilisent: `BMC_DISCOVERY_BASE_URL + /api/{BMC_DISCOVERY_API_VERSION}/...`.
 
-⚠️ Les endpoints exacts query/scan peuvent dépendre de votre instance. Ils restent volontairement en TODO dans `src/discoveryClient.ts`:
-- `DISCOVERY_QUERY_ENDPOINT_TODO`
-- `DISCOVERY_SCAN_ENDPOINT_TODO`
-
-Validez-les via le Swagger/API docs de votre instance avant usage production.
+Les requêtes passent par `POST /api/{version}/data/search`. Validez le comportement via le Swagger/API docs de votre instance avant usage production.
 
 ## Exemple client MCP distant
 
-Exemple conceptuel (client compatible MCP distant):
+Avec l'authentification OAuth, un client MCP compatible (ChatGPT, Claude…) n'a besoin que de l'URL : il découvre le serveur d'autorisation, s'enregistre (DCR) et lance le flux OAuth (authorization_code + PKCE) automatiquement.
 
 ```json
 {
   "mcpServers": {
     "bmc-helix-discovery": {
-      "url": "https://your-server.example.com/mcp",
-      "headers": {
-        "Authorization": "Bearer replace_me"
-      }
+      "url": "https://your-server.example.com/mcp"
     }
   }
 }

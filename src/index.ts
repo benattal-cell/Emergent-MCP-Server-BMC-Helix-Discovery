@@ -90,20 +90,6 @@ function getBearerToken(authHeader: string | undefined): string | null {
   return match ? match[1] : null;
 }
 
-function decodeBasicAuth(header: string | undefined): { clientId: string; clientSecret: string } | null {
-  if (!header) return null;
-  const m = header.match(/^Basic\s+(.+)$/i);
-  if (!m) return null;
-  try {
-    const decoded = Buffer.from(m[1], "base64").toString("utf8");
-    const idx = decoded.indexOf(":");
-    if (idx < 0) return null;
-    return { clientId: decoded.slice(0, idx), clientSecret: decoded.slice(idx + 1) };
-  } catch {
-    return null;
-  }
-}
-
 function parseFormBody(req: http.IncomingMessage): Promise<Record<string, string>> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
@@ -156,6 +142,33 @@ function readJsonBody(req: http.IncomingMessage): Promise<unknown> {
     });
     req.on("error", reject);
   });
+}
+
+function htmlEscape(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+interface AuthorizeParams { clientId: string; redirectUri: string; state: string; codeChallenge: string; codeChallengeMethod: string; responseType: string }
+
+function consentPage(p: AuthorizeParams, errorNote: string): string {
+  const h = htmlEscape;
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Autorisation MCP</title>
+<style>body{font-family:system-ui,sans-serif;max-width:420px;margin:10vh auto;padding:0 1rem;color:#111}code{background:#f2f2f2;padding:.1rem .3rem;border-radius:4px}input[type=password]{width:100%;padding:.6rem;font-size:1rem;box-sizing:border-box;margin:.5rem 0}button{padding:.6rem 1.2rem;font-size:1rem;cursor:pointer}</style>
+</head><body>
+<h1>Autoriser l'accès MCP</h1>
+<p>Le client <code>${h(p.clientId || "(inconnu)")}</code> demande l'accès au serveur BMC Helix Discovery MCP.</p>
+${errorNote}
+<form method="post" action="/oauth/authorize">
+<input type="hidden" name="client_id" value="${h(p.clientId)}">
+<input type="hidden" name="redirect_uri" value="${h(p.redirectUri)}">
+<input type="hidden" name="state" value="${h(p.state)}">
+<input type="hidden" name="response_type" value="${h(p.responseType)}">
+<input type="hidden" name="code_challenge" value="${h(p.codeChallenge)}">
+<input type="hidden" name="code_challenge_method" value="${h(p.codeChallengeMethod)}">
+<label>Mot de passe d'accès<input type="password" name="password" autofocus required></label>
+<button type="submit">Autoriser</button>
+</form>
+</body></html>`;
 }
 
 function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
@@ -251,8 +264,8 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
   const issuer = (config.publicBaseUrl || `http://localhost:${config.port}`).replace(/\/$/, "");
   const oauth = createOAuthServer({
     issuer,
-    clientId: config.oauthClientId || "chatgpt-mcp-client",
-    clientSecret: config.oauthClientSecret || config.mcpServerApiKey
+    redirectAllowlist: config.oauthRedirectAllowlist,
+    loginPassword: config.oauthLoginPassword
   });
 
   return http.createServer(async (req, res) => {
@@ -271,16 +284,72 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
         return;
       }
 
-      if (req.method === "GET" && normalizedPath === "/oauth/authorize") {
+      if (req.method === "GET" && normalizedPath === "/.well-known/oauth-protected-resource") {
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(JSON.stringify({ resource: issuer, authorization_servers: [issuer] }));
+        return;
+      }
+
+      // Dynamic Client Registration (RFC 7591) — connectors self-register their redirect_uris.
+      if (req.method === "POST" && normalizedPath === "/oauth/register") {
+        const body = (await readJsonBody(req)) as Record<string, unknown> | undefined;
+        const result = oauth.registerClient(body?.redirect_uris);
+        if ("error" in result) {
+          res.writeHead(400, { "content-type": "application/json" });
+          res.end(JSON.stringify({ error: "invalid_redirect_uri", error_description: result.error }));
+          return;
+        }
+        res.writeHead(201, { "content-type": "application/json" });
+        res.end(JSON.stringify({
+          client_id: result.clientId,
+          redirect_uris: result.redirectUris,
+          token_endpoint_auth_method: "none",
+          grant_types: ["authorization_code", "refresh_token"],
+          response_types: ["code"]
+        }));
+        return;
+      }
+
+      if (normalizedPath === "/oauth/authorize" && (req.method === "GET" || req.method === "POST")) {
         const url = new URL(rawUrl, issuer);
-        const clientId = url.searchParams.get("client_id") || "";
-        const redirectUri = url.searchParams.get("redirect_uri") || "";
-        const state = url.searchParams.get("state") || "";
-        const codeChallenge = url.searchParams.get("code_challenge") || undefined;
-        const codeChallengeMethod = url.searchParams.get("code_challenge_method") || undefined;
-        if (!redirectUri) { res.writeHead(400).end("missing redirect_uri"); return; }
-        if (clientId && clientId !== oauth.config.clientId) { res.writeHead(400).end("invalid client_id"); return; }
-        const code = oauth.createAuthCode(oauth.config.clientId, redirectUri, codeChallenge, codeChallengeMethod || undefined);
+        const form: Record<string, string> = req.method === "POST" ? await parseFormBody(req) : {};
+        const param = (key: string): string => (req.method === "POST" ? (form[key] ?? "") : (url.searchParams.get(key) ?? ""));
+
+        const clientId = param("client_id");
+        const redirectUri = param("redirect_uri");
+        const state = param("state");
+        const responseType = param("response_type") || "code";
+        const codeChallenge = param("code_challenge");
+        const codeChallengeMethod: "S256" | "plain" = param("code_challenge_method").toLowerCase() === "plain" ? "plain" : "S256";
+
+        if (!redirectUri || !oauth.isRedirectAcceptable(clientId, redirectUri)) {
+          res.writeHead(400, { "content-type": "text/plain" });
+          res.end("invalid or unregistered redirect_uri");
+          return;
+        }
+
+        const redirectWithError = (error: string): void => {
+          const target = new URL(redirectUri);
+          target.searchParams.set("error", error);
+          if (state) target.searchParams.set("state", state);
+          res.writeHead(302, { location: target.toString() });
+          res.end();
+        };
+
+        if (responseType !== "code") { redirectWithError("unsupported_response_type"); return; }
+        if (!codeChallenge) { redirectWithError("invalid_request"); return; } // PKCE mandatory
+
+        if (oauth.requiresConsent()) {
+          const password = req.method === "POST" ? form.password : undefined;
+          if (req.method === "GET" || !oauth.checkConsentPassword(password)) {
+            const errorNote = req.method === "POST" ? '<p style="color:#c00">Mot de passe incorrect.</p>' : "";
+            res.writeHead(req.method === "POST" ? 401 : 200, { "content-type": "text/html; charset=utf-8" });
+            res.end(consentPage({ clientId, redirectUri, state, codeChallenge, codeChallengeMethod, responseType }, errorNote));
+            return;
+          }
+        }
+
+        const code = oauth.createAuthCode(clientId, redirectUri, codeChallenge, codeChallengeMethod);
         const target = new URL(redirectUri);
         target.searchParams.set("code", code);
         if (state) target.searchParams.set("state", state);
@@ -292,47 +361,47 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
       if (req.method === "POST" && normalizedPath === "/oauth/token") {
         try {
           const contentType = (req.headers["content-type"] || "").toLowerCase();
-          const basic = decodeBasicAuth(req.headers.authorization);
           const body = contentType.includes("application/x-www-form-urlencoded")
             ? await parseFormBody(req)
-            : (await readJsonBody(req)) as Record<string, unknown>;
+            : ((await readJsonBody(req)) as Record<string, unknown>) ?? {};
+          const field = (key: string): string => String((body as Record<string, unknown>)?.[key] ?? "");
 
-          const grantType = String((body as Record<string, unknown>)?.grant_type || "");
-          const bodyClientId = String((body as Record<string, unknown>)?.client_id || "");
-          const bodyClientSecret = String((body as Record<string, unknown>)?.client_secret || "");
-
-          const clientId = basic?.clientId || bodyClientId || oauth.config.clientId;
-          const clientSecret = basic?.clientSecret || bodyClientSecret || "";
-
+          const grantType = field("grant_type");
           if (!grantType) {
             res.writeHead(400, { "content-type": "application/json" });
             res.end(JSON.stringify({ error: "invalid_request", error_description: "missing grant_type" }));
             return;
           }
-          if (clientId !== oauth.config.clientId || clientSecret !== oauth.config.clientSecret) {
-            res.writeHead(401, { "content-type": "application/json" });
-            res.end(JSON.stringify({ error: "invalid_client" }));
-            return;
-          }
 
+          let result;
           if (grantType === "authorization_code") {
-            const code = String((body as Record<string, unknown>)?.code || "");
-            const rec = oauth.codes.get(code);
-            if (!rec || Date.now() > rec.expiresAt) {
-              res.writeHead(400, { "content-type": "application/json" });
-              res.end(JSON.stringify({ error: "invalid_grant" }));
-              return;
-            }
-            oauth.codes.delete(code);
-          } else if (grantType !== "client_credentials") {
+            result = oauth.exchangeCode({
+              code: field("code"),
+              codeVerifier: field("code_verifier"),
+              redirectUri: field("redirect_uri"),
+              clientId: field("client_id") || undefined
+            });
+          } else if (grantType === "refresh_token") {
+            result = oauth.refresh(field("refresh_token"));
+          } else {
             res.writeHead(400, { "content-type": "application/json" });
             res.end(JSON.stringify({ error: "unsupported_grant_type" }));
             return;
           }
 
-          const accessToken = oauth.issueToken(clientId);
-          res.writeHead(200, { "content-type": "application/json" });
-          res.end(JSON.stringify({ access_token: accessToken, token_type: "Bearer", expires_in: 3600 }));
+          if (!result.ok) {
+            res.writeHead(400, { "content-type": "application/json" });
+            res.end(JSON.stringify({ error: result.error }));
+            return;
+          }
+
+          res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+          res.end(JSON.stringify({
+            access_token: result.tokens.accessToken,
+            token_type: "Bearer",
+            expires_in: result.tokens.expiresIn,
+            refresh_token: result.tokens.refreshToken
+          }));
           return;
         } catch {
           res.writeHead(400, { "content-type": "application/json" });
@@ -352,11 +421,11 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
         (req.method === "POST" || req.method === "GET" || req.method === "DELETE")
       ) {
         const bearer = getBearerToken(req.headers.authorization);
-        const validBearer = Boolean(bearer) && (bearer === config.mcpServerApiKey || (bearer ? oauth.validateAccessToken(bearer) : false));
+        const validBearer = bearer ? oauth.validateAccessToken(bearer) : false;
         if (!validBearer) {
           res.writeHead(401, {
             "content-type": "application/json",
-            "www-authenticate": "Bearer"
+            "www-authenticate": `Bearer resource_metadata="${issuer}/.well-known/oauth-protected-resource"`
           });
           res.end(JSON.stringify({ error: true, code: "UNAUTHORIZED", message: "Unauthorized" }));
           return;
@@ -413,8 +482,8 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
 }
 
 async function main(): Promise<void> {
-  const requiredVars = ["BMC_DISCOVERY_BASE_URL", "MCP_SERVER_API_KEY"] as const;
-  const optionalVars = ["BMC_DISCOVERY_API_VERSION", "BMC_DISCOVERY_TOKEN", "PORT", "OAUTH_CLIENT_ID", "OAUTH_CLIENT_SECRET", "NVD_API_KEY", "PUBLIC_BASE_URL", "MCP_DEFAULT_VISUAL", "MCP_INCLUDE_SVG"] as const;
+  const requiredVars = ["BMC_DISCOVERY_BASE_URL"] as const;
+  const optionalVars = ["BMC_DISCOVERY_API_VERSION", "BMC_DISCOVERY_TOKEN", "PORT", "PUBLIC_BASE_URL", "OAUTH_REDIRECT_ALLOWLIST", "OAUTH_LOGIN_PASSWORD", "NVD_API_KEY", "MCP_DEFAULT_VISUAL", "MCP_INCLUDE_SVG"] as const;
   const presence = {
     required: Object.fromEntries(requiredVars.map((k) => [k, Boolean(process.env[k]?.trim())])),
     optional: Object.fromEntries(optionalVars.map((k) => [k, Boolean(process.env[k]?.trim())]))
