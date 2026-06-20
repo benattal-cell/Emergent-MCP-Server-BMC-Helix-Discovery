@@ -251,10 +251,6 @@ export class DiscoveryClient {
   }
 }
 
-function escapeDiscoveryLiteral(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-}
-
 function escapeDiscoveryDoubleQuoted(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
