@@ -101,6 +101,7 @@ describe("discovery_dependency_map", () => {
     const tools = dependencyMapTools(client);
     const result = await tools.discovery_dependency_map.handler({ target: "PROD-WEB-01", depth: 1, maxNodes: 60, iterations: 120, linLog: false, gravity: 1, scalingRatio: 10, layout: "concentric" });
     expect(result.content.some((block) => block.type === "image" || block.resource?.mimeType === "image/svg+xml")).toBe(true);
+    // SVG resource is emitted by default (MCP_INCLUDE_SVG, opt-out).
     const svgResource = result.content.find((block) => block.resource?.mimeType === "image/svg+xml");
     expect(svgResource?.type).toBe("resource");
     const htmlResource = result.content.find((block) => block.resource?.mimeType === "text/html") as { type: "resource"; resource: { mimeType: string; text: string } };

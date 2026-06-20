@@ -299,7 +299,7 @@ export function commonRelationshipsTools() {
   return {
     discovery_common_relationships: {
       description:
-        "Static curated referential of common BMC Helix Discovery TRAVERSE paths actually used in practice. Call this BEFORE writing any TRAVERSE DSL to get the golden path and direction; fall back to discovery_taxonomy_* only when the path is absent here. No Discovery API call is made.",
+        "Static curated referential of common BMC Helix Discovery TRAVERSE paths actually used in practice. Call this BEFORE writing any TRAVERSE DSL to get the golden path and direction; fall back to discovery_taxonomy only when the path is absent here. No Discovery API call is made.",
       schema: commonRelationshipsSchema,
       outputSchema: structuredOutputSchema,
       visualInstruction: "",

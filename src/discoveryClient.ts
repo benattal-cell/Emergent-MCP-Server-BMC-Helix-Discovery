@@ -3,7 +3,6 @@ import { ApiError } from "./utils/errors.js";
 import { sanitizeObject } from "./utils/sanitize.js";
 import { flattenDiscoveryQueryResult, type FlatQueryResult } from "./utils/flatten.js";
 
-const DISCOVERY_SCAN_ENDPOINT = "/scan";
 const REQUEST_TIMEOUT_MS = 30000;
 
 interface SearchOptions {
@@ -249,13 +248,6 @@ export class DiscoveryClient {
 
   async getTaxonomyRelationshipKindDetails(kind: string): Promise<unknown> {
     return this.request("GET", this.versionedPath(`/taxonomy/relkinds/${encodeURIComponent(kind)}`), undefined, true);
-  }
-
-  async startScan(params: { target: string; label?: string; confirm: boolean }): Promise<unknown> {
-    if (!params.confirm) {
-      throw new ApiError("Scan rejected: confirm must be true", { code: "SCAN_CONFIRMATION_REQUIRED" });
-    }
-    return this.request("POST", this.versionedPath(DISCOVERY_SCAN_ENDPOINT), { target: params.target, label: params.label }, true);
   }
 }
 

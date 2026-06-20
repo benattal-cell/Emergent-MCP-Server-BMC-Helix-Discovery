@@ -22,7 +22,7 @@ function countSubcategories(categories: Record<string, string[]>): number {
 export function itCostTools() {
   const rows = loadItCostRows();
   return {
-    search_it_costs: {
+    discovery_cost_search: {
       description: "Recherche dans la base de connaissance des coûts IT de référence. Filtres optionnels par catégorie et sous-catégorie. Utile pour découvrir les composants disponibles avant d'estimer.",
       schema: searchItCostsSchema,
       outputSchema: arrayResultOutputSchema,
@@ -40,7 +40,7 @@ export function itCostTools() {
       },
       isVisual: true as const
     },
-    list_categories: {
+    discovery_cost_categories: {
       description: "Liste hiérarchique des catégories et sous-catégories disponibles dans la base de coûts.",
       schema: emptySchema,
       outputSchema: structuredOutputSchema,
@@ -59,7 +59,7 @@ export function itCostTools() {
       },
       isVisual: true as const
     },
-    estimate_cost: {
+    discovery_cost_estimate: {
       description: "Estime le coût total pour une quantité donnée d'un composant, sur un horizon temporel (mensuel, annuel, 5 ans). Renvoie min/médian/max et les hypothèses utilisées.",
       schema: estimateCostSchema,
       outputSchema: structuredOutputSchema,
@@ -84,7 +84,7 @@ export function itCostTools() {
       },
       isVisual: true as const
     },
-    compare_alternatives: {
+    discovery_cost_compare: {
       description: "Compare les alternatives disponibles pour un type de charge (ex: VM 4vCPU 16Go, Base Oracle EE, Suite bureautique). Renvoie les coûts annualisés triés et, si le composant actuel est précisé, calcule l'économie potentielle.",
       schema: compareAlternativesSchema,
       outputSchema: itCostCompareOutputSchema,

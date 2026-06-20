@@ -6,23 +6,46 @@ export interface AppConfig {
   baseUrl: string;
   apiVersion: string;
   token?: string;
-  mcpServerApiKey: string;
   port: number;
+  /** Public issuer URL used in OAuth metadata (defaults to http://localhost:PORT). */
   publicBaseUrl?: string;
-  oauthClientId?: string;
-  oauthClientSecret?: string;
+  /** Allowed redirect_uri prefixes for the OAuth flow (DCR + authorize). */
+  oauthRedirectAllowlist: string[];
+  /** Optional shared consent password. When set, /oauth/authorize shows a login gate. */
+  oauthLoginPassword?: string;
   nvdApiKey?: string;
+  /** Emit visual blocks (PNG) by default. Set MCP_DEFAULT_VISUAL=false for text-only, token-efficient deployments. */
+  defaultVisual: boolean;
+  /** Also emit the raw SVG as a resource block. On by default; set MCP_INCLUDE_SVG=false to slim payloads for PNG-only clients. */
+  includeSvgResource: boolean;
+}
+
+// Known OAuth callback prefixes for the LLM clients we support, plus localhost for desktop apps.
+// Extend via OAUTH_REDIRECT_ALLOWLIST (comma-separated); entries are merged with these defaults.
+const DEFAULT_REDIRECT_ALLOWLIST = [
+  "https://chatgpt.com/",
+  "https://chat.openai.com/",
+  "https://platform.openai.com/",
+  "https://claude.ai/",
+  "https://claude.com/",
+  "https://chat.mistral.ai/",
+  "http://localhost",
+  "http://127.0.0.1"
+];
+
+function parseAllowlist(raw: string | undefined): string[] {
+  const extra = (raw ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  return [...new Set([...DEFAULT_REDIRECT_ALLOWLIST, ...extra])];
 }
 
 export function loadConfig(): AppConfig {
   const baseUrl = process.env.BMC_DISCOVERY_BASE_URL?.trim();
-  const mcpServerApiKey = process.env.MCP_SERVER_API_KEY?.trim();
 
   if (!baseUrl) {
     throw new Error("Missing required env var: BMC_DISCOVERY_BASE_URL");
-  }
-  if (!mcpServerApiKey) {
-    throw new Error("Missing required env var: MCP_SERVER_API_KEY");
   }
 
   const rawPort = process.env.PORT?.trim() ?? "8001";
@@ -35,11 +58,12 @@ export function loadConfig(): AppConfig {
     baseUrl: baseUrl.replace(/\/$/, ""),
     apiVersion: process.env.BMC_DISCOVERY_API_VERSION?.trim() || "v1.18",
     token: process.env.BMC_DISCOVERY_TOKEN?.trim(),
-    mcpServerApiKey,
     port,
     publicBaseUrl: process.env.PUBLIC_BASE_URL?.trim(),
-    oauthClientId: process.env.OAUTH_CLIENT_ID?.trim(),
-    oauthClientSecret: process.env.OAUTH_CLIENT_SECRET?.trim(),
-    nvdApiKey: process.env.NVD_API_KEY?.trim()
+    oauthRedirectAllowlist: parseAllowlist(process.env.OAUTH_REDIRECT_ALLOWLIST),
+    oauthLoginPassword: process.env.OAUTH_LOGIN_PASSWORD?.trim() || undefined,
+    nvdApiKey: process.env.NVD_API_KEY?.trim(),
+    defaultVisual: (process.env.MCP_DEFAULT_VISUAL?.trim().toLowerCase() ?? "true") !== "false",
+    includeSvgResource: (process.env.MCP_INCLUDE_SVG?.trim().toLowerCase() ?? "true") !== "false"
   };
 }

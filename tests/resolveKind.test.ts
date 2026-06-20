@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { resolveKind, resolveKindTools } from "../src/tools/resolveKind.js";
 import { buildQueryTools } from "../src/tools/buildQuery.js";
 import { createHttpServer } from "../src/index.js";
+import { testConfig, obtainAccessToken } from "./helpers/oauthFlow.js";
 
 const mockClient = {
   getTaxonomyNodeKinds: async () => ["Host", "SoftwareInstance", "LoadBalancer"],
@@ -63,7 +64,7 @@ describe("discovery_resolve_kind", () => {
     expect(result.candidates).toHaveLength(2);
     expect(result.candidates.every((candidate) => candidate.ambiguous)).toBe(true);
     expect(result.guidance).toContain("Alias ambigu");
-    expect(result.candidates.map((candidate) => candidate.kind)).toEqual(["LoadBalancer", "SoftwareInstance"]);
+    expect(result.candidates.map((candidate) => candidate.kind)).toEqual(["NetworkDevice", "SoftwareInstance"]);
   });
 
   it("normalizes accents and case", () => {
@@ -77,20 +78,16 @@ describe("discovery_resolve_kind", () => {
   });
 
   it("lists discovery_resolve_kind through MCP tools/list", async () => {
-    currentServer = await createHttpServer({
-      baseUrl: "https://example.test",
-      apiVersion: "v1.18",
-      token: "bmc-token",
-      mcpServerApiKey: "good-key",
-      port: 0
-    });
+    currentServer = await createHttpServer(testConfig({ token: "bmc-token" }));
     await new Promise<void>((resolve) => currentServer?.listen(0, resolve));
     const address = currentServer.address();
     if (!address || typeof address === "string") throw new Error("No address");
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+    const { accessToken } = await obtainAccessToken(baseUrl);
 
-    const response = await fetch(`http://127.0.0.1:${address.port}/mcp`, {
+    const response = await fetch(`${baseUrl}/mcp`, {
       method: "POST",
-      headers: { authorization: "Bearer good-key", "content-type": "application/json", accept: "application/json, text/event-stream" },
+      headers: { authorization: `Bearer ${accessToken}`, "content-type": "application/json", accept: "application/json, text/event-stream" },
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} })
     });
     const text = await response.text();
