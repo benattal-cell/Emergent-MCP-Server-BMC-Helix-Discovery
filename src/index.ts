@@ -6,7 +6,7 @@ import { loadConfig, type AppConfig } from "./config.js";
 import { DiscoveryClient } from "./discoveryClient.js";
 import { normalizeApiError } from "./utils/errors.js";
 import { aboutTools } from "./tools/about.js";
-import { queryTools } from "./tools/query.js";
+import { queryTools, buildDslCookbook } from "./tools/query.js";
 import { executeDslTools } from "./tools/executeDsl.js";
 import { hostTools } from "./tools/hosts.js";
 import { taxonomyTools } from "./tools/taxonomy.js";
@@ -27,8 +27,8 @@ import { orphansTools } from "./tools/orphans.js";
 import { itCostTools } from "./tools/itCosts/index.js";
 import { createOAuthServer } from "./oauth.js";
 import { kpiGrid, type Kpi } from "./svg/kpi.js";
-import { renderVisual } from "./svg/renderer.js";
-import { structuredOutputSchema as defaultOutputSchema } from "./tools/outputSchemas.js";
+import { renderVisual, setVisualSettings, visualsEnabled } from "./svg/renderer.js";
+import { structuredOutputSchema as emptyOutputSchema } from "./tools/outputSchemas.js";
 import { SVG_VISUAL_DESCRIPTION } from "./tools/visualInstructions.js";
 import { loadCatalog } from "./discovery/catalog.js";
 
@@ -183,19 +183,25 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...itCostTools()
   };
 
+  const DEFAULT_ANNOTATIONS = { readOnlyHint: true, openWorldHint: true };
   for (const [name, def] of Object.entries(tools)) {
-    const toolDef = def as { schema: { parse: (value: unknown) => unknown; shape?: Record<string, unknown> }; outputSchema?: unknown; handler: (input: never) => Promise<unknown>; description?: string; visualInstruction?: string; isVisual?: boolean };
+    const toolDef = def as { schema: { parse: (value: unknown) => unknown; shape?: Record<string, unknown> }; outputSchema?: unknown; handler: (input: never) => Promise<unknown>; description?: string; visualInstruction?: string; isVisual?: boolean; annotations?: Record<string, unknown> };
     const inputSchemaShape = toolDef.schema && (toolDef.schema as { shape?: unknown }).shape
       ? (toolDef.schema as { shape: Record<string, unknown> }).shape
       : {};
-    const outputSchema = toolDef.outputSchema ?? defaultOutputSchema;
+    const registration: Record<string, unknown> = {
+      description: withVisualInstruction(toolDef.description ?? `MCP tool: ${name}`, toolDef.visualInstruction),
+      inputSchema: inputSchemaShape as Record<string, never>,
+      annotations: { ...DEFAULT_ANNOTATIONS, ...(toolDef.annotations ?? {}) }
+    };
+    // Only advertise an outputSchema when the tool declares a meaningful one.
+    // The shared empty passthrough is a sentinel meaning "no output contract".
+    if (toolDef.outputSchema && toolDef.outputSchema !== emptyOutputSchema) {
+      registration.outputSchema = toolDef.outputSchema;
+    }
     mcpServer.registerTool(
       name,
-      {
-        description: withVisualInstruction(toolDef.description ?? `MCP tool: ${name}`, toolDef.visualInstruction),
-        inputSchema: inputSchemaShape as Record<string, never>,
-        outputSchema: outputSchema as never
-      },
+      registration as never,
       async (input: unknown) => {
         try {
           const parsed = toolDef.schema.parse(input ?? {});
@@ -207,7 +213,7 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
             return { ...visualResult, structuredContent: structuredContentObject(visualResult.structuredContent) } as never;
           }
 
-          const visual = fallbackVisualForResult(name, result);
+          const visual = visualsEnabled() ? fallbackVisualForResult(name, result) : null;
           if (visual) return { ...visual, structuredContent: structuredContentObject(visual.structuredContent), content: [...visual.content, { type: "text", text: JSON.stringify(result, null, 2) }] } as never;
 
           return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }], structuredContent: structuredContentObject(result) };
@@ -217,11 +223,25 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
       }
     );
   }
+  mcpServer.registerResource(
+    "discovery-dsl-cookbook",
+    "mcp://discovery/dsl-cookbook",
+    {
+      title: "BMC Discovery DSL Cookbook",
+      description: "Full BMC Helix Discovery DSL reference (grammar, traversals, key expressions, NODECOUNT, named traversals) plus curated examples by topic. Same content embedded in discovery_execute_dsl's description, exposed as a fetchable resource for clients that read MCP resources.",
+      mimeType: "text/markdown"
+    },
+    async (uri) => ({
+      contents: [{ uri: uri.href, mimeType: "text/markdown", text: buildDslCookbook() }]
+    })
+  );
+
   return mcpServer;
 }
 
 export async function createHttpServer(config: AppConfig): Promise<http.Server> {
   const client = new DiscoveryClient(config);
+  setVisualSettings({ enabled: config.defaultVisual, includeSvg: config.includeSvgResource });
   if (process.env.NODE_ENV !== "test" && !process.env.VITEST) {
     void loadCatalog(client).catch((error) => {
       const message = error instanceof Error ? error.message : String(error);
@@ -394,7 +414,7 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
 
 async function main(): Promise<void> {
   const requiredVars = ["BMC_DISCOVERY_BASE_URL", "MCP_SERVER_API_KEY"] as const;
-  const optionalVars = ["BMC_DISCOVERY_API_VERSION", "BMC_DISCOVERY_TOKEN", "PORT", "OAUTH_CLIENT_ID", "OAUTH_CLIENT_SECRET", "NVD_API_KEY", "PUBLIC_BASE_URL"] as const;
+  const optionalVars = ["BMC_DISCOVERY_API_VERSION", "BMC_DISCOVERY_TOKEN", "PORT", "OAUTH_CLIENT_ID", "OAUTH_CLIENT_SECRET", "NVD_API_KEY", "PUBLIC_BASE_URL", "MCP_DEFAULT_VISUAL", "MCP_INCLUDE_SVG"] as const;
   const presence = {
     required: Object.fromEntries(requiredVars.map((k) => [k, Boolean(process.env[k]?.trim())])),
     optional: Object.fromEntries(optionalVars.map((k) => [k, Boolean(process.env[k]?.trim())]))

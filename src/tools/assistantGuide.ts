@@ -26,28 +26,28 @@ const sections: GuideSection[] = [
     keywords: ["cost", "coût", "cout", "costs", "saving", "savings", "économie", "economies", "value review", "business case", "tco", "roi", "azure", "aws", "vmware", "licence", "license", "rightsizing"],
     items: [
       {
-        tool: "list_categories",
+        tool: "discovery_cost_categories",
         purpose: "Lister les catégories et sous-catégories de la base de coûts IT avant une recherche.",
         useCase: "Démarrer un Value Review en découvrant les familles disponibles (cloud, infra virtualisée, licences, stockage...).",
         purposeEn: "List categories and subcategories from the IT cost knowledge base before searching.",
         useCaseEn: "Start a Value Review by discovering available families (cloud, virtualized infra, licenses, storage...)."
       },
       {
-        tool: "search_it_costs",
+        tool: "discovery_cost_search",
         purpose: "Rechercher des composants de coût par texte, catégorie et sous-catégorie.",
         useCase: "Trouver les lignes de référence pour VM 4 vCPU/16 Go, Oracle, Microsoft 365 ou stockage.",
         purposeEn: "Search cost components by text, category, and subcategory.",
         useCaseEn: "Find reference rows for 4 vCPU/16 GB VMs, Oracle, Microsoft 365, or storage."
       },
       {
-        tool: "estimate_cost",
+        tool: "discovery_cost_estimate",
         purpose: "Estimer min/médian/max pour un composant et une quantité sur un horizon mensuel, annuel ou 5 ans.",
         useCase: "Après inventaire, estimer le coût annuel de 200 VMs VMware ou de 50 cores Oracle.",
         purposeEn: "Estimate min/median/max for a component and quantity over monthly, annual, or 5-year horizons.",
         useCaseEn: "After inventory, estimate the annual cost of 200 VMware VMs or 50 Oracle cores."
       },
       {
-        tool: "compare_alternatives",
+        tool: "discovery_cost_compare",
         purpose: "Comparer les alternatives annualisées et calculer les économies potentielles face à une solution actuelle.",
         useCase: "Comparer VMware vs Azure/AWS/GCP pour 100 VMs 4 vCPU/16 Go et classer les économies médianes.",
         purposeEn: "Compare annualized alternatives and calculate potential savings versus a current solution.",
@@ -279,13 +279,6 @@ const sections: GuideSection[] = [
         useCaseEn: "After showing the dslQuery to the user, execute the validated query and keep generated_dsl_query in the result."
       },
       {
-        tool: "discovery_dsl_examples",
-        purpose: "OPTIONNEL — Fournir des exemples DSL statiques par thème.",
-        useCase: "Demander topic='traversal', 'counting', 'lookup', 'database', etc. seulement en cas de doute de syntaxe.",
-        purposeEn: "OPTIONAL — Return static DSL examples by topic.",
-        useCaseEn: "Ask for topic='traversal', 'counting', 'lookup', 'database', etc. only when syntax is uncertain."
-      },
-      {
         tool: "discovery_validate_query",
         purpose: "OPTIONNEL — Valider localement les pièges courants sans exécuter la requête Discovery.",
         useCase: "À appeler seulement si tu doutes d'une syntaxe complexe (EXPAND, STEP IN/OUT, named traversal).",
@@ -301,60 +294,11 @@ const sections: GuideSection[] = [
     keywords: ["taxonomy", "nodekind", "node kind", "fieldlist", "field", "relkind", "relationship", "model", "modèle", "schema", "schéma", "attribute", "attribut"],
     items: [
       {
-        tool: "discovery_taxonomy_node_kinds",
-        purpose: "Lister les types de nœuds disponibles.",
-        useCase: "Savoir quels kinds sont exploitables dans les requêtes.",
-        purposeEn: "List available node kinds.",
-        useCaseEn: "Determine which kinds can be used in queries."
-      },
-      {
-        tool: "discovery_taxonomy_node_kind_details",
-        purpose: "Afficher les métadonnées complètes d'un node kind.",
-        useCase: "Comprendre les attributs et relations d'un kind précis avant une query.",
-        purposeEn: "Show full metadata for a node kind.",
-        useCaseEn: "Understand attributes and relationships for a specific kind before a query."
-      },
-      {
-        tool: "discovery_taxonomy_node_kind_field_lists",
-        purpose: "Lister les field lists disponibles pour un node kind.",
-        useCase: "Identifier quelle liste de champs demander ensuite.",
-        purposeEn: "List field lists available for a node kind.",
-        useCaseEn: "Identify which field list to request next."
-      },
-      {
-        tool: "discovery_taxonomy_node_fields",
-        purpose: "Lister les champs d'un kind pour une field list.",
-        useCase: "Identifier le nom exact d'un attribut avant une query.",
-        purposeEn: "List fields for a node kind and field list.",
-        useCaseEn: "Identify exact attribute names before running a query."
-      },
-      {
-        tool: "discovery_taxonomy_relationship_kinds",
-        purpose: "Lister les types de relations disponibles.",
-        useCase: "Découvrir les relkinds avant d'écrire un TRAVERSE ou NODECOUNT.",
-        purposeEn: "List available relationship kinds.",
-        useCaseEn: "Discover relkinds before writing TRAVERSE or NODECOUNT."
-      },
-      {
-        tool: "discovery_taxonomy_relkind_details",
-        purpose: "Détailler un type de relation.",
-        useCase: "Valider les relations à utiliser entre Host et Software.",
-        purposeEn: "Show details for a relationship kind.",
-        useCaseEn: "Validate relationships to use between Host and Software."
-      },
-      {
-        tool: "discovery_taxonomy_sections",
-        purpose: "Lister les sections du modèle taxonomy.",
-        useCase: "Exploration metadata rare, utile pour comprendre le modèle global.",
-        purposeEn: "List taxonomy model sections.",
-        useCaseEn: "Rare metadata exploration, useful to understand the overall model."
-      },
-      {
-        tool: "discovery_taxonomy_locales",
-        purpose: "Lister les locales taxonomy disponibles.",
-        useCase: "Rare : vérifier les langues/locales disponibles pour les libellés taxonomy.",
-        purposeEn: "List available taxonomy locales.",
-        useCaseEn: "Rare: check available languages/locales for taxonomy labels."
+        tool: "discovery_taxonomy",
+        purpose: "Introspecter le modèle live (node kinds, champs, field lists, relations) via le paramètre `resource`.",
+        useCase: "Fallback : kind/attribut/relation inconnu, quand le cookbook de discovery_execute_dsl n'a pas suffi à bâtir la requête.",
+        purposeEn: "Introspect the live model (node kinds, fields, field lists, relationships) via the `resource` parameter.",
+        useCaseEn: "Fallback: unknown kind/attribute/relationship when the discovery_execute_dsl cookbook was not enough to build the query."
       }
     ]
   }
@@ -379,13 +323,13 @@ const GLOBAL_RULES_FR = [
   "R-A3: Si l'objet nommé est absent À LA FOIS du registre nominatif (services/apps/hosts) ET des types SoftwareInstance connus, demande DE QUEL TYPE d'objet il s'agit plutôt que de deviner ou de lancer un execute_dsl.",
   "R-A4: Ne JAMAIS improviser une requête DSL brute pour contourner une ambiguïté.",
   "R-A5: Si aucun outil paramétré de niveau 1 ne couvre le besoin, NE rédige PAS de DSL toi-même. Appelle discovery_build_query en lui fournissant l'intention structurée (searchKind, conditions where avec opérateurs fermés, traversals depuis le référentiel, show). Il compose et valide la requête.",
-  "R-A6: discovery_build_query renvoie une dslQuery SANS l'exécuter. Présente-la à l'utilisateur (il peut la modifier), puis exécute-la via discovery_execute_dsl. discovery_dsl_examples et discovery_validate_query restent des aides OPTIONNELLES, jamais une étape obligatoire.",
+  "R-A6: discovery_build_query renvoie une dslQuery SANS l'exécuter. Présente-la à l'utilisateur (il peut la modifier), puis exécute-la via discovery_execute_dsl. discovery_validate_query reste une aide OPTIONNELLE, jamais une étape obligatoire. Le cookbook DSL complet est disponible en resource MCP (mcp://discovery/dsl-cookbook).",
   "RÈGLE 1: N'invente JAMAIS du DSL Discovery (search/show) si un outil spécialisé couvre le besoin. Utilise d'abord les outils paramétrés ci-dessous.",
   "RÈGLE 2: Si l'utilisateur mentionne un éditeur (Microsoft, Oracle...) ou un produit (Windows Server, JBoss...), passe-le DIRECTEMENT en paramètre `publisherContains` / `productContains` à `discovery_lifecycle_report`. Pas d'enchaînement.",
   "RÈGLE 3: La réponse de chaque outil contient généralement un champ `summary` avec le chiffre clé. Cite-le textuellement avant tout détail.",
   "RÈGLE 4: Pour les outils retournant plusieurs représentations (ex: discovery_dependency_map), choisis la représentation la plus riche que ton client supporte. Le HTML interactif est autoportant — propose-le en téléchargement si possible.",
   "RÈGLE 5: Pour du DSL brut, utilise `discovery_build_query` pour composer et valider l'intention structurée ; exécute ensuite seulement la dslQuery validée via `discovery_execute_dsl` après présentation à l'utilisateur.",
-  "RÈGLE 6: Les chemins de traversal doivent venir du référentiel via `discovery_build_query`/`common_relationships`; ne retomber sur `discovery_taxonomy_*` que pour un chemin ABSENT du référentiel."
+  "RÈGLE 6: Les chemins de traversal doivent venir du référentiel via `discovery_build_query`/`common_relationships`; ne retomber sur `discovery_taxonomy` que pour un chemin ABSENT du référentiel."
 ];
 
 const GLOBAL_RULES_EN = [
@@ -394,13 +338,13 @@ const GLOBAL_RULES_EN = [
   "R-A3: If the named object is absent from BOTH the nominal registry (services/apps/hosts) and known SoftwareInstance types, ask WHAT TYPE of object it is instead of guessing or launching execute_dsl.",
   "R-A4: NEVER improvise a raw DSL query to work around ambiguity.",
   "R-A5: If no level-1 parameterized tool covers the need, do NOT write DSL yourself. Call discovery_build_query with structured intent (searchKind, where conditions with closed operators, traversals from the referential, show). It composes and validates the query.",
-  "R-A6: discovery_build_query returns a dslQuery WITHOUT executing it. Show it to the user (they can edit it), then execute it via discovery_execute_dsl. discovery_dsl_examples and discovery_validate_query remain OPTIONAL helpers, never a mandatory step.",
+  "R-A6: discovery_build_query returns a dslQuery WITHOUT executing it. Show it to the user (they can edit it), then execute it via discovery_execute_dsl. discovery_validate_query remains an OPTIONAL helper, never a mandatory step. The full DSL cookbook is available as an MCP resource (mcp://discovery/dsl-cookbook).",
   "RULE 1: NEVER invent Discovery DSL (search/show) when a specialized tool covers the need. Use the parameterized tools below first.",
   "RULE 2: If the user mentions a vendor (Microsoft, Oracle...) or a product (Windows Server, JBoss...), pass it DIRECTLY as `publisherContains` / `productContains` to `discovery_lifecycle_report`. No chaining.",
   "RULE 3: Tool responses usually include a `summary` field with the headline count. Quote it verbatim before any detail.",
   "RULE 4: For tools returning multiple representations (e.g. discovery_dependency_map), choose the richest representation your client supports. The interactive HTML is self-contained — offer it as a downloadable artifact when possible.",
   "RULE 5: For raw DSL, use `discovery_build_query` to compose and validate structured intent; only then execute the validated dslQuery through `discovery_execute_dsl` after showing it to the user.",
-  "RULE 6: Traversal paths must come from the referential through `discovery_build_query`/`common_relationships`; fall back to `discovery_taxonomy_*` only for a path ABSENT from the referential."
+  "RULE 6: Traversal paths must come from the referential through `discovery_build_query`/`common_relationships`; fall back to `discovery_taxonomy` only for a path ABSENT from the referential."
 ];
 
 function previewList(values: string[], max = 12): string {

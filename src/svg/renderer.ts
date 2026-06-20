@@ -36,45 +36,76 @@ export interface RenderedVisual {
   structuredContent?: unknown;
 }
 
+interface VisualSettings {
+  /** Emit visual blocks (PNG / SVG / interactive HTML). When false, only the text summary is returned. */
+  enabled: boolean;
+  /** Also emit the raw SVG as a resource block. Opt-out: on by default; disable to slim payloads for PNG-only clients. */
+  includeSvg: boolean;
+  /** Default rasterized PNG width. Smaller = cheaper for vision models. */
+  pngWidth: number;
+}
+
+// Process-wide visual policy. Configured once at startup from env (see config.ts),
+// so individual tools never need a per-call visual flag. The text summary is ALWAYS
+// returned; the PNG/SVG/HTML blocks are gated by this policy.
+let visualSettings: VisualSettings = { enabled: true, includeSvg: true, pngWidth: 1200 };
+
+export function setVisualSettings(partial: Partial<VisualSettings>): void {
+  visualSettings = { ...visualSettings, ...partial };
+}
+
+export function visualsEnabled(): boolean {
+  return visualSettings.enabled;
+}
+
 export function renderVisual(svg: string, options: RenderOptions): RenderedVisual {
-  const width = options.pngWidth ?? 1200;
+  const width = options.pngWidth ?? visualSettings.pngWidth;
   const resourceUri = `mcp://discovery-visual/${options.name}.svg`;
-  let pngBase64: string | null = null;
+  const content: VisualContentBlock[] = [];
   let rasterError: string | null = null;
 
-  try {
-    const Resvg = loadResvg();
-    if (!Resvg) throw new Error("@resvg/resvg-js is not available; install dependencies to enable PNG rasterization");
-    const resvg = new Resvg(svg, {
-      fitTo: { mode: "width", value: width },
-      background: "rgba(255,255,255,1)",
-      font: { loadSystemFonts: false, defaultFontFamily: "Arial" }
-    });
-    pngBase64 = resvg.render().asPng().toString("base64");
-  } catch (error) {
-    rasterError = error instanceof Error ? error.message : String(error);
+  if (visualSettings.enabled) {
+    let pngBase64: string | null = null;
+    try {
+      const Resvg = loadResvg();
+      if (!Resvg) throw new Error("@resvg/resvg-js is not available; install dependencies to enable PNG rasterization");
+      const resvg = new Resvg(svg, {
+        fitTo: { mode: "width", value: width },
+        background: "rgba(255,255,255,1)",
+        font: { loadSystemFonts: false, defaultFontFamily: "Arial" }
+      });
+      pngBase64 = resvg.render().asPng().toString("base64");
+    } catch (error) {
+      rasterError = error instanceof Error ? error.message : String(error);
+    }
+
+    if (pngBase64) content.push({ type: "image", data: pngBase64, mimeType: "image/png" });
+    // Emit the SVG resource by default (opt-out), or always as a fallback when PNG rasterization failed.
+    if (visualSettings.includeSvg || !pngBase64) {
+      content.push({ type: "resource", resource: { uri: resourceUri, mimeType: "image/svg+xml", text: svg } });
+    }
+
+    if (options.interactiveHtml) {
+      content.push({
+        type: "resource",
+        resource: {
+          uri: `mcp://discovery-visual/${options.interactiveHtml.resourceName}.html`,
+          mimeType: "text/html",
+          text: options.interactiveHtml.html
+        }
+      });
+    }
   }
 
-  const content: VisualContentBlock[] = [];
-  if (pngBase64) content.push({ type: "image", data: pngBase64, mimeType: "image/png" });
-  content.push({ type: "resource", resource: { uri: resourceUri, mimeType: "image/svg+xml", text: svg } });
-
-  if (options.interactiveHtml) {
-    content.push({
-      type: "resource",
-      resource: {
-        uri: `mcp://discovery-visual/${options.interactiveHtml.resourceName}.html`,
-        mimeType: "text/html",
-        text: options.interactiveHtml.html
-      }
-    });
+  const summaryParts: string[] = [];
+  if (options.textSummary) summaryParts.push(options.textSummary);
+  if (rasterError) summaryParts.push(`[PNG rasterization failed: ${rasterError}. SVG resource provided as fallback.]`);
+  if (summaryParts.length > 0) {
+    content.push({ type: "text", text: summaryParts.join("\n\n") });
   }
-
-  if (options.textSummary || rasterError) {
-    const parts: string[] = [];
-    if (options.textSummary) parts.push(options.textSummary);
-    if (rasterError) parts.push(`[PNG rasterization failed: ${rasterError}. SVG resource still available.]`);
-    content.push({ type: "text", text: parts.join("\n\n") });
+  // MCP requires a non-empty content array; guarantee at least a text block.
+  if (content.length === 0) {
+    content.push({ type: "text", text: options.textSummary ?? "" });
   }
 
   return options.structuredContent ? { content, structuredContent: options.structuredContent } : { content };

@@ -3,21 +3,8 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { structuredOutputSchema } from "./outputSchemas.js";
 import { ApiError } from "../utils/errors.js";
 
-export const queryJsonSchema = z.object({
-  query: z.string().min(1)
-}).strict();
-
-
-export const dslExamplesSchema = z.object({
-  topic: z.string().min(1)
-}).strict();
-
 export const validateQuerySchema = z.object({
   query: z.string().min(1)
-}).strict();
-
-export const rawGetSchema = z.object({
-  path: z.string().min(1).refine((value) => value.startsWith("/api/"), "path must start with /api/")
 }).strict();
 
 
@@ -229,13 +216,13 @@ export const EXECUTE_DSL_DESCRIPTION = [
   "All-null traversal results in SHOW",
   "  - The role specification might not match the data's directionality.",
   "  - Try the role-agnostic form `#:RelationKind::TargetKind.attr`.",
-  "  - Verify the relation kind exists via discovery_taxonomy_relkind_details.",
+  "  - Verify the relation kind exists via discovery_taxonomy(resource=\"relationship_kind\", kind=…).",
   "",
   "LOOKUP with WHERE",
   "  - Not allowed. Use SEARCH with a WHERE on id or name instead.",
   "",
-  "Need examples for a specific topic?",
-  "  \u2192 Call `discovery_dsl_examples(topic=\"...\")` for curated snippets.",
+  "Need topic-organized examples?",
+  "  \u2192 See the bundled DSL cookbook MCP resource (mcp://discovery/dsl-cookbook).",
   "",
   "For the official BMC reference, see \"Using the Query Language\" in the ",
   "BMC Discovery documentation (DISCO241 or later)."
@@ -455,10 +442,34 @@ export function getDslExamples(topic: string): { topic: string; examples: DslExa
       topic,
       examples: [],
       availableTopics: Object.keys(DSL_EXAMPLES).sort(),
-      message: "Unknown topic. Choose one of the availableTopics values, then pass it back to discovery_dsl_examples."
+      message: "Unknown topic. Choose one of the availableTopics values."
     };
   }
   return { topic: normalized, examples };
+}
+
+/**
+ * Single source of truth for the DSL cookbook: the grammar reference embedded in
+ * discovery_execute_dsl plus every curated example, rendered as Markdown. Exposed
+ * as an MCP resource so clients that fetch resources get it without reloading the
+ * tool description.
+ */
+export function buildDslCookbook(): string {
+  const lines: string[] = [
+    EXECUTE_DSL_DESCRIPTION,
+    "",
+    "════════════════════════════",
+    "CURATED EXAMPLES BY TOPIC",
+    "════════════════════════════",
+    ""
+  ];
+  for (const topic of Object.keys(DSL_EXAMPLES).sort()) {
+    lines.push(`## ${topic}`, "");
+    for (const example of DSL_EXAMPLES[topic]) {
+      lines.push(`### ${example.title}`, "```", example.query, "```", example.explanation, "");
+    }
+  }
+  return lines.join("\n");
 }
 
 export interface QueryValidationResult {
@@ -515,12 +526,6 @@ export function validateDiscoveryQuery(query: string): QueryValidationResult {
 
 export function queryTools(client: DiscoveryClient) {
   return {
-    discovery_dsl_examples: {
-      description: "Return curated, static BMC Discovery DSL examples for a topic. Use this as an optional drafting reference before calling discovery_execute_dsl. No Discovery API call is made.",
-      schema: dslExamplesSchema,
-      outputSchema: structuredOutputSchema,
-      handler: async (input: z.infer<typeof dslExamplesSchema>) => getDslExamples(input.topic)
-    },
     discovery_validate_query: {
       description: "Validate common BMC Discovery DSL mistakes locally without executing the query. Optional pre-flight helper before discovery_execute_dsl; catches clause-ordering traps, LOOKUP+WHERE, and count(traverse ...) patterns.",
       schema: validateQuerySchema,

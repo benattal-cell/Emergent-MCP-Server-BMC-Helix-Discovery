@@ -63,7 +63,7 @@ describe("discovery_resolve_kind", () => {
     expect(result.candidates).toHaveLength(2);
     expect(result.candidates.every((candidate) => candidate.ambiguous)).toBe(true);
     expect(result.guidance).toContain("Alias ambigu");
-    expect(result.candidates.map((candidate) => candidate.kind)).toEqual(["LoadBalancer", "SoftwareInstance"]);
+    expect(result.candidates.map((candidate) => candidate.kind)).toEqual(["NetworkDevice", "SoftwareInstance"]);
   });
 
   it("normalizes accents and case", () => {

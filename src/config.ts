@@ -12,6 +12,10 @@ export interface AppConfig {
   oauthClientId?: string;
   oauthClientSecret?: string;
   nvdApiKey?: string;
+  /** Emit visual blocks (PNG) by default. Set MCP_DEFAULT_VISUAL=false for text-only, token-efficient deployments. */
+  defaultVisual: boolean;
+  /** Also emit the raw SVG as a resource block. On by default; set MCP_INCLUDE_SVG=false to slim payloads for PNG-only clients. */
+  includeSvgResource: boolean;
 }
 
 export function loadConfig(): AppConfig {
@@ -40,6 +44,8 @@ export function loadConfig(): AppConfig {
     publicBaseUrl: process.env.PUBLIC_BASE_URL?.trim(),
     oauthClientId: process.env.OAUTH_CLIENT_ID?.trim(),
     oauthClientSecret: process.env.OAUTH_CLIENT_SECRET?.trim(),
-    nvdApiKey: process.env.NVD_API_KEY?.trim()
+    nvdApiKey: process.env.NVD_API_KEY?.trim(),
+    defaultVisual: (process.env.MCP_DEFAULT_VISUAL?.trim().toLowerCase() ?? "true") !== "false",
+    includeSvgResource: (process.env.MCP_INCLUDE_SVG?.trim().toLowerCase() ?? "true") !== "false"
   };
 }

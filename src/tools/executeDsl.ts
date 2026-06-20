@@ -152,8 +152,8 @@ export function executeDslTools(client: DiscoveryClient) {
               ...relationshipHints(input.request, input.query),
               message: msg(
                 lang,
-                `Le kind « ${primary} » n'existe pas dans la taxonomy live de cette instance. Les chemins curés fournis ci-dessous dans relationshipHints utilisent des kinds réels ; choisis un kind valide (voir suggestions/knownKindsSample) ou appelle discovery_taxonomy_node_kinds, corrige la requête puis relance.`,
-                `Kind "${primary}" does not exist in this instance's live taxonomy. The curated paths below in relationshipHints use real kinds; pick a valid kind (see suggestions/knownKindsSample) or call discovery_taxonomy_node_kinds, fix the query, then retry.`
+                `Le kind « ${primary} » n'existe pas dans la taxonomy live de cette instance. Les chemins curés fournis ci-dessous dans relationshipHints utilisent des kinds réels ; choisis un kind valide (voir suggestions/knownKindsSample) ou appelle discovery_taxonomy(resource="node_kinds"), corrige la requête puis relance.`,
+                `Kind "${primary}" does not exist in this instance's live taxonomy. The curated paths below in relationshipHints use real kinds; pick a valid kind (see suggestions/knownKindsSample) or call discovery_taxonomy(resource="node_kinds"), fix the query, then retry.`
               )
             };
           }
@@ -162,8 +162,8 @@ export function executeDslTools(client: DiscoveryClient) {
             warnings.push(
               msg(
                 lang,
-                `Kinds de traversal non reconnus (vérifie via discovery_taxonomy_node_kind_details) : ${unknownTraversal.join(", ")}`,
-                `Unrecognized traversal kinds (verify via discovery_taxonomy_node_kind_details): ${unknownTraversal.join(", ")}`
+                `Kinds de traversal non reconnus (vérifie via discovery_taxonomy(resource="node_kind", kind=…)) : ${unknownTraversal.join(", ")}`,
+                `Unrecognized traversal kinds (verify via discovery_taxonomy(resource="node_kind", kind=…)): ${unknownTraversal.join(", ")}`
               )
             );
           }

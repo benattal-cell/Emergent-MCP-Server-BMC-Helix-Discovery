@@ -69,8 +69,8 @@ describe("IT cost tools", () => {
     expect(result.kpi?.savings_pct).toBeNull();
   });
 
-  it("compare_alternatives handler returns visual content plus raw structuredContent", async () => {
-    const result = await itCostTools().compare_alternatives.handler({
+  it("discovery_cost_compare handler returns visual content plus raw structuredContent", async () => {
+    const result = await itCostTools().discovery_cost_compare.handler({
       workload_type: "VM 4vCPU 16Go",
       quantity: 100,
       current_solution: "VM 4 vCPU / 16 Go RAM / 100 Go disk"
@@ -84,9 +84,9 @@ describe("IT cost tools", () => {
   it("all IT cost handlers return visual content and raw structuredContent", async () => {
     const tools = itCostTools();
     const calls = [
-      tools.search_it_costs.handler({ query: "m5.xlarge", limit: 5 }),
-      tools.list_categories.handler({}),
-      tools.estimate_cost.handler({ component: "AWS EC2 m5.xlarge", quantity: 2, horizon: "annual", scenario: "all" })
+      tools.discovery_cost_search.handler({ query: "m5.xlarge", limit: 5 }),
+      tools.discovery_cost_categories.handler({}),
+      tools.discovery_cost_estimate.handler({ component: "AWS EC2 m5.xlarge", quantity: 2, horizon: "annual", scenario: "all" })
     ];
 
     for (const result of await Promise.all(calls)) {

@@ -12,6 +12,8 @@ Renseignez ces variables uniquement dans votre plateforme de déploiement (Emerg
 - `BMC_DISCOVERY_TOKEN`
 - `MCP_SERVER_API_KEY`
 - `PORT` (défaut local `3000`)
+- `MCP_DEFAULT_VISUAL` (défaut `true`) — voir « Sortie visuelle & optimisation »
+- `MCP_INCLUDE_SVG` (défaut `true`) — voir « Sortie visuelle & optimisation »
 
 ## Installation
 
@@ -51,6 +53,21 @@ Réponse:
   "service": "bmc-helix-discovery-mcp"
 }
 ```
+
+## Sortie visuelle & optimisation
+
+Chaque outil renvoie **toujours** un résumé texte. Les blocs visuels sont configurables par variables d'environnement, à adapter selon le client/LLM cible :
+
+| Variable | Défaut | Effet |
+|---|---|---|
+| `MCP_DEFAULT_VISUAL` | `true` | Émet une image **PNG** (rendue depuis le SVG). `false` → réponses **texte seules** (économie de tokens, clients texte-seul). |
+| `MCP_INCLUDE_SVG` | `true` | Émet **aussi** le SVG brut en `resource`. `false` → n'envoie que le PNG (allège la charge pour les clients qui ne rendent que le PNG). |
+
+Notes de coût :
+- Le **PNG** est facturé selon ses **dimensions** (largeur par défaut `1200px`) ; le **SVG** en `resource` est facturé en **tokens texte** (longueur du XML).
+- Déploiement **économe** (ex. LLM texte-seul) : `MCP_DEFAULT_VISUAL=false`.
+- Garder le visuel mais alléger : `MCP_INCLUDE_SVG=false` (PNG seul).
+- Si la rastérisation PNG échoue, le SVG est renvoyé **en secours** quel que soit `MCP_INCLUDE_SVG`.
 
 ## Outils MCP exposés
 
@@ -101,10 +118,10 @@ Exemple conceptuel (client compatible MCP distant):
 
 The server includes a lightweight IT cost knowledge base loaded from `data/it_cost_knowledge_base.csv` at startup. These tools are intended for Value Reviews: combine Discovery inventory outputs with reference market costs to estimate annual or 5-year cost ranges and potential savings.
 
-- `list_categories`: enumerate cost categories/subcategories before searching.
-- `search_it_costs`: search the reference catalog by free text, category, and subcategory.
-- `estimate_cost`: estimate min/median/max cost for a component and quantity over monthly, annual, or 5-year horizons.
-- `compare_alternatives`: compare annualized alternatives for a workload and calculate median savings versus a current solution.
+- `discovery_cost_categories`: enumerate cost categories/subcategories before searching.
+- `discovery_cost_search`: search the reference catalog by free text, category, and subcategory.
+- `discovery_cost_estimate`: estimate min/median/max cost for a component and quantity over monthly, annual, or 5-year horizons.
+- `discovery_cost_compare`: compare annualized alternatives for a workload and calculate median savings versus a current solution.
 
 Example:
 
