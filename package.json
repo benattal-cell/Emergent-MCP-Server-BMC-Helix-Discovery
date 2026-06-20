@@ -1,6 +1,6 @@
 {
   "name": "bmc-helix-discovery-mcp",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "description": "Local MCP server for BMC Helix Discovery REST APIs",
   "type": "module",
   "main": "dist/index.js",
