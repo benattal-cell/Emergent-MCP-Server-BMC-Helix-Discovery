@@ -103,13 +103,6 @@ const sections: GuideSection[] = [
         useCase: "Pour 'Windows Server obsolètes' ou 'OS à risque', appeler ce tool avec osContains si besoin et onlyAtRisk=true pour EOS dépassée. PAS BESOIN d'enchaîner search_data.",
         purposeEn: "Run an OS obsolescence report directly from Host nodes with OS SupportDetail EOS/EOSS/EOES/EOL dates and failure_reason handling.",
         useCaseEn: "For 'obsolete Windows Server' or 'OS at risk', call this tool with osContains as needed and onlyAtRisk=true for exceeded EOS. NO NEED to chain search_data."
-      },
-      {
-        tool: "discovery_build_lifecycle_query",
-        purpose: "AVANCÉ. Construire le DSL sans l'exécuter, uniquement pour inspection.",
-        useCase: "Rare : seulement si on doit modifier la requête avant exécution.",
-        purposeEn: "ADVANCED. Build the DSL string without executing it, only for inspection.",
-        useCaseEn: "Rare: only when the query must be modified before execution."
       }
     ]
   },
@@ -147,20 +140,6 @@ const sections: GuideSection[] = [
         useCase: "Obtenir les cibles techniques d'une CVE sans saisie manuelle.",
         purposeEn: "Fetch CPEs associated with a CVE from NVD.",
         useCaseEn: "Get CVE technical targets without manual data entry."
-      },
-      {
-        tool: "discovery_build_cve_software_query",
-        purpose: "Construire la requête Discovery à partir de CPE.",
-        useCase: "Générer une recherche prête à l'emploi pour identifier les logiciels impactés.",
-        purposeEn: "Build the Discovery query from CPE strings.",
-        useCaseEn: "Generate a ready-to-run search to identify impacted software."
-      },
-      {
-        tool: "discovery_cve_full_inventory_prompt",
-        purpose: "Préparer l'appel qui retourne l'inventaire complet impacté.",
-        useCase: "Si l'utilisateur veut en savoir plus, lancer l'extraction détaillée (table complète).",
-        purposeEn: "Prepare the call that returns the full impacted inventory.",
-        useCaseEn: "If the user wants more details, run the detailed extraction (full table)."
       }
     ]
   },
@@ -226,13 +205,6 @@ const sections: GuideSection[] = [
         useCase: "Quand on a déjà un nodeId et qu'on veut inspecter les relations sans rendu visuel.",
         purposeEn: "Retrieve the raw graph around a Discovery nodeId.",
         useCaseEn: "When a nodeId is already known and relationships should be inspected without visual rendering."
-      },
-      {
-        tool: "discovery_summarize_node_graph_cmdb",
-        purpose: "Résumer un graphe brut en vue CMDB/urbanisation (classes CI, relations, volumes).",
-        useCase: "Après discovery_get_node_graph, produire une synthèse compréhensible pour CMDB/IT architecture.",
-        purposeEn: "Summarize a raw graph into a CMDB/IT-architecture view (CI classes, relationships, volumes).",
-        useCaseEn: "After discovery_get_node_graph, produce a summary understandable for CMDB/IT architecture."
       }
     ]
   },

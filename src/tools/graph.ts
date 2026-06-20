@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
 import { renderTopologyVisual } from "../svg/topologyVisual.js";
-import { graphOutputSchema, graphSummaryOutputSchema } from "./outputSchemas.js";
+import { graphOutputSchema } from "./outputSchemas.js";
 import { CYTOSCAPE_VISUAL_DESCRIPTION } from "./visualInstructions.js";
 
-const nodeIdSchema = z.object({
-  nodeId: z.string().min(1)
+const nodeGraphSchema = z.object({
+  nodeId: z.string().min(1),
+  format: z.enum(["raw", "summarize"]).default("raw")
 }).strict();
 
 function toArray(value: unknown): unknown[] {
@@ -54,12 +55,15 @@ function summarizeGraph(raw: unknown): unknown {
 export function graphTools(client: DiscoveryClient) {
   return {
     discovery_get_node_graph: {
-      description: "Get the dependency graph around a specific node (by nodeId): all directly-connected nodes and the relationships between them. Use this when the user asks 'what depends on X?', 'what's connected to X?', 'show the topology around X'. The nodeId must come from a previous search (e.g. discovery_find_hosts returns a 'key' field that's the nodeId).",
-      schema: nodeIdSchema,
+      description: "Get the dependency graph around a specific node (by nodeId): all directly-connected nodes and the relationships between them. Use this when the user asks 'what depends on X?', 'what's connected to X?', 'show the topology around X'. The nodeId must come from a previous search (e.g. discovery_find_hosts returns a 'key' field that's the nodeId). `format='raw'` (default) returns/draws the full graph; `format='summarize'` returns a compact CMDB-style rollup (CI count, top CI classes, top relationship types) — use it when the raw graph is too verbose.",
+      schema: nodeGraphSchema,
       outputSchema: graphOutputSchema,
       visualInstruction: CYTOSCAPE_VISUAL_DESCRIPTION,
-      handler: async (input: z.infer<typeof nodeIdSchema>) => {
+      handler: async (input: z.infer<typeof nodeGraphSchema>) => {
         const raw = await client.getNodeGraph(input.nodeId);
+        if (input.format === "summarize") {
+          return summarizeGraph(raw);
+        }
         const summary = summarizeGraph(raw) as { counts?: { nodes?: number; relations?: number } };
         return renderTopologyVisual(raw, {
           name: `node_graph_${input.nodeId.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase()}`,
@@ -70,12 +74,6 @@ export function graphTools(client: DiscoveryClient) {
         });
       },
       isVisual: true as const
-    },
-    discovery_summarize_node_graph_cmdb: {
-      description: "Take the raw graph output of discovery_get_node_graph and summarize it CMDB-style: total CI count, top CI classes, top relationship types. Use this right after discovery_get_node_graph when the raw graph is too verbose for the user.",
-      schema: z.object({ graph: z.unknown() }).strict(),
-      outputSchema: graphSummaryOutputSchema,
-      handler: async (input: { graph: unknown }) => summarizeGraph(input.graph)
     }
   };
 }
