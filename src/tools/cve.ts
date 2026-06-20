@@ -1,13 +1,9 @@
 import { z } from "zod";
 import type { AppConfig } from "../config.js";
 import type { DiscoveryClient } from "../discoveryClient.js";
-import { dslQueryOutputSchema, structuredOutputSchema } from "./outputSchemas.js";
+import { structuredOutputSchema } from "./outputSchemas.js";
 
 const languageSchema = z.enum(["fr", "en"]).optional();
-
-const cpeSchema = z.string().min(1).refine((v) => v.startsWith("cpe:2.3:"), {
-  message: "CPE must start with cpe:2.3:"
-});
 
 const cveIdSchema = z.string().regex(/^CVE-\d{4}-\d{4,}$/i, "Invalid CVE format");
 const CVE_SEARCH_MAX_ROWS = 20_000;
@@ -154,22 +150,36 @@ async function rowsForExecutiveSummary(client: DiscoveryClient, dsl: string, inp
 export function cveTools(client: DiscoveryClient, config: Pick<AppConfig, "nvdApiKey">) {
   return {
     discovery_cve_executive_summary: {
-      description: "Produce an EXECUTIVE-style summary for a CVE: number of impacted assets, top business services / hosts / versions, and a follow-up prompt asking if the user wants the full impacted inventory. Use this FIRST when the user asks 'are we exposed to CVE-XXXX-YYYY?' or 'what's the impact of CVE-XXXX-YYYY?'. Requires the CVE ID. If discoveryRows is empty, this tool fetches NVD CPEs, builds the Discovery impact query, executes it internally, and summarizes the impacted rows.",
+      description: "Produce an EXECUTIVE-style summary for a CVE: number of impacted assets, top business services / hosts / versions, and a follow-up prompt. Use this FIRST when the user asks 'are we exposed to CVE-XXXX-YYYY?' or 'what's the impact of CVE-XXXX-YYYY?'. Requires the CVE ID. The tool fetches NVD CPEs, builds the Discovery impact query and executes it internally (or uses discoveryRows if provided). Set detail='full' to return the COMPLETE impacted inventory (every host, version, service, owner) up to `limit` rows instead of the summary.",
       schema: z.object({
         cveId: cveIdSchema,
+        detail: z.enum(["summary", "full"]).default("summary"),
         topN: z.number().int().min(1).max(20).default(5),
+        limit: z.number().int().min(1).max(500).default(200),
         discoveryRows: z.array(z.record(z.unknown())).default([]),
         language: languageSchema,
         question: z.string().optional()
       }).strict(),
       outputSchema: structuredOutputSchema,
-      handler: async (input: { cveId: string; topN: number; discoveryRows: Array<Record<string, unknown>>; language?: "fr" | "en"; question?: string }) => {
+      handler: async (input: { cveId: string; detail: "summary" | "full"; topN: number; limit: number; discoveryRows: Array<Record<string, unknown>>; language?: "fr" | "en"; question?: string }) => {
         const lang = resolveLanguage(input.language, input.question);
         const t = i18n(lang);
         const cveId = input.cveId.toUpperCase();
         const cpes = await fetchNvdCpes(cveId, config.nvdApiKey);
         const dsl = buildDiscoveryDsl(cpes);
         const { rows, source } = await rowsForExecutiveSummary(client, dsl, input.discoveryRows, cpes, cveId);
+
+        if (input.detail === "full") {
+          return {
+            cveHeader: { cveId, riskTitle: t.riskTitle },
+            cveSummary: { cpeCount: cpes.length, impactedRowsCount: rows.length },
+            execution: source,
+            dslQuery: dsl,
+            expectedColumns: t.expectedColumns,
+            returnedRows: Math.min(rows.length, input.limit),
+            rows: rows.slice(0, input.limit)
+          };
+        }
 
         const topServices = aggregateTop(rows, ["Service Name", "Business Service", "business_service", "service"], input.topN);
         const topHosts = aggregateTop(rows, ["Host Name", "Host", "host"], input.topN);
@@ -179,21 +189,8 @@ export function cveTools(client: DiscoveryClient, config: Pick<AppConfig, "nvdAp
         return {
           cveHeader: { cveId, riskTitle: t.riskTitle, note: t.summaryNote },
           cveSummary: { cpeCount: cpes.length, impactedRowsCount: rows.length, topServices, topHosts, topVersions, matchPrecision },
-          discoverySearchPlan: { primaryTool: "discovery_build_cve_software_query", execution: source, dslQuery: dsl },
+          discoverySearchPlan: { execution: source, dslQuery: dsl },
           followUpPrompt: t.followUpPrompt
-        };
-      }
-    },
-    discovery_build_cve_software_query: {
-      description: "Build the Discovery DSL query that finds software instances matching a list of CPEs without executing it. For execution, pass the returned dslQuery to discovery_execute_dsl. Use this AFTER getting CPEs from discovery_get_cve_cpes_from_nvd, or prefer discovery_cve_executive_summary for the standard one-call flow.",
-      schema: z.object({ cpeStrings: z.array(cpeSchema).min(1), includeUrlEncoded: z.boolean().default(false) }).strict(),
-      outputSchema: dslQueryOutputSchema,
-      handler: async (input: { cpeStrings: string[]; includeUrlEncoded: boolean }) => {
-        const dsl = buildDiscoveryDsl(input.cpeStrings);
-        return {
-          cpeCount: input.cpeStrings.length,
-          dslQuery: dsl,
-          ...(input.includeUrlEncoded ? { urlEncodedQuery: encodeURIComponent(dsl) } : {})
         };
       }
     },
@@ -204,23 +201,6 @@ export function cveTools(client: DiscoveryClient, config: Pick<AppConfig, "nvdAp
       handler: async (input: { cveId: string }) => {
         const cpes = await fetchNvdCpes(input.cveId.toUpperCase(), config.nvdApiKey);
         return { cveId: input.cveId.toUpperCase(), cpeCount: cpes.length, cpeStrings: cpes };
-      }
-    },
-    discovery_cve_full_inventory_prompt: {
-      description: "Prepare the full impacted-inventory call. Use this AFTER discovery_cve_executive_summary if the user said yes to seeing the full impacted inventory (every host, version, service, owner). Returns recommendedInput for discovery_execute_dsl.",
-      schema: z.object({ cveId: cveIdSchema, cpeStrings: z.array(cpeSchema).min(1), limit: z.number().int().min(1).max(500).default(200), language: languageSchema, question: z.string().optional() }).strict(),
-      outputSchema: structuredOutputSchema,
-      handler: async (input: { cveId: string; cpeStrings: string[]; limit: number; language?: "fr" | "en"; question?: string }) => {
-        const lang = resolveLanguage(input.language, input.question);
-        const t = i18n(lang);
-        const dsl = buildDiscoveryDsl(input.cpeStrings);
-        return {
-          cveId: input.cveId.toUpperCase(),
-          objective: t.fullInventoryObjective,
-          runWithTool: "discovery_execute_dsl",
-          recommendedInput: { query: dsl, limit: input.limit },
-          expectedColumns: t.expectedColumns
-        };
       }
     }
   };

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
 import { kpiGrid } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
-import { dslQueryOutputSchema, flatRowsOutputSchema } from "./outputSchemas.js";
+import { flatRowsOutputSchema } from "./outputSchemas.js";
 import { appendRowsMarkdownSummary } from "./shared/markdownTable.js";
 import { DAY_IN_NANOS } from "./shared/time.js";
 
@@ -116,7 +116,7 @@ function appliedFiltersFor(input: z.infer<typeof lifecycleReportSchema>): Record
 export function lifecycleTools(client: DiscoveryClient) {
   return {
     discovery_lifecycle_report: {
-      description: "Run the end-of-life/end-of-support report. Returns software/OS with their EOL, EOS, EOSS, EOES dates AND a 'Lifecycle Risk' label (e.g. 'EOS Exceeded', 'EOL less than 182 days away'). USE THIS DIRECTLY (do not chain build_lifecycle_query + search_data) when the user asks 'what software is end-of-life?', 'what is going out of support soon?', 'show obsolete software'. ALWAYS pass `publisherContains` when the user mentions a vendor (Microsoft, Oracle, Adobe, IBM, ...). ALWAYS pass `productContains` when the user mentions a specific product (Windows Server, SQL Server, JBoss, ...). Set `onlyAtRisk=true` to filter to items already past a support date. Response includes a `summary` field with the headline count, then `rows` with the data.",
+      description: "Run the end-of-life/end-of-support report. Returns software/OS with their EOL, EOS, EOSS, EOES dates AND a 'Lifecycle Risk' label (e.g. 'EOS Exceeded', 'EOL less than 182 days away'). USE THIS DIRECTLY (do not build a separate DSL query then execute it) when the user asks 'what software is end-of-life?', 'what is going out of support soon?', 'show obsolete software'. ALWAYS pass `publisherContains` when the user mentions a vendor (Microsoft, Oracle, Adobe, IBM, ...). ALWAYS pass `productContains` when the user mentions a specific product (Windows Server, SQL Server, JBoss, ...). Set `onlyAtRisk=true` to filter to items already past a support date. Response includes a `summary` field with the headline count, then `rows` with the data.",
       schema: lifecycleReportSchema,
       outputSchema: flatRowsOutputSchema,
       handler: async (input: z.infer<typeof lifecycleReportSchema>) => {
@@ -145,19 +145,6 @@ export function lifecycleTools(client: DiscoveryClient) {
         });
       },
       isVisual: true as const
-    },
-    discovery_build_lifecycle_query: {
-      description: "Construit le DSL lifecycle sans l'exécuter. Pour l'exécution, passer le dslQuery retourné à discovery_execute_dsl. Pour le cas standard, préférer discovery_lifecycle_report qui exécute en un appel.",
-      schema: lifecycleSchema,
-      outputSchema: dslQueryOutputSchema,
-      handler: async (input: z.infer<typeof lifecycleSchema>) => {
-        const dslQuery = buildLifecycleQuery(input);
-        return {
-          dslQuery,
-          riskWindowDays: input.riskWindowDays,
-          ...(input.includeUrlEncoded ? { urlEncodedQuery: encodeURIComponent(dslQuery) } : {})
-        };
-      }
     }
   };
 }

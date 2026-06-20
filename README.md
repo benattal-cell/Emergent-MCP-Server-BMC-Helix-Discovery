@@ -75,7 +75,7 @@ Notes de coût :
 
 ## Outils MCP exposés
 
-Le serveur expose ~31 outils (préfixe `discovery_`). La liste exacte est découvrable via `tools/list`. Principaux :
+Le serveur expose ~27 outils (préfixe `discovery_`). La liste exacte est découvrable via `tools/list`. Principaux :
 
 - Inventaire : `discovery_find_hosts`, `discovery_find_software_instances`, `discovery_find_host_software`
 - Requêtes DSL : `discovery_build_query`, `discovery_execute_dsl`, `discovery_validate_query`, `discovery_common_relationships`, `discovery_resolve_kind`
