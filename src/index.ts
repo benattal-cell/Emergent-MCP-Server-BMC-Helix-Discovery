@@ -17,7 +17,6 @@ import { cveTools } from "./tools/cve.js";
 import { graphTools } from "./tools/graph.js";
 import { lifecycleTools } from "./tools/lifecycle.js";
 import { patchComplianceTools } from "./tools/patchCompliance.js";
-import { osLifecycleTools } from "./tools/osLifecycle.js";
 import { windowsLicenseTools } from "./tools/windowsLicense.js";
 import { assistantGuideTools } from "./tools/assistantGuide.js";
 import { dependencyMapTools } from "./tools/dependencyMap.js";
@@ -186,7 +185,6 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...graphTools(client),
     ...lifecycleTools(client),
     ...patchComplianceTools(client),
-    ...osLifecycleTools(client),
     ...windowsLicenseTools(client),
     ...assistantGuideTools(),
     ...dependencyScopeTools(client),

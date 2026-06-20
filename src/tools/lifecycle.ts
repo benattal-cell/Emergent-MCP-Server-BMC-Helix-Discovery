@@ -4,6 +4,7 @@ import { kpiGrid } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { flatRowsOutputSchema } from "./outputSchemas.js";
 import { appendRowsMarkdownSummary } from "./shared/markdownTable.js";
+import { runOsLifecycleReport } from "./osLifecycle.js";
 import { DAY_IN_NANOS } from "./shared/time.js";
 
 const riskWindowDaysDefault = 182;
@@ -21,9 +22,11 @@ const lifecycleSchema = z.object({
 }).strict();
 
 const lifecycleReportSchema = z.object({
-  limit: z.number().int().min(1).max(500).default(100),
+  scope: z.enum(["software", "os"]).default("software"),
+  limit: z.number().int().min(1).max(1000).default(100),
   riskWindowDays: z.number().int().min(1).max(3650).default(riskWindowDaysDefault),
   onlyAtRisk: z.boolean().default(false),
+  osContains: z.string().min(1).optional(),
   hostNameContains: z.string().min(1).optional(),
   publisherContains: z.string().min(1).optional(),
   productContains: z.string().min(1).optional(),
@@ -116,10 +119,18 @@ function appliedFiltersFor(input: z.infer<typeof lifecycleReportSchema>): Record
 export function lifecycleTools(client: DiscoveryClient) {
   return {
     discovery_lifecycle_report: {
-      description: "Run the end-of-life/end-of-support report. Returns software/OS with their EOL, EOS, EOSS, EOES dates AND a 'Lifecycle Risk' label (e.g. 'EOS Exceeded', 'EOL less than 182 days away'). USE THIS DIRECTLY (do not build a separate DSL query then execute it) when the user asks 'what software is end-of-life?', 'what is going out of support soon?', 'show obsolete software'. ALWAYS pass `publisherContains` when the user mentions a vendor (Microsoft, Oracle, Adobe, IBM, ...). ALWAYS pass `productContains` when the user mentions a specific product (Windows Server, SQL Server, JBoss, ...). Set `onlyAtRisk=true` to filter to items already past a support date. Response includes a `summary` field with the headline count, then `rows` with the data.",
+      description: "Run the end-of-life/end-of-support report. Returns software/OS with their EOL, EOS, EOSS, EOES dates AND a 'Lifecycle Risk' label (e.g. 'EOS Exceeded', 'EOL less than 182 days away'). USE THIS DIRECTLY (do not build a separate DSL query then execute it) when the user asks 'what software is end-of-life?', 'what is going out of support soon?', 'show obsolete software'. ALWAYS pass `publisherContains` when the user mentions a vendor (Microsoft, Oracle, Adobe, IBM, ...). ALWAYS pass `productContains` when the user mentions a specific product (Windows Server, SQL Server, JBoss, ...). Set `onlyAtRisk=true` to filter to items already past a support date. Set `scope='os'` for the operating-system lifecycle view (starts from Host nodes / OS SupportDetail; filter the OS with `osContains`); default `scope='software'` covers SoftwareInstance with publisher/product/typeIn filters. Response includes a `summary` field with the headline count, then `rows` with the data.",
       schema: lifecycleReportSchema,
       outputSchema: flatRowsOutputSchema,
       handler: async (input: z.infer<typeof lifecycleReportSchema>) => {
+        if (input.scope === "os") {
+          return runOsLifecycleReport(client, {
+            osContains: input.osContains,
+            onlyAtRisk: input.onlyAtRisk,
+            riskWindowDays: input.riskWindowDays,
+            limit: input.limit
+          });
+        }
         const query = buildLifecycleQuery({
           riskWindowDays: input.riskWindowDays,
           includeUrlEncoded: false,

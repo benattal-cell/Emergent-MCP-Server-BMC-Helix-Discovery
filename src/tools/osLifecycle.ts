@@ -2,7 +2,6 @@ import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
 import { kpiGrid } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
-import { flatRowsOutputSchema } from "./outputSchemas.js";
 import { appendRowsMarkdownSummary } from "./shared/markdownTable.js";
 import { DAY_IN_NANOS } from "./shared/time.js";
 
@@ -109,44 +108,34 @@ function appliedFiltersFor(input: OsLifecycleInput): Record<string, unknown> {
   return applied;
 }
 
-export function osLifecycleTools(client: DiscoveryClient) {
-  return {
-    discovery_os_lifecycle_report: {
-      description: "Run an operating-system lifecycle report directly in Discovery. Starts from Host nodes, traverses OS SupportDetail only, returns host OS/vendor/virtual plus EOS/EOSS/EOES/EOL/default dates and failure_reason. A missing date with failure_reason containing 'not pertinent' is classified as not pertinent, not as missing data. USE THIS DIRECTLY; do not delegate to discovery_execute_dsl.",
-      schema: osLifecycleSchema,
-      outputSchema: flatRowsOutputSchema,
-      handler: async (input: OsLifecycleInput) => {
-        const appliedFilters = appliedFiltersFor(input);
-        const [hosts, atRisk, inWindow] = await Promise.all([
-          client.queryJson(buildOsLifecycleQuery(input), input.limit, { entityLabel: "hôtes avec lifecycle OS", appliedFilters }),
-          client.queryJson(buildOsLifecycleQuery({ ...input, onlyAtRisk: false }, "atRisk"), 0, { entityLabel: "hôtes OS à risque", appliedFilters }),
-          client.queryJson(buildOsLifecycleQuery({ ...input, onlyAtRisk: false }, "window"), 0, { entityLabel: "hôtes OS dans la fenêtre de risque", appliedFilters })
-        ]);
-        const rows = Array.isArray(hosts.rows) ? hosts.rows : [];
-        const result = {
-          summary: `${atRisk.totalCount ?? 0} hôte(s) OS à risque sur ${hosts.totalCount ?? rows.length} hôte(s) ciblé(s).`,
-          totalCount: hosts.totalCount,
-          returnedCount: rows.length,
-          rows,
-          risk: {
-            hosts: hosts.totalCount ?? rows.length,
-            atRisk: atRisk.totalCount ?? 0,
-            window: inWindow.totalCount ?? 0,
-            riskWindowDays: input.riskWindowDays
-          },
-          generated_dsl_query: buildOsLifecycleQuery(input),
-          appliedFilters
-        };
-        const svg = kpiGrid("OS lifecycle", [
-          { label: "Hôtes", value: String(result.risk.hosts), hint: input.osContains },
-          { label: "À risque", value: String(result.risk.atRisk), hint: "EOS dépassée", alert: result.risk.atRisk > 0 },
-          { label: "Fenêtre", value: String(result.risk.window), hint: `${input.riskWindowDays} j`, alert: result.risk.window > 0 }
-        ], { columns: 3 });
-
-        return renderVisual(svg, { name: "os_lifecycle_report", textSummary: appendRowsMarkdownSummary(result.summary, rows), structuredContent: result });
-
-      },
-      isVisual: true as const
-    }
+// Runs the OS-lifecycle view (Host nodes, OS SupportDetail). Exposed via discovery_lifecycle_report scope='os'.
+export async function runOsLifecycleReport(client: DiscoveryClient, input: OsLifecycleInput) {
+  const appliedFilters = appliedFiltersFor(input);
+  const [hosts, atRisk, inWindow] = await Promise.all([
+    client.queryJson(buildOsLifecycleQuery(input), input.limit, { entityLabel: "hôtes avec lifecycle OS", appliedFilters }),
+    client.queryJson(buildOsLifecycleQuery({ ...input, onlyAtRisk: false }, "atRisk"), 0, { entityLabel: "hôtes OS à risque", appliedFilters }),
+    client.queryJson(buildOsLifecycleQuery({ ...input, onlyAtRisk: false }, "window"), 0, { entityLabel: "hôtes OS dans la fenêtre de risque", appliedFilters })
+  ]);
+  const rows = Array.isArray(hosts.rows) ? hosts.rows : [];
+  const result = {
+    summary: `${atRisk.totalCount ?? 0} hôte(s) OS à risque sur ${hosts.totalCount ?? rows.length} hôte(s) ciblé(s).`,
+    totalCount: hosts.totalCount,
+    returnedCount: rows.length,
+    rows,
+    risk: {
+      hosts: hosts.totalCount ?? rows.length,
+      atRisk: atRisk.totalCount ?? 0,
+      window: inWindow.totalCount ?? 0,
+      riskWindowDays: input.riskWindowDays
+    },
+    generated_dsl_query: buildOsLifecycleQuery(input),
+    appliedFilters
   };
+  const svg = kpiGrid("OS lifecycle", [
+    { label: "Hôtes", value: String(result.risk.hosts), hint: input.osContains },
+    { label: "À risque", value: String(result.risk.atRisk), hint: "EOS dépassée", alert: result.risk.atRisk > 0 },
+    { label: "Fenêtre", value: String(result.risk.window), hint: `${input.riskWindowDays} j`, alert: result.risk.window > 0 }
+  ], { columns: 3 });
+
+  return renderVisual(svg, { name: "os_lifecycle_report", textSummary: appendRowsMarkdownSummary(result.summary, rows), structuredContent: result });
 }
