@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { DiscoveryClient } from "../discoveryClient.js";
-import { eur, kpiGrid } from "../svg/kpi.js";
+import { eur, kpiDashboard } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { loadItCostRows, type ItCostRow } from "./itCosts/dataLoader.js";
 import { structuredOutputSchema } from "./outputSchemas.js";
@@ -1010,7 +1010,7 @@ export function windowsLicenseTools(client: DiscoveryClient) {
           windowsVmOsVersions: esxGuestVersions.get(host.id) ?? []
         }));
         const report = await buildWindowsLicenseReportFromHosts([...esxWithGuestVersions, ...baremetal, ...hyperv], input);
-        const svg = kpiGrid("Windows licensing", [
+        const svg = kpiDashboard("Windows licensing", [
           { label: "Hôtes licenciables", value: String(report.totals.licenseableHosts), hint: `${report.totals.physicalHosts} physiques` },
           { label: "Cœurs licenciables", value: String(report.totals.licenseableCores), hint: input.priceProfile },
           { label: "Coût estimé", value: eur(report.totals.estimatedMedianCost), hint: "médian CSV" },
@@ -1018,7 +1018,11 @@ export function windowsLicenseTools(client: DiscoveryClient) {
           { label: "Réorganisation", value: eur(report.totals.savingsConsolidation), hint: "consolidation/pod", delta: { text: "sous réserve", positive: true } },
           { label: "Migration baremetal", value: eur(report.totals.savingsBaremetalMigration), hint: "potentiel max", delta: { text: "à valider", positive: true } },
           { label: "À vérifier", value: String(report.totals.undeterminedHosts), hint: "cœurs indéterminés", alert: report.totals.undeterminedHosts > 0 }
-        ], { columns: 3 });
+        ], [
+          { label: "Acquises", value: report.totals.savingsAcquired },
+          { label: "Consolidation", value: report.totals.savingsConsolidation },
+          { label: "Migration baremetal", value: report.totals.savingsBaremetalMigration }
+        ], { barTitle: "Leviers d'économies", formatValue: eur });
         return renderVisual(svg, {
           name: "windows_license_report",
           textSummary: buildWindowsLicenseTextSummary(report),

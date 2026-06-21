@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
-import { kpiGrid, type Kpi } from "../svg/kpi.js";
+import { kpiDashboard, countBy, type Kpi } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { deriveHostRole } from "./hostRole.js";
 import { flatRowsOutputSchema } from "./outputSchemas.js";
@@ -94,7 +94,8 @@ export function findTools(client: DiscoveryClient) {
           kpis.push({ label: "Rôle hôte", value: role.role, hint: role.matched.join(", ") || "Aucun mapping" });
         }
 
-        const svg = kpiGrid(`Recherche · ${input.kind}`, kpis, { columns: 2 });
+        const bars = countBy(rows, ["type", "Type", "os", "OS"]);
+        const svg = kpiDashboard(`Recherche · ${input.kind}`, kpis, bars, { barTitle: "Répartition", maxBars: 12 });
         return renderVisual(svg, {
           name: `find_${slug(input.kind)}_${slug(input.contains ?? input.relatedToName ?? "all")}`,
           textSummary: appendRowsMarkdownSummary(result.summary, rows),

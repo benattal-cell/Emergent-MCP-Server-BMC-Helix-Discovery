@@ -3,7 +3,7 @@ import { loadItCostRows } from "./dataLoader.js";
 import { listCategories, searchItCosts, searchItCostsSchema } from "./search.js";
 import { estimateCost, estimateCostSchema } from "./estimate.js";
 import { compareAlternatives, compareAlternativesSchema } from "./compare.js";
-import { eur, kpiGrid, type Kpi } from "../../svg/kpi.js";
+import { eur, kpiDashboard, countBy, type Kpi, type BarDatum } from "../../svg/kpi.js";
 import { renderVisual } from "../../svg/renderer.js";
 
 function slug(value: string): string {
@@ -51,11 +51,12 @@ export function itCostTools() {
         switch (input.mode) {
           case "categories": {
             const result = listCategories(rows);
-            const svg = kpiGrid("Catégories coûts IT", [
+            const bars: BarDatum[] = Object.entries(result).map(([category, subs]) => ({ label: category, value: subs.length }));
+            const svg = kpiDashboard("Catégories coûts IT", [
               { label: "Catégories", value: String(Object.keys(result).length), hint: "Familles de coûts" },
               { label: "Sous-catégories", value: String(countSubcategories(result)), hint: "Niveaux de classement" },
               { label: "Références", value: String(rows.length), hint: "Lignes du catalogue" }
-            ]);
+            ], bars, { barTitle: "Sous-catégories par catégorie", maxBars: 12 });
             return renderVisual(svg, {
               name: "it_cost_categories",
               textSummary: `${Object.keys(result).length} catégories et ${countSubcategories(result)} sous-catégories disponibles.`,
@@ -65,10 +66,11 @@ export function itCostTools() {
           case "search": {
             const args = searchItCostsSchema.parse({ query: input.query, category: input.category, subcategory: input.subcategory, limit: input.limit });
             const result = searchItCosts(rows, args);
-            const svg = kpiGrid("Recherche coûts IT", [
+            const bars = countBy(result as unknown as Array<Record<string, unknown>>, ["Catégorie"]);
+            const svg = kpiDashboard("Recherche coûts IT", [
               { label: "Résultats", value: String(result.length), hint: args.query ? `Query: ${args.query}` : "Catalogue filtré" },
               { label: "Catégorie", value: args.category ?? "Toutes", hint: args.subcategory ? `Sous-catégorie: ${args.subcategory}` : undefined }
-            ], { columns: 2 });
+            ], bars, { barTitle: "Par catégorie", maxBars: 12 });
             return renderVisual(svg, {
               name: visualName("it_cost_search", args.query ?? args.category ?? "all"),
               textSummary: `${result.length} coûts IT trouvés.`,
@@ -89,7 +91,14 @@ export function itCostTools() {
                 { label: "Coût médian", value: eur(result.costs.median), hint: `${result.quantity} × ${result.unit}` },
                 { label: "Coût max", value: eur(result.costs.max), hint: result.currency }
               ];
-            const svg = kpiGrid("Estimation coût IT", kpis);
+            const bars: BarDatum[] = "error" in result
+              ? []
+              : [
+                { label: "Min", value: result.costs.min },
+                { label: "Médian", value: result.costs.median },
+                { label: "Max", value: result.costs.max }
+              ];
+            const svg = kpiDashboard("Estimation coût IT", kpis, bars, { barTitle: `Scénarios (${result && "horizon" in result ? result.horizon : "annual"})`, formatValue: eur });
             return renderVisual(svg, {
               name: visualName("it_cost_estimate", parsed.data.component),
               textSummary: "error" in result ? result.error.message : `${result.component}: coût médian ${eur(result.costs.median)} (${result.horizon}).`,
@@ -116,7 +125,8 @@ export function itCostTools() {
                 { label: "Alternatives", value: String(result.alternatives.length), hint: parsed.data.workload_type },
                 { label: "Moins chère", value: result.alternatives[0]?.component ?? "N/A", hint: result.alternatives[0] ? eur(result.alternatives[0].annual_cost_median) : undefined }
               ];
-            const svg = kpiGrid("Comparaison alternatives", kpis);
+            const bars: BarDatum[] = result.alternatives.map((alt) => ({ label: alt.component, value: alt.annual_cost_median }));
+            const svg = kpiDashboard("Comparaison alternatives", kpis, bars, { barTitle: "Coût annuel par alternative", formatValue: eur });
             return renderVisual(svg, {
               name: visualName("it_cost_compare", parsed.data.workload_type),
               textSummary: result.kpi

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
-import { kpiGrid } from "../svg/kpi.js";
+import { kpiDashboard } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { flatRowsOutputSchema } from "./outputSchemas.js";
 import { rowsToMarkdownTable } from "./shared/markdownTable.js";
@@ -133,11 +133,14 @@ export function patchComplianceTools(client: DiscoveryClient) {
           generated_dsl_queries: queries,
           appliedFilters
         };
-        const svg = kpiGrid("Patch compliance", [
+        const svg = kpiDashboard("Patch compliance", [
           { label: "Hôtes ciblés", value: String(totalHosts), hint: input.osContains ?? "Windows" },
           { label: "% conformes", value: `${compliancePct}%`, hint: input.complianceMode === "all" ? "Tous les KB" : "Au moins un KB", alert: compliancePct < 95 },
           { label: "Non conformes", value: String(nonCompliantCount), hint: uniqueKbList(input.kbList).join(", "), alert: nonCompliantCount > 0 }
-        ], { columns: 3 });
+        ], [
+          { label: "Conformes", value: compliantCount },
+          { label: "Non conformes", value: nonCompliantCount }
+        ], { barTitle: "Conformité" });
         const summaryRows = rows.map((row) => ({
           Host: row.Host,
           OS: row.OS,
