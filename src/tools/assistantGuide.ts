@@ -144,9 +144,9 @@ const sections: GuideSection[] = [
     items: [
       {
         tool: "discovery_find",
-        purpose: "Recherche générique sur n'importe quel kind. `kind` (Host, SoftwareInstance, NetworkDevice, Database…) + `contains` (matche TOUS les attributs : nom, OS, owner, domaine…). Option `relatedToKind`+`relatedToName` pour scoper par relation.",
+        purpose: "Recherche générique sur n'importe quel kind. `kind` (Host, SoftwareInstance, NetworkDevice, SoftwareContainer…) + `contains` (matche TOUS les attributs : nom, OS, owner, domaine…). Option `relatedToKind`+`relatedToName` pour scoper par relation.",
         useCase: "Combien de serveurs Linux ? → kind=Host, contains='Linux'. Toutes les instances Oracle → kind=SoftwareInstance, contains='Oracle'. Que tourne-t-il sur SAP-PROD-01 ? → kind=SoftwareInstance, relatedToKind=Host, relatedToName='SAP-PROD-01'. Logiciels du service Apex → relatedToKind=BusinessService.",
-        purposeEn: "Generic search on any kind. `kind` (Host, SoftwareInstance, NetworkDevice, Database…) + `contains` (matches EVERY attribute: name, OS, owner, domain…). Optional `relatedToKind`+`relatedToName` to scope by relationship.",
+        purposeEn: "Generic search on any kind. `kind` (Host, SoftwareInstance, NetworkDevice, SoftwareContainer…) + `contains` (matches EVERY attribute: name, OS, owner, domain…). Optional `relatedToKind`+`relatedToName` to scope by relationship.",
         useCaseEn: "How many Linux servers? → kind=Host, contains='Linux'. All Oracle instances → kind=SoftwareInstance, contains='Oracle'. What runs on SAP-PROD-01? → kind=SoftwareInstance, relatedToKind=Host, relatedToName='SAP-PROD-01'. Software of the Apex service → relatedToKind=BusinessService."
       }
     ]
@@ -158,32 +158,11 @@ const sections: GuideSection[] = [
     keywords: ["dependency", "dépendance", "dependances", "topology", "topologie", "graph", "graphe", "map", "carte", "connected", "depends on", "impact", "blast radius", "node graph", "cmdb", "urbanisation", "service map"],
     items: [
       {
-        tool: "discovery_dependency_scope",
-        purpose: "Probe léger à appeler EN PREMIER pour estimer la taille du graphe avant rendu.",
-        useCase: "Avant le rendu, évaluer nodes/relations pour choisir depth et éviter une carte trop dense.",
-        purposeEn: "Lightweight probe to call FIRST to estimate graph size before rendering.",
-        useCaseEn: "Before rendering, evaluate nodes/relationships to choose depth and avoid an overly dense map."
-      },
-      {
-        tool: "discovery_dependency_map",
-        purpose: "Rendre une carte multi-représentation (PNG + SVG + HTML interactif autoportant). Si le client supporte les fichiers téléchargeables, il DOIT proposer le HTML interactif via le mécanisme natif (ex: present_files).",
-        useCase: "Pour une analyse d'impact ou blast radius, afficher le PNG/SVG inline et proposer systématiquement le HTML interactif en téléchargement si possible.",
-        purposeEn: "Render a multi-representation map (PNG + SVG + self-contained interactive HTML). If the client supports downloadable files, it MUST offer the interactive HTML through the native mechanism (e.g. present_files).",
-        useCaseEn: "For impact/blast-radius analysis, render PNG/SVG inline and always offer the interactive HTML as a downloadable artifact when possible."
-      },
-      {
-        tool: "discovery_service_architecture",
-        purpose: "Générer un schéma d'architecture hiérarchical style dossier (D3 tree, rectangles, Bézier) depuis un nœud racine BusinessApplication ou Host. Plus lisible que dependency_map pour les services avec une structure arborescente claire.",
-        useCase: `Passer serviceName="Jira" — le tool résout automatiquement tous les nœuds correspondants et génère un schéma par résultat. Pour éviter l'explosion du graphe sur les gros services, passer kindFilter=["BusinessService","BusinessApplicationInstance","Host","SoftwareInstance"]. Toujours commencer par depth=2 ; augmenter si le résultat est trop pauvre.`,
-        purposeEn: "Generate a hierarchical folder-style architecture diagram (D3 tree, rectangles, Bézier links) from a root BusinessApplication or Host node. More readable than dependency_map for services with a clear tree structure.",
-        useCaseEn: "When the user asks 'show me the architecture of [service]' or 'service X diagram', prefer this tool over dependency_map. If the graph has many cross-links (multi-parent), tell the user some nodes were duplicated."
-      },
-      {
-        tool: "discovery_get_node_graph",
-        purpose: "Récupérer le graphe brut autour d'un nodeId Discovery.",
-        useCase: "Quand on a déjà un nodeId et qu'on veut inspecter les relations sans rendu visuel.",
-        purposeEn: "Retrieve the raw graph around a Discovery nodeId.",
-        useCaseEn: "When a nodeId is already known and relationships should be inspected without visual rendering."
+        tool: "discovery_topology",
+        purpose: "Topologie/dépendances autour de n'importe quel objet, en 4 modes (paramètre `mode`). scope : dimensionne d'ABORD (compteurs, sans dessiner). summary : synthèse CMDB. map : graphe interactif (PNG+SVG+HTML, `depth`/`layout`). service : arbre BusinessService→BusinessService.",
+        useCase: "Lance mode=scope en premier sur un objet inconnu pour estimer la taille, puis mode=map pour dessiner (layout=hierarchical pour l'architecture, concentric pour blast-radius). mode=summary pour une lecture CMDB sans visuel ; mode=service pour l'arbre des services métier. target = nom ou nodeId (Host, SoftwareInstance, NetworkDevice, SoftwareContainer, BusinessService, BusinessApplicationInstance) ; targetKind pour désambiguïser.",
+        purposeEn: "Topology/dependencies around any object, in 4 modes (`mode` param). scope: SIZE first (counts, no draw). summary: CMDB rollup. map: interactive graph (PNG+SVG+HTML, `depth`/`layout`). service: BusinessService→BusinessService tree.",
+        useCaseEn: "Run mode=scope first on an unknown object to size it, then mode=map to draw (layout=hierarchical for architecture, concentric for blast-radius). mode=summary for a CMDB read without a visual; mode=service for the business-service tree. target = name or nodeId; targetKind to disambiguate."
       }
     ]
   },
@@ -267,11 +246,11 @@ const GLOBAL_RULES_FR = [
   "R-A3: Si l'objet nommé est absent À LA FOIS du registre nominatif (services/apps/hosts) ET des types SoftwareInstance connus, demande DE QUEL TYPE d'objet il s'agit plutôt que de deviner ou de lancer un execute_dsl.",
   "R-A4: Ne JAMAIS improviser une requête DSL brute pour contourner une ambiguïté.",
   "R-A5: Si aucun outil paramétré de niveau 1 ne couvre le besoin, NE rédige PAS de DSL toi-même. Appelle discovery_build_query en lui fournissant l'intention structurée (searchKind, conditions where avec opérateurs fermés, traversals depuis le référentiel, show). Il compose et valide la requête.",
-  "R-A6: discovery_build_query renvoie une dslQuery SANS l'exécuter (il valide déjà la syntaxe). Présente-la à l'utilisateur (il peut la modifier), puis exécute-la via discovery_execute_dsl (qui revalide avant exécution). Le cookbook DSL complet est disponible en resource MCP (mcp://discovery/dsl-cookbook).",
+  "R-A6: discovery_build_query renvoie une dslQuery SANS l'exécuter (il valide déjà la syntaxe). Présente-la à l'utilisateur (il peut la modifier), puis exécute-la via discovery_execute_dsl (qui revalide avant exécution). Le cookbook DSL complet est embarqué dans la description de discovery_execute_dsl (chargé à la connexion) et aussi exposé en resource MCP (mcp://discovery/dsl-cookbook).",
   "RÈGLE 1: N'invente JAMAIS du DSL Discovery (search/show) si un outil spécialisé couvre le besoin. Utilise d'abord les outils paramétrés ci-dessous.",
   "RÈGLE 2: Si l'utilisateur mentionne un éditeur (Microsoft, Oracle...) ou un produit (Windows Server, JBoss...), passe-le DIRECTEMENT en paramètre `publisherContains` / `productContains` à `discovery_lifecycle_report`. Pas d'enchaînement.",
   "RÈGLE 3: La réponse de chaque outil contient généralement un champ `summary` avec le chiffre clé. Cite-le textuellement avant tout détail.",
-  "RÈGLE 4: Pour les outils retournant plusieurs représentations (ex: discovery_dependency_map), choisis la représentation la plus riche que ton client supporte. Le HTML interactif est autoportant — propose-le en téléchargement si possible.",
+  "RÈGLE 4: Pour les outils retournant plusieurs représentations (ex: discovery_topology mode=map), choisis la représentation la plus riche que ton client supporte. Le HTML interactif est autoportant — propose-le en téléchargement si possible.",
   "RÈGLE 5: Pour du DSL brut, utilise `discovery_build_query` pour composer et valider l'intention structurée ; exécute ensuite seulement la dslQuery validée via `discovery_execute_dsl` après présentation à l'utilisateur.",
   "RÈGLE 6: Les chemins de traversal doivent venir du référentiel via `discovery_build_query`/`common_relationships`; ne retomber sur `discovery_taxonomy` que pour un chemin ABSENT du référentiel."
 ];
@@ -282,14 +261,34 @@ const GLOBAL_RULES_EN = [
   "R-A3: If the named object is absent from BOTH the nominal registry (services/apps/hosts) and known SoftwareInstance types, ask WHAT TYPE of object it is instead of guessing or launching execute_dsl.",
   "R-A4: NEVER improvise a raw DSL query to work around ambiguity.",
   "R-A5: If no level-1 parameterized tool covers the need, do NOT write DSL yourself. Call discovery_build_query with structured intent (searchKind, where conditions with closed operators, traversals from the referential, show). It composes and validates the query.",
-  "R-A6: discovery_build_query returns a dslQuery WITHOUT executing it (it already validates syntax). Show it to the user (they can edit it), then execute it via discovery_execute_dsl (which re-validates before running). The full DSL cookbook is available as an MCP resource (mcp://discovery/dsl-cookbook).",
+  "R-A6: discovery_build_query returns a dslQuery WITHOUT executing it (it already validates syntax). Show it to the user (they can edit it), then execute it via discovery_execute_dsl (which re-validates before running). The full DSL cookbook is embedded in the discovery_execute_dsl description (loaded at connection time) and also exposed as an MCP resource (mcp://discovery/dsl-cookbook).",
   "RULE 1: NEVER invent Discovery DSL (search/show) when a specialized tool covers the need. Use the parameterized tools below first.",
   "RULE 2: If the user mentions a vendor (Microsoft, Oracle...) or a product (Windows Server, JBoss...), pass it DIRECTLY as `publisherContains` / `productContains` to `discovery_lifecycle_report`. No chaining.",
   "RULE 3: Tool responses usually include a `summary` field with the headline count. Quote it verbatim before any detail.",
-  "RULE 4: For tools returning multiple representations (e.g. discovery_dependency_map), choose the richest representation your client supports. The interactive HTML is self-contained — offer it as a downloadable artifact when possible.",
+  "RULE 4: For tools returning multiple representations (e.g. discovery_topology mode=map), choose the richest representation your client supports. The interactive HTML is self-contained — offer it as a downloadable artifact when possible.",
   "RULE 5: For raw DSL, use `discovery_build_query` to compose and validate structured intent; only then execute the validated dslQuery through `discovery_execute_dsl` after showing it to the user.",
   "RULE 6: Traversal paths must come from the referential through `discovery_build_query`/`common_relationships`; fall back to `discovery_taxonomy` only for a path ABSENT from the referential."
 ];
+
+// Server instructions: delivered in the MCP `initialize` response (handshake),
+// injected by compliant clients into the model context at connection time.
+// Keep it SHORT — orchestration rules + pointers. The full DSL grammar stays in
+// the `mcp://discovery/dsl-cookbook` resource and the discovery_execute_dsl
+// description (loaded on demand), NOT here. Reuses GLOBAL_RULES_FR (single source).
+export function buildServerInstructions(): string {
+  return [
+    "Serveur MCP BMC Helix Discovery (inventaire, CVE, obsolescence, conformité, licences, coûts/Value Review, dépendances/topologie, DSL).",
+    "À LA CONNEXION : pour toute demande sur des données Discovery, appelle d'abord `discovery_tool_guide` avec la question brute de l'utilisateur — il renvoie les bons outils, le catalogue connu et les règles complètes (FR/EN).",
+    "",
+    "Classes de nœud RÉELLES : Host, SoftwareInstance, NetworkDevice, SoftwareContainer, BusinessService, BusinessApplicationInstance, Cluster, StorageSystem… Mappe les alias FR/EN vers la vraie classe avec `discovery_resolve_kind` ; ne devine jamais un kind.",
+    "Limites : gérées UNIQUEMENT côté serveur (MCP_RESULT_LIMIT) avec pagination via `nextOffset`. N'invente aucun paramètre de limite par appel.",
+    "DSL : n'écris jamais de DSL à la main → `discovery_build_query` compose+valide, puis `discovery_execute_dsl` exécute. Le cookbook DSL complet (grammaire + exemples) est embarqué dans la description de `discovery_execute_dsl` (chargé à la connexion) ; il est aussi exposé en resource `mcp://discovery/dsl-cookbook`.",
+    "Prompts MCP disponibles (workflows guidés) : cve_impact, value_review, eol_audit, dependency_analysis.",
+    "",
+    "Règles d'orchestration :",
+    ...GLOBAL_RULES_FR.map((rule) => `- ${rule}`)
+  ].join("\n");
+}
 
 function previewList(values: string[], max = 12): string {
   const visible = values.slice(0, max);

@@ -76,18 +76,22 @@ Notes de coût :
 
 ## Outils MCP exposés
 
-Le serveur expose ~23 outils (préfixe `discovery_`). La liste exacte est découvrable via `tools/list`. Principaux :
+Le serveur expose ~20 outils (préfixe `discovery_`). La liste exacte est découvrable via `tools/list`. Principaux :
 
 - Recherche : `discovery_find` (kind générique + `contains` + relation optionnelle `relatedToKind`/`relatedToName`)
 - Requêtes DSL : `discovery_build_query`, `discovery_execute_dsl`, `discovery_common_relationships`, `discovery_resolve_kind`
 - Modèle : `discovery_taxonomy` (introspection live, en fallback)
 - Cycle de vie / conformité : `discovery_lifecycle_report` (param `scope: software|os`), `discovery_patch_compliance_report`, `discovery_windows_license_report`
 - CVE : `discovery_cve_executive_summary`, `discovery_get_cve_cpes_from_nvd`, …
-- Cartographie : `discovery_dependency_map`, `discovery_dependency_scope`, `discovery_service_architecture`, `discovery_get_node_graph`
+- Topologie / dépendances : `discovery_topology` (modes `scope` / `summary` / `map` / `service` — accepte Host, SoftwareInstance, NetworkDevice, SoftwareContainer, BusinessService, BusinessApplicationInstance)
 - Coûts / Value Review : `discovery_cost_categories`, `discovery_cost_search`, `discovery_cost_estimate`, `discovery_cost_compare`
 - Métadonnées : `discovery_about`, `discovery_get_api_status`, `discovery_tool_guide`
 
 Une **resource** MCP est aussi exposée : `mcp://discovery/dsl-cookbook` (référence complète du DSL Discovery).
+
+Au handshake MCP (`initialize`), le serveur renvoie un champ **`instructions`** : un briefing d'orchestration court (classes de nœud réelles, discipline DSL `build_query`→`execute_dsl`, limites gérées côté serveur, pointeurs vers `discovery_tool_guide`, les Prompts et le cookbook). Les clients conformes l'injectent dans le contexte du modèle **dès la connexion**.
+
+**Chargement automatique du contexte (sans action utilisateur).** Deux canaux sont chargés au premier contact du client et persistent jusqu'à compression : (1) le champ `instructions` ci-dessus, (2) les **descriptions d'outils** envoyées avec `tools/list`. Le **cookbook DSL complet** (grammaire + exemples) est donc embarqué dans la description de `discovery_execute_dsl` afin d'être présent dès la connexion — l'utilisateur n'a pas à le demander. La resource `mcp://discovery/dsl-cookbook` expose le même contenu (source unique `buildDslCookbook()`) pour les clients qui préfèrent le *pull* à la demande.
 
 ## Prompts MCP (workflows guidés)
 

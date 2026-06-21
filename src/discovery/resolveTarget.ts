@@ -16,7 +16,9 @@ export type ResolveTargetResult =
 export const RESOLVABLE_TARGET_KINDS = ["BusinessService", "BusinessApplicationInstance", "Host", "SoftwareInstance"] as const;
 export type ResolvableTargetKind = typeof RESOLVABLE_TARGET_KINDS[number];
 
-const LIVE_KINDS = ["BusinessService", "BusinessApplicationInstance", "Host"] as const;
+// Real Discovery node kinds resolved by name (source: src/data/kind_aliases.csv).
+// Databases are modelled as SoftwareInstance (type "Database Server"), covered by the type query below.
+const LIVE_KINDS = ["BusinessService", "BusinessApplicationInstance", "Host", "NetworkDevice", "SoftwareContainer"] as const;
 
 export function looksLikeNodeId(value: string): boolean {
   return /^[0-9a-f]{32,}$/i.test(value);
@@ -40,10 +42,13 @@ function addCandidate(candidates: Map<string, ResolvedCandidate>, candidate: Res
   if (!candidates.has(key)) candidates.set(key, candidate);
 }
 
-async function liveLookup(client: DiscoveryClient, target: string): Promise<ResolvedCandidate[]> {
+async function liveLookup(client: DiscoveryClient, target: string, targetKind?: string): Promise<ResolvedCandidate[]> {
   const needle = escapeDiscoveryDoubleQuoted(target);
+  // Default kinds queried by name, plus an explicit targetKind (any real Discovery node kind, e.g. StorageSystem) when provided.
+  const nameKinds = new Set<string>(LIVE_KINDS);
+  if (targetKind && /^[A-Za-z][A-Za-z0-9_]*$/.test(targetKind)) nameKinds.add(targetKind);
   const queries = [
-    ...LIVE_KINDS.map((kind) => ({
+    ...[...nameKinds].map((kind) => ({
       kind,
       query: `SEARCH ${kind} WHERE name HAS SUBWORD "${needle}" SHOW name, kind, #id`
     })),
@@ -76,7 +81,7 @@ async function liveLookup(client: DiscoveryClient, target: string): Promise<Reso
   return [...candidates.values()];
 }
 
-export async function resolveTarget(client: DiscoveryClient, input: string, options: { targetKind?: ResolvableTargetKind } = {}): Promise<ResolveTargetResult> {
+export async function resolveTarget(client: DiscoveryClient, input: string, options: { targetKind?: string } = {}): Promise<ResolveTargetResult> {
   const target = input.trim();
   if (looksLikeNodeId(target)) return { status: "node_id", id: target };
 
@@ -84,7 +89,7 @@ export async function resolveTarget(client: DiscoveryClient, input: string, opti
   for (const entry of lookupByName(target)) addCandidate(candidates, entry);
 
   const cachedTypeMatches = lookupByType(target);
-  const liveCandidates = await liveLookup(client, target);
+  const liveCandidates = await liveLookup(client, target, options.targetKind);
   for (const candidate of liveCandidates) addCandidate(candidates, candidate);
 
   const resolved = [...candidates.values()].filter((candidate) => !options.targetKind || candidate.kind === options.targetKind);
