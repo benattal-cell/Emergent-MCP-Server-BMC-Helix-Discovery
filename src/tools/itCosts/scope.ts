@@ -9,8 +9,8 @@ import { compareAlternatives } from "./compare.js";
 // windows_license): VM unit = Host(virtual), vCPU = #:::ProcessorInfo.num_logical_processors,
 // RAM = logical_ram (Mo), wildcard traversal `:::Host`.
 export const scopeSchema = z.object({
-  type: z.enum(["service", "host", "fleet"]).describe("service: VMs d'un BusinessService ; host: VMs hébergées par un hôte ; fleet: tout le parc virtuel (filtre os optionnel)."),
-  name: z.string().min(1).optional().describe("Nom du service ou de l'hôte (requis pour service/host), matché en HAS SUBWORD."),
+  type: z.enum(["service", "host", "vcenter", "fleet"]).describe("service: VMs d'un BusinessService ; host: VMs hébergées par un hôte ; vcenter: VMs gérées par un vCenter (chaîne vCenter→Cluster→Host→guests) ; fleet: tout le parc virtuel (filtre os optionnel)."),
+  name: z.string().min(1).optional().describe("Nom du service / hôte / vCenter (requis pour service/host/vcenter), matché en HAS SUBWORD."),
   osContains: z.string().min(1).optional().describe("Filtre OS optionnel (ex. 'Windows', 'Linux').")
 }).strict();
 export type CostScope = z.infer<typeof scopeSchema>;
@@ -43,6 +43,10 @@ export function buildScopeQuery(scope: CostScope): string {
   }
   if (scope.type === "host") {
     return `search Host where name has subword "${name}"\n  traverse :::Host where virtual\n  ${SHOW}`;
+  }
+  if (scope.type === "vcenter") {
+    // vCenter→Cluster→Host(ESX) per common_relationships.csv, then ESX→guest VMs via :::Host where virtual.
+    return `search SoftwareInstance where name has subword "${name}" and type has subword "vCenter"\n  traverse ServiceProvide:SoftwareService:Service:Cluster\n  traverse HostContainer:HostContainment:ContainedHost:Host\n  traverse :::Host where virtual\n  ${SHOW}`;
   }
   const where = scope.osContains ? `virtual and os has subword "${esc(scope.osContains)}"` : "virtual";
   return `search Host where ${where}\n  ${SHOW}`;

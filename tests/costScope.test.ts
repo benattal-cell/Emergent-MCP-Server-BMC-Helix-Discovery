@@ -14,6 +14,14 @@ describe("cost scope", () => {
     expect(query).toContain("logical_ram");
   });
 
+  it("builds a vCenter scope query with the documented vCenter->Cluster->Host chain", () => {
+    const query = buildScopeQuery({ type: "vcenter", name: "VC-PROD" });
+    expect(query).toContain('search SoftwareInstance where name has subword "VC-PROD" and type has subword "vCenter"');
+    expect(query).toContain("traverse ServiceProvide:SoftwareService:Service:Cluster");
+    expect(query).toContain("traverse HostContainer:HostContainment:ContainedHost:Host");
+    expect(query).toContain("traverse :::Host where virtual");
+  });
+
   it("builds a fleet scope query with an optional os filter", () => {
     expect(buildScopeQuery({ type: "fleet" })).toContain("search Host where virtual");
     expect(buildScopeQuery({ type: "fleet", osContains: "Windows" })).toContain('where virtual and os has subword "Windows"');

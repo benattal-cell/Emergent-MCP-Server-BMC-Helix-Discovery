@@ -37,7 +37,7 @@ const costSchema = z.object({
   workload_type: z.string().min(1).optional().describe("[compare] Type de charge à comparer (ex: VM 4vCPU 16Go)."),
   current_solution: z.string().min(1).optional().describe("[compare] Solution actuelle (fuzzy), pour calculer l'économie."),
   // [estimate/compare] — chiffrage piloté par l'inventaire Discovery (remplace workload_type/quantity manuels)
-  scope: scopeSchema.optional().describe("[estimate/compare] Périmètre Discovery à chiffrer (service / host / fleet) : résout les VMs réelles, les bucketise par taille (vCPU/RAM) et chiffre le parc. Dérive la quantité automatiquement.")
+  scope: scopeSchema.optional().describe("[estimate/compare] Périmètre Discovery à chiffrer (service / host / vcenter / fleet) : résout les VMs réelles, les bucketise par taille (vCPU/RAM) et chiffre le parc. Dérive la quantité automatiquement.")
 }).strict();
 
 function missingArgs(mode: string, fields: string): { content: { type: "text"; text: string }[]; structuredContent: Record<string, unknown>; isError: true } {
