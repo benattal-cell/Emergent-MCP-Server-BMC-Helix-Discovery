@@ -3,7 +3,7 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { ApiError } from "../utils/errors.js";
 import { structuredOutputSchema } from "./outputSchemas.js";
 import { matchCommonRelationships } from "./commonRelationships.js";
-import { EXECUTE_DSL_DESCRIPTION, enrichDslError, extractDiscoveryErrorMessage, validateDiscoveryQuery } from "./query.js";
+import { buildDslCookbook, enrichDslError, extractDiscoveryErrorMessage, validateDiscoveryQuery } from "./query.js";
 
 const executeDslSchema = z
   .object({
@@ -99,8 +99,8 @@ export function executeDslTools(client: DiscoveryClient) {
         "",
         "Exécute une requête DSL BMC Discovery brute et renvoie les lignes. C'est L'outil pour exécuter toute dslQuery validée — typiquement issue de discovery_build_query, mais tout DSL bien formé fonctionne.",
         "",
-        "Reference DSL block for this execute_dsl path:",
-        ...EXECUTE_DSL_DESCRIPTION
+        "Complete DSL cookbook (grammar + curated examples), embedded here so it loads with tools/list at connection time:",
+        buildDslCookbook()
       ].join("\n"),
       schema: executeDslSchema,
       outputSchema: structuredOutputSchema,

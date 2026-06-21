@@ -89,7 +89,9 @@ Le serveur expose ~20 outils (préfixe `discovery_`). La liste exacte est décou
 
 Une **resource** MCP est aussi exposée : `mcp://discovery/dsl-cookbook` (référence complète du DSL Discovery).
 
-Au handshake MCP (`initialize`), le serveur renvoie un champ **`instructions`** : un briefing d'orchestration court (classes de nœud réelles, discipline DSL `build_query`→`execute_dsl`, limites gérées côté serveur, pointeurs vers `discovery_tool_guide`, les Prompts et le cookbook). Les clients conformes l'injectent dans le contexte du modèle **dès la connexion**. La doc DSL complète n'y est PAS dupliquée : elle reste dans la resource `dsl-cookbook` (lue à la demande) et la description de `discovery_execute_dsl`.
+Au handshake MCP (`initialize`), le serveur renvoie un champ **`instructions`** : un briefing d'orchestration court (classes de nœud réelles, discipline DSL `build_query`→`execute_dsl`, limites gérées côté serveur, pointeurs vers `discovery_tool_guide`, les Prompts et le cookbook). Les clients conformes l'injectent dans le contexte du modèle **dès la connexion**.
+
+**Chargement automatique du contexte (sans action utilisateur).** Deux canaux sont chargés au premier contact du client et persistent jusqu'à compression : (1) le champ `instructions` ci-dessus, (2) les **descriptions d'outils** envoyées avec `tools/list`. Le **cookbook DSL complet** (grammaire + exemples) est donc embarqué dans la description de `discovery_execute_dsl` afin d'être présent dès la connexion — l'utilisateur n'a pas à le demander. La resource `mcp://discovery/dsl-cookbook` expose le même contenu (source unique `buildDslCookbook()`) pour les clients qui préfèrent le *pull* à la demande.
 
 ## Authentification (OAuth 2.1)
 
