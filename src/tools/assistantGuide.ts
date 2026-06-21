@@ -92,17 +92,10 @@ const sections: GuideSection[] = [
     items: [
       {
         tool: "discovery_lifecycle_report",
-        purpose: "Exécuter directement un rapport lifecycle avec filtres intégrés (publisherContains, productContains, hostNameContains, typeIn).",
-        useCase: "Pour 'logiciels Microsoft en fin de support', appeler avec publisherContains='Microsoft'. PAS BESOIN d'enchaîner build_lifecycle_query + search_data.",
-        purposeEn: "Run a lifecycle report directly with built-in filters (publisherContains, productContains, hostNameContains, typeIn).",
-        useCaseEn: "For 'Microsoft software end-of-life', call with publisherContains='Microsoft'. NO NEED to chain build_lifecycle_query + search_data."
-      },
-      {
-        tool: "discovery_os_lifecycle_report",
-        purpose: "Exécuter directement un rapport d'obsolescence OS depuis les Host avec dates EOS/EOSS/EOES/EOL SupportDetail OS et gestion de failure_reason.",
-        useCase: "Pour 'Windows Server obsolètes' ou 'OS à risque', appeler ce tool avec osContains si besoin et onlyAtRisk=true pour EOS dépassée. PAS BESOIN d'enchaîner search_data.",
-        purposeEn: "Run an OS obsolescence report directly from Host nodes with OS SupportDetail EOS/EOSS/EOES/EOL dates and failure_reason handling.",
-        useCaseEn: "For 'obsolete Windows Server' or 'OS at risk', call this tool with osContains as needed and onlyAtRisk=true for exceeded EOS. NO NEED to chain search_data."
+        purpose: "Exécuter directement un rapport lifecycle. scope='software' (défaut) : SoftwareInstance avec filtres publisherContains/productContains/hostNameContains/typeIn. scope='os' : obsolescence OS depuis les Host (dates EOS/EOSS/EOES/EOL SupportDetail OS, gestion failure_reason, filtre osContains).",
+        useCase: "Pour 'logiciels Microsoft en fin de support', appeler avec publisherContains='Microsoft'. Pour 'Windows Server obsolètes' / 'OS à risque', appeler avec scope='os' (+ osContains si besoin, onlyAtRisk=true). PAS BESOIN de construire le DSL séparément.",
+        purposeEn: "Run a lifecycle report directly. scope='software' (default): SoftwareInstance with publisherContains/productContains/hostNameContains/typeIn filters. scope='os': OS obsolescence from Host nodes (OS SupportDetail EOS/EOSS/EOES/EOL dates, failure_reason handling, osContains filter).",
+        useCaseEn: "For 'Microsoft software end-of-life', call with publisherContains='Microsoft'. For 'obsolete Windows Server' / 'OS at risk', call with scope='os' (+ osContains as needed, onlyAtRisk=true). No need to build the DSL separately."
       }
     ]
   },
