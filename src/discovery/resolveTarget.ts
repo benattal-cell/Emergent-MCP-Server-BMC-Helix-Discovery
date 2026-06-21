@@ -16,7 +16,9 @@ export type ResolveTargetResult =
 export const RESOLVABLE_TARGET_KINDS = ["BusinessService", "BusinessApplicationInstance", "Host", "SoftwareInstance"] as const;
 export type ResolvableTargetKind = typeof RESOLVABLE_TARGET_KINDS[number];
 
-const LIVE_KINDS = ["BusinessService", "BusinessApplicationInstance", "Host", "NetworkDevice", "Database"] as const;
+// Real Discovery node kinds resolved by name (source: src/data/kind_aliases.csv).
+// Databases are modelled as SoftwareInstance (type "Database Server"), covered by the type query below.
+const LIVE_KINDS = ["BusinessService", "BusinessApplicationInstance", "Host", "NetworkDevice", "SoftwareContainer"] as const;
 
 export function looksLikeNodeId(value: string): boolean {
   return /^[0-9a-f]{32,}$/i.test(value);
@@ -42,7 +44,7 @@ function addCandidate(candidates: Map<string, ResolvedCandidate>, candidate: Res
 
 async function liveLookup(client: DiscoveryClient, target: string, targetKind?: string): Promise<ResolvedCandidate[]> {
   const needle = escapeDiscoveryDoubleQuoted(target);
-  // Default kinds queried by name, plus an explicit targetKind (e.g. a cloud/container kind) when provided.
+  // Default kinds queried by name, plus an explicit targetKind (any real Discovery node kind, e.g. StorageSystem) when provided.
   const nameKinds = new Set<string>(LIVE_KINDS);
   if (targetKind && /^[A-Za-z][A-Za-z0-9_]*$/.test(targetKind)) nameKinds.add(targetKind);
   const queries = [

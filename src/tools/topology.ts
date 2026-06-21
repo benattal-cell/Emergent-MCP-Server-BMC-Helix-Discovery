@@ -10,8 +10,8 @@ import { CYTOSCAPE_VISUAL_DESCRIPTION } from "./visualInstructions.js";
 const kindPattern = /^[A-Za-z][A-Za-z0-9_]*$/;
 
 export const topologySchema = z.object({
-  target: z.string().min(1).describe("Nom ou nodeId de la cible (Host, SoftwareInstance, NetworkDevice, Database, BusinessService, objet cloud/container…)"),
-  targetKind: z.string().regex(kindPattern).optional().describe("Kind pour désambiguïser la résolution du nom (ex. Host, NetworkDevice, Database, BusinessService)"),
+  target: z.string().min(1).describe("Nom ou nodeId de la cible (Host, SoftwareInstance, NetworkDevice, SoftwareContainer, BusinessService, BusinessApplicationInstance…)"),
+  targetKind: z.string().regex(kindPattern).optional().describe("Kind Discovery réel pour désambiguïser la résolution du nom (ex. Host, NetworkDevice, SoftwareContainer, StorageSystem, BusinessService)"),
   mode: z.enum(["scope", "summary", "map", "service"]).default("map"),
   depth: z.number().int().min(1).max(4).default(1).describe("Profondeur de traversée (mode map: max 3 ; mode service: max 4)"),
   maxNodes: z.number().int().min(5).max(500).default(60),
@@ -20,7 +20,7 @@ export const topologySchema = z.object({
 }).strict();
 
 const DESCRIPTION = [
-  "Topologie / dépendances autour de N'IMPORTE QUEL objet Discovery (Host, SoftwareInstance, NetworkDevice, Database, objet cloud, container, BusinessService…). Un seul outil, quatre modes :",
+  "Topologie / dépendances autour de N'IMPORTE QUEL objet Discovery (Host, SoftwareInstance, NetworkDevice, SoftwareContainer, BusinessService, BusinessApplicationInstance…). Un seul outil, quatre modes :",
   "- mode=scope : DIMENSIONNE le voisinage (compteurs par kind, fan-in/out) SANS dessiner. À lancer EN PREMIER sur un objet inconnu pour choisir depth/filtres.",
   "- mode=summary : synthèse type CMDB (nb de CI, top classes de CI, top types de relations). Pas de dessin.",
   "- mode=map (défaut) : DESSINE le graphe de dépendances interactif (multi-sauts via depth/maxNodes ; layout concentric|hierarchical|cose).",

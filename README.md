@@ -83,7 +83,7 @@ Le serveur expose ~20 outils (préfixe `discovery_`). La liste exacte est décou
 - Modèle : `discovery_taxonomy` (introspection live, en fallback)
 - Cycle de vie / conformité : `discovery_lifecycle_report` (param `scope: software|os`), `discovery_patch_compliance_report`, `discovery_windows_license_report`
 - CVE : `discovery_cve_executive_summary`, `discovery_get_cve_cpes_from_nvd`, …
-- Topologie / dépendances : `discovery_topology` (modes `scope` / `summary` / `map` / `service` — accepte Host, SoftwareInstance, NetworkDevice, Database, cloud, container, BusinessService)
+- Topologie / dépendances : `discovery_topology` (modes `scope` / `summary` / `map` / `service` — accepte Host, SoftwareInstance, NetworkDevice, SoftwareContainer, BusinessService, BusinessApplicationInstance)
 - Coûts / Value Review : `discovery_cost_categories`, `discovery_cost_search`, `discovery_cost_estimate`, `discovery_cost_compare`
 - Métadonnées : `discovery_about`, `discovery_get_api_status`, `discovery_tool_guide`
 

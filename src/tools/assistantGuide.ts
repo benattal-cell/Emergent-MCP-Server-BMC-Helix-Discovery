@@ -144,9 +144,9 @@ const sections: GuideSection[] = [
     items: [
       {
         tool: "discovery_find",
-        purpose: "Recherche générique sur n'importe quel kind. `kind` (Host, SoftwareInstance, NetworkDevice, Database…) + `contains` (matche TOUS les attributs : nom, OS, owner, domaine…). Option `relatedToKind`+`relatedToName` pour scoper par relation.",
+        purpose: "Recherche générique sur n'importe quel kind. `kind` (Host, SoftwareInstance, NetworkDevice, SoftwareContainer…) + `contains` (matche TOUS les attributs : nom, OS, owner, domaine…). Option `relatedToKind`+`relatedToName` pour scoper par relation.",
         useCase: "Combien de serveurs Linux ? → kind=Host, contains='Linux'. Toutes les instances Oracle → kind=SoftwareInstance, contains='Oracle'. Que tourne-t-il sur SAP-PROD-01 ? → kind=SoftwareInstance, relatedToKind=Host, relatedToName='SAP-PROD-01'. Logiciels du service Apex → relatedToKind=BusinessService.",
-        purposeEn: "Generic search on any kind. `kind` (Host, SoftwareInstance, NetworkDevice, Database…) + `contains` (matches EVERY attribute: name, OS, owner, domain…). Optional `relatedToKind`+`relatedToName` to scope by relationship.",
+        purposeEn: "Generic search on any kind. `kind` (Host, SoftwareInstance, NetworkDevice, SoftwareContainer…) + `contains` (matches EVERY attribute: name, OS, owner, domain…). Optional `relatedToKind`+`relatedToName` to scope by relationship.",
         useCaseEn: "How many Linux servers? → kind=Host, contains='Linux'. All Oracle instances → kind=SoftwareInstance, contains='Oracle'. What runs on SAP-PROD-01? → kind=SoftwareInstance, relatedToKind=Host, relatedToName='SAP-PROD-01'. Software of the Apex service → relatedToKind=BusinessService."
       }
     ]
@@ -160,7 +160,7 @@ const sections: GuideSection[] = [
       {
         tool: "discovery_topology",
         purpose: "Topologie/dépendances autour de n'importe quel objet, en 4 modes (paramètre `mode`). scope : dimensionne d'ABORD (compteurs, sans dessiner). summary : synthèse CMDB. map : graphe interactif (PNG+SVG+HTML, `depth`/`layout`). service : arbre BusinessService→BusinessService.",
-        useCase: "Lance mode=scope en premier sur un objet inconnu pour estimer la taille, puis mode=map pour dessiner (layout=hierarchical pour l'architecture, concentric pour blast-radius). mode=summary pour une lecture CMDB sans visuel ; mode=service pour l'arbre des services métier. target = nom ou nodeId (Host, SoftwareInstance, NetworkDevice, Database, cloud, container, BusinessService) ; targetKind pour désambiguïser.",
+        useCase: "Lance mode=scope en premier sur un objet inconnu pour estimer la taille, puis mode=map pour dessiner (layout=hierarchical pour l'architecture, concentric pour blast-radius). mode=summary pour une lecture CMDB sans visuel ; mode=service pour l'arbre des services métier. target = nom ou nodeId (Host, SoftwareInstance, NetworkDevice, SoftwareContainer, BusinessService, BusinessApplicationInstance) ; targetKind pour désambiguïser.",
         purposeEn: "Topology/dependencies around any object, in 4 modes (`mode` param). scope: SIZE first (counts, no draw). summary: CMDB rollup. map: interactive graph (PNG+SVG+HTML, `depth`/`layout`). service: BusinessService→BusinessService tree.",
         useCaseEn: "Run mode=scope first on an unknown object to size it, then mode=map to draw (layout=hierarchical for architecture, concentric for blast-radius). mode=summary for a CMDB read without a visual; mode=service for the business-service tree. target = name or nodeId; targetKind to disambiguate."
       }

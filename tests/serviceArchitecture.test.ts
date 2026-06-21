@@ -167,7 +167,7 @@ describe("discovery_service_architecture", () => {
 
     const result = await serviceArchitectureTools(client).discovery_service_architecture.handler({ serviceName: "Missing" });
 
-    // resolveTarget queries 5 kinds by name (BusinessService, BusinessApplicationInstance, Host, NetworkDevice, Database) + SoftwareInstance by type.
+    // resolveTarget queries 5 kinds by name (BusinessService, BusinessApplicationInstance, Host, NetworkDevice, SoftwareContainer) + SoftwareInstance by type.
     expect(client.searchData).toHaveBeenCalledTimes(6);
     expect(result).toMatchObject({ isError: true, structuredContent: { status: "none", target: "Missing" } });
     expect(result.content[0]).toEqual({ type: "text", text: "Rien trouvé pour Missing." });
