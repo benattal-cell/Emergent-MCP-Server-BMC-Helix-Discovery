@@ -14,14 +14,6 @@ describe("cost scope", () => {
     expect(query).toContain("logical_ram");
   });
 
-  it("builds a vCenter scope query with the documented vCenter->Cluster->Host chain", () => {
-    const query = buildScopeQuery({ type: "vcenter", name: "VC-PROD" });
-    expect(query).toContain('search SoftwareInstance where name has subword "VC-PROD" and type has subword "vCenter"');
-    expect(query).toContain("traverse ServiceProvide:SoftwareService:Service:Cluster");
-    expect(query).toContain("traverse HostContainer:HostContainment:ContainedHost:Host");
-    expect(query).toContain("traverse :::Host where virtual");
-  });
-
   it("builds a fleet scope query with an optional os filter", () => {
     expect(buildScopeQuery({ type: "fleet" })).toContain("search Host where virtual");
     expect(buildScopeQuery({ type: "fleet", osContains: "Windows" })).toContain('where virtual and os has subword "Windows"');
@@ -69,7 +61,7 @@ describe("cost scope", () => {
 
   it("errors clearly when the scope resolves to no VMs", async () => {
     const client = { searchData: vi.fn().mockResolvedValue({ rows: [] }) } as never;
-    const result = await itCostTools(client).discovery_cost.handler({ mode: "compare", scope: { type: "host", name: "ghost" }, horizon: "annual", scenario: "all", limit: 10 });
+    const result = await itCostTools(client).discovery_cost.handler({ mode: "compare", scope: { type: "service", name: "ghost" }, horizon: "annual", scenario: "all", limit: 10 });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("Aucune VM");
   });

@@ -47,7 +47,7 @@ export function registerDiscoveryPrompts(server: McpServer): void {
       `3. discovery_cost(mode=compare${current_solution ? `, current_solution="${current_solution}"` : ""}) pour les alternatives annualisées et l'économie médiane.`,
       "4. Pour les licences Windows Server, utilise discovery_windows_license_report.",
       "",
-      "Pour un périmètre réel (un service, un hôte, ou tout le parc virtuel), préfère discovery_cost(mode=compare, scope={type:'service'|'host'|'vcenter'|'fleet', name:'...'}) : il résout les VMs depuis Discovery, les bucketise par taille (vCPU/RAM) et compare on-prem vs cloud sans saisir la quantité.",
+      "Pour un périmètre réel (un service, un hôte, ou tout le parc virtuel), préfère discovery_cost(mode=compare, scope={type:'service'|'fleet', name:'...'}) : il résout les VMs depuis Discovery, les bucketise par taille (vCPU/RAM) et compare on-prem vs cloud sans saisir la quantité.",
       "Sinon, croise avec l'inventaire réel via discovery_find si une quantité est nécessaire. Présente min / médian / max et l'économie médiane."
     ].join("\n"))
   );
