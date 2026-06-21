@@ -26,32 +26,11 @@ const sections: GuideSection[] = [
     keywords: ["cost", "coût", "cout", "costs", "saving", "savings", "économie", "economies", "value review", "business case", "tco", "roi", "azure", "aws", "vmware", "licence", "license", "rightsizing"],
     items: [
       {
-        tool: "discovery_cost_categories",
-        purpose: "Lister les catégories et sous-catégories de la base de coûts IT avant une recherche.",
-        useCase: "Démarrer un Value Review en découvrant les familles disponibles (cloud, infra virtualisée, licences, stockage...).",
-        purposeEn: "List categories and subcategories from the IT cost knowledge base before searching.",
-        useCaseEn: "Start a Value Review by discovering available families (cloud, virtualized infra, licenses, storage...)."
-      },
-      {
-        tool: "discovery_cost_search",
-        purpose: "Rechercher des composants de coût par texte, catégorie et sous-catégorie.",
-        useCase: "Trouver les lignes de référence pour VM 4 vCPU/16 Go, Oracle, Microsoft 365 ou stockage.",
-        purposeEn: "Search cost components by text, category, and subcategory.",
-        useCaseEn: "Find reference rows for 4 vCPU/16 GB VMs, Oracle, Microsoft 365, or storage."
-      },
-      {
-        tool: "discovery_cost_estimate",
-        purpose: "Estimer min/médian/max pour un composant et une quantité sur un horizon mensuel, annuel ou 5 ans.",
-        useCase: "Après inventaire, estimer le coût annuel de 200 VMs VMware ou de 50 cores Oracle.",
-        purposeEn: "Estimate min/median/max for a component and quantity over monthly, annual, or 5-year horizons.",
-        useCaseEn: "After inventory, estimate the annual cost of 200 VMware VMs or 50 Oracle cores."
-      },
-      {
-        tool: "discovery_cost_compare",
-        purpose: "Comparer les alternatives annualisées et calculer les économies potentielles face à une solution actuelle.",
-        useCase: "Comparer VMware vs Azure/AWS/GCP pour 100 VMs 4 vCPU/16 Go et classer les économies médianes.",
-        purposeEn: "Compare annualized alternatives and calculate potential savings versus a current solution.",
-        useCaseEn: "Compare VMware vs Azure/AWS/GCP for 100 4 vCPU/16 GB VMs and rank median savings."
+        tool: "discovery_cost",
+        purpose: "Coûts IT / Value Review, en 4 modes (paramètre `mode`). categories : familles du catalogue. search : composants par texte/catégorie/sous-catégorie. estimate : min/médian/max pour un `component` × `quantity` sur un horizon (mensuel/annuel/5 ans). compare : alternatives annualisées + économie face à `current_solution`.",
+        useCase: "Value Review : mode=categories pour cadrer, puis mode=search pour trouver 'VM 4 vCPU/16 Go' ou 'Oracle', mode=estimate pour chiffrer 200 VMs VMware, mode=compare pour classer VMware vs Azure/AWS/GCP et les économies médianes.",
+        purposeEn: "IT costs / Value Review, in 4 modes (`mode` param). categories: catalog families. search: components by text/category/subcategory. estimate: min/median/max for a `component` × `quantity` over a horizon (monthly/annual/5-year). compare: annualized alternatives + savings versus `current_solution`.",
+        useCaseEn: "Value Review: mode=categories to frame, then mode=search to find '4 vCPU/16 GB VM' or 'Oracle', mode=estimate to price 200 VMware VMs, mode=compare to rank VMware vs Azure/AWS/GCP and median savings."
       },
       {
         tool: "discovery_windows_license_report",
@@ -69,18 +48,11 @@ const sections: GuideSection[] = [
     keywords: ["health", "status", "statut", "connexion", "connectivité", "reachable", "version", "api", "about", "diagnostic"],
     items: [
       {
-        tool: "discovery_get_api_status",
-        purpose: "Vérifier que Discovery est joignable et que la version API configurée est supportée.",
-        useCase: "À appeler quand un outil échoue, après un déploiement Railway, ou avant une série d'analyses.",
-        purposeEn: "Check whether Discovery is reachable and whether the configured API version is supported.",
-        useCaseEn: "Call this when a tool fails, after a Railway deployment, or before a batch of analyses."
-      },
-      {
         tool: "discovery_about",
-        purpose: "Lire les métadonnées brutes de l'instance Discovery.",
-        useCase: "Diagnostiquer la version et les capacités exposées par `/api/about`.",
-        purposeEn: "Read raw metadata from the Discovery instance.",
-        useCaseEn: "Diagnose the version and capabilities exposed by `/api/about`."
+        purpose: "Métadonnées de l'instance Discovery (version, capacités). Avec `check=true` : health-check (joignabilité + version d'API configurée supportée, warning si écart).",
+        useCase: "check=true quand un outil échoue, après un déploiement Railway, ou avant une série d'analyses. Sans check : diagnostiquer la version et les capacités exposées par `/api/about`.",
+        purposeEn: "Discovery instance metadata (version, capabilities). With `check=true`: health-check (reachability + configured API version supported, warning on mismatch).",
+        useCaseEn: "check=true when a tool fails, after a Railway deployment, or before a batch of analyses. Without check: diagnose the version and capabilities exposed by `/api/about`."
       }
     ]
   },

@@ -42,9 +42,9 @@ export function registerDiscoveryPrompts(server: McpServer): void {
       "Réalise une Value Review à partir de la base de coûts de référence.",
       "",
       "Procédure :",
-      "1. discovery_cost_categories pour cadrer les familles disponibles.",
-      `2. discovery_cost_search puis discovery_cost_estimate pour chiffrer ${workload ? `"${workload}"` : "la charge demandée"}.`,
-      `3. discovery_cost_compare${current_solution ? ` (current_solution="${current_solution}")` : ""} pour les alternatives annualisées et l'économie médiane.`,
+      "1. discovery_cost(mode=categories) pour cadrer les familles disponibles.",
+      `2. discovery_cost(mode=search) puis discovery_cost(mode=estimate) pour chiffrer ${workload ? `"${workload}"` : "la charge demandée"}.`,
+      `3. discovery_cost(mode=compare${current_solution ? `, current_solution="${current_solution}"` : ""}) pour les alternatives annualisées et l'économie médiane.`,
       "4. Pour les licences Windows Server, utilise discovery_windows_license_report.",
       "",
       "Croise avec l'inventaire réel via discovery_find si une quantité est nécessaire. Présente min / médian / max et l'économie médiane."

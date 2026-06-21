@@ -69,11 +69,15 @@ describe("IT cost tools", () => {
     expect(result.kpi?.savings_pct).toBeNull();
   });
 
-  it("discovery_cost_compare handler returns visual content plus raw structuredContent", async () => {
-    const result = await itCostTools().discovery_cost_compare.handler({
+  it("discovery_cost mode=compare returns visual content plus raw structuredContent", async () => {
+    const result = await itCostTools().discovery_cost.handler({
+      mode: "compare",
       workload_type: "VM 4vCPU 16Go",
       quantity: 100,
-      current_solution: "VM 4 vCPU / 16 Go RAM / 100 Go disk"
+      current_solution: "VM 4 vCPU / 16 Go RAM / 100 Go disk",
+      horizon: "annual",
+      scenario: "all",
+      limit: 10
     });
 
     expect(result.structuredContent).toBeTruthy();
@@ -81,12 +85,18 @@ describe("IT cost tools", () => {
     expect(result.content.some((block) => block.type === "text")).toBe(true);
   });
 
-  it("all IT cost handlers return visual content and raw structuredContent", async () => {
-    const tools = itCostTools();
+  it("discovery_cost returns a clear error when required args are missing for the mode", async () => {
+    const result = await itCostTools().discovery_cost.handler({ mode: "estimate", horizon: "annual", scenario: "all", limit: 10 });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("component + quantity");
+  });
+
+  it("all discovery_cost modes return visual content and raw structuredContent", async () => {
+    const cost = itCostTools().discovery_cost;
     const calls = [
-      tools.discovery_cost_search.handler({ query: "m5.xlarge", limit: 5 }),
-      tools.discovery_cost_categories.handler({}),
-      tools.discovery_cost_estimate.handler({ component: "AWS EC2 m5.xlarge", quantity: 2, horizon: "annual", scenario: "all" })
+      cost.handler({ mode: "search", query: "m5.xlarge", limit: 5, horizon: "annual", scenario: "all" }),
+      cost.handler({ mode: "categories", horizon: "annual", scenario: "all", limit: 10 }),
+      cost.handler({ mode: "estimate", component: "AWS EC2 m5.xlarge", quantity: 2, horizon: "annual", scenario: "all", limit: 10 })
     ];
 
     for (const result of await Promise.all(calls)) {
