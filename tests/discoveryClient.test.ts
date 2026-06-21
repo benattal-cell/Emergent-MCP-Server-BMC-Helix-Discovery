@@ -69,6 +69,25 @@ describe("DiscoveryClient", () => {
     expect(String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0])).toContain("limit=60");
   });
 
+  it("fetches all pages when no result-limit policy is set, without sending a limit param", async () => {
+    const total = 250;
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string) => {
+      const offset = Number(new URL(url).searchParams.get("offset") || 0);
+      const rows = Array.from({ length: Math.max(0, Math.min(100, total - offset)) }, (_, i) => [`row-${offset + i}`]);
+      return { ok: true, status: 200, text: async () => JSON.stringify({ items: [{ kind: "Host", count: total, headings: ["name"], results: rows }] }) };
+    }));
+    const client = new DiscoveryClient(config);
+
+    const result = await client.searchData("SEARCH Host SHOW name");
+
+    expect(result.returnedCount).toBe(total);
+    expect(result.rows).toHaveLength(total);
+    expect(result.hasMore).toBe(false);
+    const calls = (fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    expect(calls).toHaveLength(3);
+    for (const call of calls) expect(String(call[0])).not.toContain("limit=");
+  });
+
   it("applies the server result-limit policy to normal searches", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ results: [] }) }));
     const client = new DiscoveryClient({ ...config, resultLimit: 25 } as never);

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
-import { kpiGrid } from "../svg/kpi.js";
+import { kpiDashboard, type BarDatum } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { appendRowsMarkdownSummary } from "./shared/markdownTable.js";
 import { orphanOutputSchema } from "./outputSchemas.js";
@@ -208,10 +208,22 @@ Use discovery_execute_dsl if you want to inspect or run raw Discovery DSL. Limit
           rows,
           generated_dsl_query
         };
-        const svg = kpiGrid("Orphelins", [
-          { label: "Éléments orphelins", value: String(rows.length), hint: `${allRows.length} candidats analysés`, alert: rows.length > 0 },
-          { label: "Kind", value: input.target_kind, hint: input.inbound_relation.kind }
-        ], { columns: 2 });
+        const byType = rows.reduce<Record<string, number>>((acc, row) => {
+          const value = (row as Record<string, unknown>).type;
+          const t = typeof value === "string" && value.trim() !== "" ? value : "(type inconnu)";
+          acc[t] = (acc[t] ?? 0) + 1;
+          return acc;
+        }, {});
+        const bars: BarDatum[] = Object.entries(byType).map(([label, value]) => ({ label, value }));
+        const svg = kpiDashboard(
+          "Orphelins",
+          [
+            { label: "Éléments orphelins", value: String(rows.length), hint: `${allRows.length} candidats analysés`, alert: rows.length > 0 },
+            { label: "Kind", value: input.target_kind, hint: input.inbound_relation.kind }
+          ],
+          bars,
+          { barTitle: "Répartition par type", maxBars: 12 }
+        );
         return renderVisual(svg, {
           name: `orphans_${input.target_kind.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase()}`,
           textSummary: appendRowsMarkdownSummary(`${rows.length} orphan candidates retained from ${allRows.length} analyzed ${input.target_kind} rows.`, rows),
