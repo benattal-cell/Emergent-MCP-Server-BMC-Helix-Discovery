@@ -93,6 +93,17 @@ Au handshake MCP (`initialize`), le serveur renvoie un champ **`instructions`** 
 
 **Chargement automatique du contexte (sans action utilisateur).** Deux canaux sont chargés au premier contact du client et persistent jusqu'à compression : (1) le champ `instructions` ci-dessus, (2) les **descriptions d'outils** envoyées avec `tools/list`. Le **cookbook DSL complet** (grammaire + exemples) est donc embarqué dans la description de `discovery_execute_dsl` afin d'être présent dès la connexion — l'utilisateur n'a pas à le demander. La resource `mcp://discovery/dsl-cookbook` expose le même contenu (source unique `buildDslCookbook()`) pour les clients qui préfèrent le *pull* à la demande.
 
+## Prompts MCP (workflows guidés)
+
+Le serveur expose des **prompts** — des workflows déclenchés par l'utilisateur (ex. slash commands du client) qui pré-câblent le bon enchaînement d'outils, pour éviter que l'IA improvise :
+
+- `cve_impact` (arg : `cve_id`) — briefing d'exposition à un CVE (résumé exécutif puis inventaire complet sur demande).
+- `value_review` (args : `workload`, `current_solution`) — analyse de coûts / Value Review.
+- `eol_audit` (args : `scope`, `vendor`, `product`) — audit fin de support (logiciel ou OS, focus à risque).
+- `dependency_analysis` (args : `target`, `target_kind`) — cartographie de dépendances (taille puis graphe).
+
+Rappel des 3 primitives MCP : **Tools** (l'IA agit) · **Resources** (l'IA lit) · **Prompts** (l'utilisateur lance).
+
 ## Authentification (OAuth 2.1)
 
 Le serveur est son propre **serveur d'autorisation** OAuth 2.1 (auto-hébergé, pas d'IdP externe). Il n'y a **plus de bearer statique**.
