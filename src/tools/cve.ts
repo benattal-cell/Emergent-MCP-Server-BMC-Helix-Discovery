@@ -147,7 +147,7 @@ async function rowsForExecutiveSummary(client: DiscoveryClient, dsl: string, inp
   return { rows: annotateMatchPrecision(result.rows as Array<Record<string, unknown>>, cpes), source: "executed_query" };
 }
 
-export function cveTools(client: DiscoveryClient, config: Pick<AppConfig, "nvdApiKey">) {
+export function cveTools(client: DiscoveryClient, config: Pick<AppConfig, "nvdApiKey" | "resultLimit">) {
   return {
     discovery_cve_executive_summary: {
       description: "Produce an EXECUTIVE-style summary for a CVE: number of impacted assets, top business services / hosts / versions, and a follow-up prompt. Use this FIRST when the user asks 'are we exposed to CVE-XXXX-YYYY?' or 'what's the impact of CVE-XXXX-YYYY?'. Requires the CVE ID. The tool fetches NVD CPEs, builds the Discovery impact query and executes it internally (or uses discoveryRows if provided). Set detail='full' to return the COMPLETE impacted inventory (every host, version, service, owner) up to `limit` rows instead of the summary.",
@@ -155,13 +155,12 @@ export function cveTools(client: DiscoveryClient, config: Pick<AppConfig, "nvdAp
         cveId: cveIdSchema,
         detail: z.enum(["summary", "full"]).default("summary"),
         topN: z.number().int().min(1).max(20).default(5),
-        limit: z.number().int().min(1).max(500).default(200),
         discoveryRows: z.array(z.record(z.unknown())).default([]),
         language: languageSchema,
         question: z.string().optional()
       }).strict(),
       outputSchema: structuredOutputSchema,
-      handler: async (input: { cveId: string; detail: "summary" | "full"; topN: number; limit: number; discoveryRows: Array<Record<string, unknown>>; language?: "fr" | "en"; question?: string }) => {
+      handler: async (input: { cveId: string; detail: "summary" | "full"; topN: number; discoveryRows: Array<Record<string, unknown>>; language?: "fr" | "en"; question?: string }) => {
         const lang = resolveLanguage(input.language, input.question);
         const t = i18n(lang);
         const cveId = input.cveId.toUpperCase();
@@ -170,14 +169,16 @@ export function cveTools(client: DiscoveryClient, config: Pick<AppConfig, "nvdAp
         const { rows, source } = await rowsForExecutiveSummary(client, dsl, input.discoveryRows, cpes, cveId);
 
         if (input.detail === "full") {
+          const cap = config.resultLimit ?? null;
+          const limitedRows = cap === null ? rows : rows.slice(0, cap);
           return {
             cveHeader: { cveId, riskTitle: t.riskTitle },
             cveSummary: { cpeCount: cpes.length, impactedRowsCount: rows.length },
             execution: source,
             dslQuery: dsl,
             expectedColumns: t.expectedColumns,
-            returnedRows: Math.min(rows.length, input.limit),
-            rows: rows.slice(0, input.limit)
+            returnedRows: limitedRows.length,
+            rows: limitedRows
           };
         }
 

@@ -16,6 +16,7 @@ Renseignez ces variables uniquement dans votre plateforme de déploiement (Emerg
 - `OAUTH_LOGIN_PASSWORD` (optionnel) — si défini, `/oauth/authorize` affiche une page de consentement protégée par ce mot de passe
 - `MCP_DEFAULT_VISUAL` (défaut `true`) — voir « Sortie visuelle & optimisation »
 - `MCP_INCLUDE_SVG` (défaut `true`) — voir « Sortie visuelle & optimisation »
+- `MCP_RESULT_LIMIT` (optionnel, défaut: **aucune limite**) — cap serveur du nombre de lignes renvoyées par les recherches (`discovery_find`, lifecycle, etc.). Non défini = tout est renvoyé ; une valeur entière positive borne chaque page. Quand un cap est actif, les recherches **paginent** : le résultat expose `hasMore` / `nextOffset` — rappeler l'outil avec `offset = nextOffset` pour la page suivante.
 
 ## Installation
 
@@ -75,9 +76,9 @@ Notes de coût :
 
 ## Outils MCP exposés
 
-Le serveur expose ~26 outils (préfixe `discovery_`). La liste exacte est découvrable via `tools/list`. Principaux :
+Le serveur expose ~24 outils (préfixe `discovery_`). La liste exacte est découvrable via `tools/list`. Principaux :
 
-- Inventaire : `discovery_find_hosts`, `discovery_find_software_instances`, `discovery_find_host_software`
+- Recherche : `discovery_find` (kind générique + `contains` + relation optionnelle `relatedToKind`/`relatedToName`)
 - Requêtes DSL : `discovery_build_query`, `discovery_execute_dsl`, `discovery_validate_query`, `discovery_common_relationships`, `discovery_resolve_kind`
 - Modèle : `discovery_taxonomy` (introspection live, en fallback)
 - Cycle de vie / conformité : `discovery_lifecycle_report` (param `scope: software|os`), `discovery_patch_compliance_report`, `discovery_windows_license_report`

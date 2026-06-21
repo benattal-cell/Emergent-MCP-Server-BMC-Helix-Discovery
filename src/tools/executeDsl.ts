@@ -13,7 +13,7 @@ const executeDslSchema = z
     userConfirmed: z.boolean().optional(),
     // deprecated: ignoré, conservé pour compat appelants
     provenance: z.enum(["curated", "exploratory"]).optional(),
-    limit: z.number().int().min(1).max(500).optional(),
+    offset: z.number().int().min(0).default(0),
     language: z.enum(["fr", "en"]).optional()
   })
   .strict();
@@ -44,7 +44,7 @@ function normalizeKindNames(raw: unknown): string[] {
   return [];
 }
 
-async function getKnownKinds(client: DiscoveryClient): Promise<Set<string> | null> {
+export async function getKnownKinds(client: DiscoveryClient): Promise<Set<string> | null> {
   if (kindCache && Date.now() - kindCache.at < KIND_TTL_MS) return kindCache.kinds;
   try {
     const raw = await client.getTaxonomyNodeKinds(false);
@@ -180,9 +180,10 @@ export function executeDslTools(client: DiscoveryClient) {
         // --- Exécution ---
         let result: unknown;
         try {
-          result = await client.queryJson(input.query, input.limit ?? 100, {
+          result = await client.queryJson(input.query, undefined, {
             entityLabel: msg(lang, "résultats execute DSL", "execute DSL results"),
-            appliedFilters: {}
+            appliedFilters: {},
+            offset: input.offset
           });
         } catch (error) {
           if (error instanceof ApiError && error.status === 400) {

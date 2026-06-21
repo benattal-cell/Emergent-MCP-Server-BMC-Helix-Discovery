@@ -27,7 +27,7 @@ describe("discovery_execute_dsl", () => {
     expect(result.executed).toBe(true);
     expect(result.preflight).toMatchObject({ queryValidated: true, taxonomyChecked: true });
     expect(client.queryJson).toHaveBeenCalledTimes(1);
-    expect(client.queryJson).toHaveBeenCalledWith("SEARCH Host SHOW name", 100, expect.any(Object));
+    expect(client.queryJson).toHaveBeenCalledWith("SEARCH Host SHOW name", undefined, expect.any(Object));
   });
 
   it("keeps blocking invalid DSL during query validation without confirmation", async () => {

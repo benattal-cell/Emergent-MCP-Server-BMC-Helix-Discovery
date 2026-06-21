@@ -143,25 +143,11 @@ const sections: GuideSection[] = [
     keywords: ["host", "hôte", "serveur", "server", "machine", "software", "logiciel", "soft", "application", "instance", "count", "combien", "inventaire", "inventory", "linux", "windows", "rhel"],
     items: [
       {
-        tool: "discovery_find_hosts",
-        purpose: "Lister/filtrer des hôtes par nom ou OS.",
-        useCase: "Combien de serveurs Linux ? Quels hôtes contiennent 'PROD' dans leur nom ?",
-        purposeEn: "List/filter hosts by name or OS.",
-        useCaseEn: "How many Linux servers? Which hosts contain 'PROD' in their name?"
-      },
-      {
-        tool: "discovery_find_software_instances",
-        purpose: "Lister/filtrer des instances logicielles.",
-        useCase: "Toutes les instances Oracle, ou tous les Apache.",
-        purposeEn: "List/filter software instances.",
-        useCaseEn: "All Oracle instances, or all Apache instances."
-      },
-      {
-        tool: "discovery_find_host_software",
-        purpose: "Lister les logiciels installés sur un hôte donné.",
-        useCase: "Que tourne-t-il sur SAP-PROD-01 ?",
-        purposeEn: "List software installed on a given host.",
-        useCaseEn: "What's running on SAP-PROD-01?"
+        tool: "discovery_find",
+        purpose: "Recherche générique sur n'importe quel kind. `kind` (Host, SoftwareInstance, NetworkDevice, Database…) + `contains` (matche TOUS les attributs : nom, OS, owner, domaine…). Option `relatedToKind`+`relatedToName` pour scoper par relation.",
+        useCase: "Combien de serveurs Linux ? → kind=Host, contains='Linux'. Toutes les instances Oracle → kind=SoftwareInstance, contains='Oracle'. Que tourne-t-il sur SAP-PROD-01 ? → kind=SoftwareInstance, relatedToKind=Host, relatedToName='SAP-PROD-01'. Logiciels du service Apex → relatedToKind=BusinessService.",
+        purposeEn: "Generic search on any kind. `kind` (Host, SoftwareInstance, NetworkDevice, Database…) + `contains` (matches EVERY attribute: name, OS, owner, domain…). Optional `relatedToKind`+`relatedToName` to scope by relationship.",
+        useCaseEn: "How many Linux servers? → kind=Host, contains='Linux'. All Oracle instances → kind=SoftwareInstance, contains='Oracle'. What runs on SAP-PROD-01? → kind=SoftwareInstance, relatedToKind=Host, relatedToName='SAP-PROD-01'. Software of the Apex service → relatedToKind=BusinessService."
       }
     ]
   },

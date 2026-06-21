@@ -69,32 +69,40 @@ describe("DiscoveryClient", () => {
     expect(String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0])).toContain("limit=60");
   });
 
-  it("keeps simple host/software lookups capped by default but allows full inventory paging", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string, init?: { body?: string }) => {
-      const parsed = new URL(url);
-      const offset = Number(parsed.searchParams.get("offset") || 0);
-      const limit = Number(parsed.searchParams.get("limit") || 100);
-      const query = JSON.parse(init?.body ?? "{}").query as string | undefined;
-      const total = query?.includes("SoftwareInstance") ? 120 : 1;
-      const rows = Array.from({ length: Math.max(0, Math.min(limit, total - offset)) }, (_, i) => [`item-${offset + i}`]);
-      return {
-        ok: true,
-        status: 200,
-        text: async () => JSON.stringify({ items: [{ count: total, headings: ["name"], results: rows }] })
-      };
-    }));
+  it("applies the server result-limit policy to normal searches", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ results: [] }) }));
+    const client = new DiscoveryClient({ ...config, resultLimit: 25 } as never);
+
+    await client.searchData("SEARCH Host SHOW name");
+
+    const url = String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0]);
+    expect(url).toContain("limit=25");
+  });
+
+  it("honors an explicit limit=0 (count-only) even with no result-limit policy", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ items: [{ count: 42, headings: ["name"], results: [] }] }) }));
     const client = new DiscoveryClient(config);
 
-    await client.findHosts({ nameContains: "prod" });
-    expect(String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0])).toContain("limit=50");
+    const result = await client.searchData("SEARCH Host SHOW name", { limit: 0 });
 
-    await client.findHosts({ nameContains: "prod", defaultLimit: 75 });
-    expect(String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[1][0])).toContain("limit=75");
+    const url = String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0]);
+    expect(url).toContain("limit=0");
+    expect(result.totalCount).toBe(42);
+    expect(result.returnedCount).toBe(0);
+  });
 
-    const inventory = await client.findSoftwareInstances({ typeContains: "Microsoft", maxRows: 120, pageSize: 80 });
-    expect(inventory.rows).toHaveLength(120);
-    expect(fetch).toHaveBeenCalledTimes(4);
-    expect(String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[2][0])).toContain("limit=80");
+  it("exposes pagination (offset/hasMore/nextOffset) when the policy caps a page", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ items: [{ count: 30, headings: ["name"], results: Array.from({ length: 10 }, (_, i) => [`row-${i}`]) }] }) }));
+    const client = new DiscoveryClient({ ...config, resultLimit: 10 } as never);
+
+    const result = await client.searchData("SEARCH Host SHOW name", { offset: 0 });
+
+    const url = String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0]);
+    expect(url).toContain("limit=10");
+    expect(url).toContain("offset=0");
+    expect(result.offset).toBe(0);
+    expect(result.hasMore).toBe(true);
+    expect(result.nextOffset).toBe(10);
   });
 
 });

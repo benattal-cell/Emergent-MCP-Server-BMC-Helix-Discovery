@@ -38,7 +38,7 @@ export const findOrphansSchema = z.object({
   include_active: z.boolean().default(false),
   include_inbound_detail: z.boolean().default(false),
   group_by: z.enum(["host", "publisher", "product", "type"]).nullable().default(null),
-  limit: z.number().int().min(1).max(2000).default(500)
+  offset: z.number().int().min(0).default(0)
 }).strict();
 
 export type FindOrphansInput = z.infer<typeof findOrphansSchema>;
@@ -174,9 +174,10 @@ Use discovery_execute_dsl if you want to inspect or run raw Discovery DSL. Limit
       handler: async (input: FindOrphansInput) => {
         await validateTaxonomy(client, input);
         const generated_dsl_query = buildFindOrphansQuery(input);
-        const result = await client.queryJson(generated_dsl_query, input.limit, {
+        const result = await client.queryJson(generated_dsl_query, undefined, {
           entityLabel: input.target_kind,
-          appliedFilters: input as unknown as Record<string, unknown>
+          appliedFilters: input as unknown as Record<string, unknown>,
+          offset: input.offset
         });
         const hasNoise = hasDslNoiseFilters(input);
         const allRows = result.rows.map((row) => {
@@ -192,7 +193,7 @@ Use discovery_execute_dsl if you want to inspect or run raw Discovery DSL. Limit
         const warnings: string[] = [];
         if (input.noise_filters.exclude_same_host) warnings.push("exclude_same_host is not implemented in DSL in this version; total_inbound still includes same-host relationships.");
         if (input.include_inbound_detail) warnings.push("include_inbound_detail requested, but this version returns count-based categorization only; use generated_dsl_query with discovery_execute_dsl for raw DSL debugging.");
-        if (result.returnedCount < result.totalCount) warnings.push("Result set is truncated by limit; use a more restrictive target_filter or increase limit up to 2000.");
+        if (result.returnedCount < result.totalCount) warnings.push("Result set is truncated by the server result limit (MCP_RESULT_LIMIT); refine target_filter or raise MCP_RESULT_LIMIT.");
         const payload = {
           summary: {
             total_candidates: allRows.length,
