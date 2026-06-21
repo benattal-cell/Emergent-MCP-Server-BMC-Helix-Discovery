@@ -11,8 +11,7 @@ export const patchComplianceSchema = z.object({
   osContains: z.string().min(1).optional(),
   hostsSoftwareMatching: z.string().optional().transform((value) => (value && value.trim() !== "" ? value : undefined)),
 
-  hostingFilter: z.enum(["with", "without", "any"]).default("any"),
-  limit: z.number().int().min(1).max(1000).default(100)
+  hostingFilter: z.enum(["with", "without", "any"]).default("any")
 }).strict();
 
 type PatchComplianceInput = z.infer<typeof patchComplianceSchema>;
@@ -117,7 +116,7 @@ export function patchComplianceTools(client: DiscoveryClient) {
         const appliedFilters = appliedFiltersFor(input);
         const [targeted, nonCompliant] = await Promise.all([
           client.queryJson(queries.targetQuery, 0, { entityLabel: "hôtes Windows ciblés", appliedFilters }),
-          client.queryJson(queries.nonCompliantQuery, input.limit, { entityLabel: "hôtes non conformes", appliedFilters })
+          client.queryJson(queries.nonCompliantQuery, undefined, { entityLabel: "hôtes non conformes", appliedFilters })
         ]);
         const rows = addMissingKbColumn(Array.isArray(nonCompliant.rows) ? nonCompliant.rows : [], input.kbList);
         const totalHosts = targeted.totalCount ?? 0;

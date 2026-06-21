@@ -23,7 +23,6 @@ const lifecycleSchema = z.object({
 
 const lifecycleReportSchema = z.object({
   scope: z.enum(["software", "os"]).default("software"),
-  limit: z.number().int().min(1).max(1000).default(100),
   riskWindowDays: z.number().int().min(1).max(3650).default(riskWindowDaysDefault),
   onlyAtRisk: z.boolean().default(false),
   osContains: z.string().min(1).optional(),
@@ -127,8 +126,7 @@ export function lifecycleTools(client: DiscoveryClient) {
           return runOsLifecycleReport(client, {
             osContains: input.osContains,
             onlyAtRisk: input.onlyAtRisk,
-            riskWindowDays: input.riskWindowDays,
-            limit: input.limit
+            riskWindowDays: input.riskWindowDays
           });
         }
         const query = buildLifecycleQuery({
@@ -140,7 +138,7 @@ export function lifecycleTools(client: DiscoveryClient) {
           productContains: input.productContains,
           typeIn: input.typeIn
         });
-        const result = await client.queryJson(query, input.limit, {
+        const result = await client.queryJson(query, undefined, {
           entityLabel: "logiciels avec dates de cycle de vie",
           appliedFilters: appliedFiltersFor(input)
         });

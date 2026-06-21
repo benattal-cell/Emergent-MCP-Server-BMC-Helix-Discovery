@@ -14,8 +14,7 @@ export const findSchema = z.object({
   contains: z.string().min(1).optional(),
   relatedToKind: z.string().regex(kindPattern).optional(),
   relatedToName: z.string().min(1).optional(),
-  fields: z.array(z.string().regex(/^[A-Za-z0-9_]+$/)).min(1).optional(),
-  limit: z.number().int().min(1).max(200).default(50)
+  fields: z.array(z.string().regex(/^[A-Za-z0-9_]+$/)).min(1).optional()
 }).strict();
 
 function esc(value: string): string {
@@ -79,7 +78,7 @@ export function findTools(client: DiscoveryClient) {
         if (input.relatedToName) appliedFilters.relatedToName = input.relatedToName;
 
         const query = buildFindQuery(input);
-        const result = await client.queryJson(query, input.limit, { entityLabel: input.kind, appliedFilters });
+        const result = await client.queryJson(query, undefined, { entityLabel: input.kind, appliedFilters });
         const rows = Array.isArray(result.rows) ? result.rows as Array<Record<string, unknown>> : [];
 
         const kpis: Kpi[] = [
