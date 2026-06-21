@@ -188,7 +188,7 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...assistantGuideTools(),
     ...topologyTools(client),
     ...orphansTools(client),
-    ...itCostTools()
+    ...itCostTools(client)
   };
 
   const DEFAULT_ANNOTATIONS = { readOnlyHint: true, openWorldHint: true };
