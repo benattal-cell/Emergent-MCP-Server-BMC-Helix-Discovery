@@ -8,7 +8,7 @@ import { normalizeApiError } from "./utils/errors.js";
 import { aboutTools } from "./tools/about.js";
 import { queryTools, buildDslCookbook } from "./tools/query.js";
 import { executeDslTools } from "./tools/executeDsl.js";
-import { hostTools } from "./tools/hosts.js";
+import { findTools } from "./tools/find.js";
 import { taxonomyTools } from "./tools/taxonomy.js";
 import { commonRelationshipsTools } from "./tools/commonRelationships.js";
 import { resolveKindTools } from "./tools/resolveKind.js";
@@ -176,7 +176,7 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...aboutTools(client, config.apiVersion),
     ...queryTools(client),
     ...executeDslTools(client),
-    ...hostTools(client),
+    ...findTools(client),
     ...taxonomyTools(client),
     ...commonRelationshipsTools(),
     ...resolveKindTools(),

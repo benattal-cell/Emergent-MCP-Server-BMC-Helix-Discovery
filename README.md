@@ -75,9 +75,9 @@ Notes de coût :
 
 ## Outils MCP exposés
 
-Le serveur expose ~26 outils (préfixe `discovery_`). La liste exacte est découvrable via `tools/list`. Principaux :
+Le serveur expose ~24 outils (préfixe `discovery_`). La liste exacte est découvrable via `tools/list`. Principaux :
 
-- Inventaire : `discovery_find_hosts`, `discovery_find_software_instances`, `discovery_find_host_software`
+- Recherche : `discovery_find` (kind générique + `contains` + relation optionnelle `relatedToKind`/`relatedToName`)
 - Requêtes DSL : `discovery_build_query`, `discovery_execute_dsl`, `discovery_validate_query`, `discovery_common_relationships`, `discovery_resolve_kind`
 - Modèle : `discovery_taxonomy` (introspection live, en fallback)
 - Cycle de vie / conformité : `discovery_lifecycle_report` (param `scope: software|os`), `discovery_patch_compliance_report`, `discovery_windows_license_report`

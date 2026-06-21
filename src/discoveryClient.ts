@@ -156,68 +156,6 @@ export class DiscoveryClient {
     };
   }
 
-  findHosts(params: { nameContains?: string; osContains?: string; limit?: number; defaultLimit?: number; maxRows?: number; pageSize?: number }): Promise<FlatQueryResult> {
-    const filters: string[] = [];
-    const applied: Record<string, unknown> = {};
-    if (params.nameContains) {
-      filters.push(`* has subword "${escapeDiscoveryDoubleQuoted(params.nameContains)}"`);
-      applied.nameContains = params.nameContains;
-    }
-    if (params.osContains) {
-      filters.push(`os has subword "${escapeDiscoveryDoubleQuoted(params.osContains)}"`);
-      applied.osContains = params.osContains;
-    }
-    const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
-    const query = `search Host${where} show name, hostname, dns_name, os, type, key, #id as 'id'`;
-    return this.searchData(query, {
-      limit: params.maxRows === undefined ? (params.limit ?? params.defaultLimit ?? 50) : params.limit,
-      maxRows: params.maxRows,
-      pageSize: params.pageSize,
-      format: "object",
-      entityLabel: "hôtes",
-      appliedFilters: applied
-    });
-  }
-
-  findSoftwareInstances(params: { typeContains?: string; nameContains?: string; instanceContains?: string; limit?: number; defaultLimit?: number; maxRows?: number; pageSize?: number }): Promise<FlatQueryResult> {
-    const filters: string[] = [];
-    const applied: Record<string, unknown> = {};
-    if (params.typeContains) {
-      filters.push(`type has subword "${escapeDiscoveryDoubleQuoted(params.typeContains)}"`);
-      applied.typeContains = params.typeContains;
-    }
-    if (params.nameContains) {
-      filters.push(`name has subword "${escapeDiscoveryDoubleQuoted(params.nameContains)}"`);
-      applied.nameContains = params.nameContains;
-    }
-    if (params.instanceContains) {
-      filters.push(`instance has subword "${escapeDiscoveryDoubleQuoted(params.instanceContains)}"`);
-      applied.instanceContains = params.instanceContains;
-    }
-    const where = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
-    const query = `search SoftwareInstance${where} show type, name, instance, product_version`;
-    return this.searchData(query, {
-      limit: params.maxRows === undefined ? (params.limit ?? params.defaultLimit ?? 50) : params.limit,
-      maxRows: params.maxRows,
-      pageSize: params.pageSize,
-      format: "object",
-      entityLabel: "instances logicielles",
-      appliedFilters: applied
-    });
-  }
-
-  findHostSoftware(params: { hostNameContains: string; softwareTypeContains?: string; limit?: number }): Promise<FlatQueryResult> {
-    const hostNeedle = escapeDiscoveryDoubleQuoted(params.hostNameContains);
-    const hostFilter = `(#:::Host.name has subword "${hostNeedle}" or #:::Host.hostname has subword "${hostNeedle}" or #:::Host.dns_name has subword "${hostNeedle}")`;
-    const swFilter = params.softwareTypeContains
-      ? ` and type has subword "${escapeDiscoveryDoubleQuoted(params.softwareTypeContains)}"`
-      : "";
-    const query = `search SoftwareInstance where ${hostFilter}${swFilter} show type, name, instance, product_version, #:::Host.name, #:::Host.hostname, #:::Host.key`;
-    const applied: Record<string, unknown> = { hostNameContains: params.hostNameContains };
-    if (params.softwareTypeContains) applied.softwareTypeContains = params.softwareTypeContains;
-    return this.queryJson(query, params.limit ?? 50, { entityLabel: "logiciels sur l'hôte", appliedFilters: applied });
-  }
-
   async getTaxonomySections(): Promise<unknown> {
     return this.request("GET", this.versionedPath(`/taxonomy/sections`), undefined, true);
   }
@@ -249,10 +187,6 @@ export class DiscoveryClient {
   async getTaxonomyRelationshipKindDetails(kind: string): Promise<unknown> {
     return this.request("GET", this.versionedPath(`/taxonomy/relkinds/${encodeURIComponent(kind)}`), undefined, true);
   }
-}
-
-function escapeDiscoveryDoubleQuoted(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
 function mapStatusToCode(status: number): string {

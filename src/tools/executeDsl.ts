@@ -44,7 +44,7 @@ function normalizeKindNames(raw: unknown): string[] {
   return [];
 }
 
-async function getKnownKinds(client: DiscoveryClient): Promise<Set<string> | null> {
+export async function getKnownKinds(client: DiscoveryClient): Promise<Set<string> | null> {
   if (kindCache && Date.now() - kindCache.at < KIND_TTL_MS) return kindCache.kinds;
   try {
     const raw = await client.getTaxonomyNodeKinds(false);
