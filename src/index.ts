@@ -14,14 +14,11 @@ import { commonRelationshipsTools } from "./tools/commonRelationships.js";
 import { resolveKindTools } from "./tools/resolveKind.js";
 import { buildQueryTools } from "./tools/buildQuery.js";
 import { cveTools } from "./tools/cve.js";
-import { graphTools } from "./tools/graph.js";
 import { lifecycleTools } from "./tools/lifecycle.js";
 import { patchComplianceTools } from "./tools/patchCompliance.js";
 import { windowsLicenseTools } from "./tools/windowsLicense.js";
 import { assistantGuideTools } from "./tools/assistantGuide.js";
-import { dependencyMapTools } from "./tools/dependencyMap.js";
-import { dependencyScopeTools } from "./tools/dependencyScope.js";
-import { serviceArchitectureTools } from "./tools/serviceArchitecture.js";
+import { topologyTools } from "./tools/topology.js";
 import { orphansTools } from "./tools/orphans.js";
 import { itCostTools } from "./tools/itCosts/index.js";
 import { createOAuthServer } from "./oauth.js";
@@ -181,14 +178,11 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
     ...resolveKindTools(),
     ...buildQueryTools(client),
     ...cveTools(client, config),
-    ...graphTools(client),
     ...lifecycleTools(client),
     ...patchComplianceTools(client),
     ...windowsLicenseTools(client),
     ...assistantGuideTools(),
-    ...dependencyScopeTools(client),
-    ...dependencyMapTools(client),
-    ...serviceArchitectureTools(client),
+    ...topologyTools(client),
     ...orphansTools(client),
     ...itCostTools()
   };
