@@ -69,4 +69,14 @@ describe("DiscoveryClient", () => {
     expect(String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0])).toContain("limit=60");
   });
 
+  it("applies the server result-limit policy to normal searches", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ results: [] }) }));
+    const client = new DiscoveryClient({ ...config, resultLimit: 25 } as never);
+
+    await client.searchData("SEARCH Host SHOW name");
+
+    const url = String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0]);
+    expect(url).toContain("limit=25");
+  });
+
 });

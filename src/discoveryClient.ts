@@ -119,7 +119,17 @@ export class DiscoveryClient {
       });
     };
 
-    if (options.maxRows === undefined || options.omitOffset) return fetchPage(0, options.limit);
+    // Internal single-page aggregate calls (omitOffset) keep their explicit limit.
+    if (options.omitOffset) return fetchPage(0, options.limit);
+
+    // Normal single-page search: the server-side result-limit policy governs (null = no limit).
+    if (options.maxRows === undefined) {
+      const policy = this.config.resultLimit ?? null;
+      const effectiveLimit = policy === null
+        ? undefined
+        : (options.limit !== undefined ? Math.min(options.limit, policy) : policy);
+      return fetchPage(0, effectiveLimit);
+    }
 
     const pageSize = options.pageSize ?? options.limit ?? 500;
     const maxRows = Math.max(0, options.maxRows);
