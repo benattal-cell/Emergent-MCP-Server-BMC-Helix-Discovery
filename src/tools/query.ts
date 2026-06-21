@@ -1,12 +1,4 @@
-import { z } from "zod";
-import { DiscoveryClient } from "../discoveryClient.js";
-import { structuredOutputSchema } from "./outputSchemas.js";
 import { ApiError } from "../utils/errors.js";
-
-export const validateQuerySchema = z.object({
-  query: z.string().min(1)
-}).strict();
-
 
 export const EXECUTE_DSL_DESCRIPTION = [
   "Execute a raw BMC Discovery DSL query and return flattened results.",
@@ -522,15 +514,4 @@ export function validateDiscoveryQuery(query: string): QueryValidationResult {
   }
 
   return { valid: errors.length === 0, errors, hints };
-}
-
-export function queryTools(client: DiscoveryClient) {
-  return {
-    discovery_validate_query: {
-      description: "Validate common BMC Discovery DSL mistakes locally without executing the query. Optional pre-flight helper before discovery_execute_dsl; catches clause-ordering traps, LOOKUP+WHERE, and count(traverse ...) patterns.",
-      schema: validateQuerySchema,
-      outputSchema: structuredOutputSchema,
-      handler: async (input: z.infer<typeof validateQuerySchema>) => validateDiscoveryQuery(input.query)
-    }
-  };
 }

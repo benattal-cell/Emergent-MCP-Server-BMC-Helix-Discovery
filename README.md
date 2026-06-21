@@ -76,10 +76,10 @@ Notes de coût :
 
 ## Outils MCP exposés
 
-Le serveur expose ~24 outils (préfixe `discovery_`). La liste exacte est découvrable via `tools/list`. Principaux :
+Le serveur expose ~23 outils (préfixe `discovery_`). La liste exacte est découvrable via `tools/list`. Principaux :
 
 - Recherche : `discovery_find` (kind générique + `contains` + relation optionnelle `relatedToKind`/`relatedToName`)
-- Requêtes DSL : `discovery_build_query`, `discovery_execute_dsl`, `discovery_validate_query`, `discovery_common_relationships`, `discovery_resolve_kind`
+- Requêtes DSL : `discovery_build_query`, `discovery_execute_dsl`, `discovery_common_relationships`, `discovery_resolve_kind`
 - Modèle : `discovery_taxonomy` (introspection live, en fallback)
 - Cycle de vie / conformité : `discovery_lifecycle_report` (param `scope: software|os`), `discovery_patch_compliance_report`, `discovery_windows_license_report`
 - CVE : `discovery_cve_executive_summary`, `discovery_get_cve_cpes_from_nvd`, …
@@ -151,11 +151,11 @@ The CSV is the source of truth; no live cloud pricing or currency conversion is 
 
 `discovery_execute_dsl` is the guarded DSL execution tool for exploratory raw BMC Discovery DSL: it requires no user confirmation, validates the candidate query locally, then verifies referenced kinds against the live taxonomy before executing. Its description includes the DSL reference for clause ordering, traversal syntax, key expressions, `NODECOUNT`, named traversals, string literals, canonical examples, and recovery hints.
 
-Use these companion tools before executing raw DSL through `discovery_execute_dsl`:
+Before writing raw DSL for `discovery_execute_dsl`:
 
-- `discovery_dsl_examples`: returns static curated query snippets for topics such as `traversal`, `communication`, `lifecycle`, `containment`, `cluster`, `host_software`, `database`, `counting`, `named_traversal`, and `lookup`.
-- `discovery_validate_query`: performs a local pre-flight check for common mistakes (`count(traverse ...)`, `LOOKUP` with `WHERE`, and clause ordering issues) without calling Discovery.
+- `discovery_build_query` composes and validates a query from structured intent (without executing) — prefer it over hand-writing DSL. `discovery_execute_dsl` itself re-validates the query (clause ordering, `count(traverse ...)`, `LOOKUP`+`WHERE`, ...) before running, so no separate validation tool is needed.
 - `discovery_common_relationships`: returns curated real `TRAVERSE` paths from `src/data/common_relationships.csv` so callers can use `traverseSpec` (or `traverseReversed` when `matchedDirection` is `reverse`) instead of inventing relationships.
+- The full DSL grammar + curated examples are available as the MCP resource `mcp://discovery/dsl-cookbook`.
 
 When `discovery_execute_dsl` fails validation or taxonomy checks, its response keeps the existing `stage` / `executed` / `errors` / `hints` fields and additively includes `relationshipHints` plus `antiPatterns` from `common_relationships.csv`. When Discovery still returns a 400 DSL syntax error at execution time, the guarded response includes the original message, a contextual hint when a known pattern matches, the submitted query, and the same curated relationship hints.
 
