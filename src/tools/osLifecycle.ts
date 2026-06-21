@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
-import { kpiGrid } from "../svg/kpi.js";
+import { kpiDashboard, countBy } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { appendRowsMarkdownSummary } from "./shared/markdownTable.js";
 import { DAY_IN_NANOS } from "./shared/time.js";
@@ -131,11 +131,12 @@ export async function runOsLifecycleReport(client: DiscoveryClient, input: OsLif
     generated_dsl_query: buildOsLifecycleQuery(input),
     appliedFilters
   };
-  const svg = kpiGrid("OS lifecycle", [
+  const bars = countBy(rows, ["OS", "os", "OS Lifecycle Risk"]);
+  const svg = kpiDashboard("OS lifecycle", [
     { label: "Hôtes", value: String(result.risk.hosts), hint: input.osContains },
     { label: "À risque", value: String(result.risk.atRisk), hint: "EOS dépassée", alert: result.risk.atRisk > 0 },
     { label: "Fenêtre", value: String(result.risk.window), hint: `${input.riskWindowDays} j`, alert: result.risk.window > 0 }
-  ], { columns: 3 });
+  ], bars, { barTitle: "Répartition par OS", maxBars: 12 });
 
   return renderVisual(svg, { name: "os_lifecycle_report", textSummary: appendRowsMarkdownSummary(result.summary, rows), structuredContent: result });
 }

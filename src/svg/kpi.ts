@@ -64,11 +64,27 @@ export interface BarDatum {
 
 // Dashboard = a row of KPI cards on top + a horizontal bar chart below (distribution).
 // Reuses the kpiGrid visual language (same palette/fonts).
+// Count rows by the first of `fields` that actually carries data (handles attribute
+// casing differences). Returns [] when nothing matches, so kpiDashboard degrades to KPIs.
+export function countBy(rows: Array<Record<string, unknown>>, fields: string | string[]): BarDatum[] {
+  const candidates = Array.isArray(fields) ? fields : [fields];
+  const field = candidates.find((f) => rows.some((row) => typeof row[f] === "string" && (row[f] as string).trim() !== ""));
+  if (!field) return [];
+  const counts: Record<string, number> = {};
+  for (const row of rows) {
+    const value = row[field];
+    if (typeof value !== "string" || value.trim() === "") continue;
+    const key = value.trim();
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return Object.entries(counts).map(([label, value]) => ({ label, value }));
+}
+
 export function kpiDashboard(
   title: string,
   kpis: Kpi[],
   bars: BarDatum[],
-  opts: { barTitle?: string; maxBars?: number } = {}
+  opts: { barTitle?: string; maxBars?: number; formatValue?: (value: number) => string } = {}
 ): string {
   const margin = 28;
   const gap = 18;
@@ -110,7 +126,7 @@ export function kpiDashboard(
   const firstBarY = barTitleY + 22;
   const rowH = 34;
   const labelW = 190;
-  const valueW = 50;
+  const valueW = opts.formatValue ? 88 : 50;
   const trackX = margin + labelW;
   const trackW = Math.max(60, innerWidth - labelW - valueW);
 
@@ -121,7 +137,7 @@ export function kpiDashboard(
       <text x="${margin}" y="${y + 15}" font-size="13" fill="#1d2330">${svgEscape(svgTruncate(bar.label, 26))}</text>
       <rect x="${trackX}" y="${y}" width="${trackW}" height="20" rx="6" fill="#eef2f8"/>
       <rect x="${trackX}" y="${y}" width="${w}" height="20" rx="6" fill="#2f5fd0"/>
-      <text x="${trackX + trackW + valueW - 6}" y="${y + 15}" text-anchor="end" font-size="13" font-weight="700" fill="#1d2330">${bar.value}</text>
+      <text x="${trackX + trackW + valueW - 6}" y="${y + 15}" text-anchor="end" font-size="13" font-weight="700" fill="#1d2330">${svgEscape(svgTruncate(opts.formatValue ? opts.formatValue(bar.value) : String(bar.value), 14))}</text>
     </g>`;
   }).join("");
 

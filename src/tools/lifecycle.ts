@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DiscoveryClient } from "../discoveryClient.js";
-import { kpiGrid } from "../svg/kpi.js";
+import { kpiDashboard, countBy } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { flatRowsOutputSchema } from "./outputSchemas.js";
 import { appendRowsMarkdownSummary } from "./shared/markdownTable.js";
@@ -146,10 +146,11 @@ export function lifecycleTools(client: DiscoveryClient) {
           offset: input.offset
         });
         const rows = Array.isArray(result.rows) ? result.rows : [];
-        const svg = kpiGrid("Lifecycle", [
+        const bars = countBy(rows, ["Lifecycle Risk", "SI Publisher", "Type"]);
+        const svg = kpiDashboard("Lifecycle", [
           { label: input.onlyAtRisk ? "Fin de support" : "Éléments", value: String(result.totalCount ?? rows.length), hint: `${result.returnedCount ?? rows.length} retournés`, alert: input.onlyAtRisk || rows.length > 0 },
           { label: "Fenêtre risque", value: `${input.riskWindowDays} j`, hint: input.publisherContains ?? input.productContains ?? undefined }
-        ], { columns: 2 });
+        ], bars, { barTitle: "Répartition par risque", maxBars: 12 });
         return renderVisual(svg, {
           name: "lifecycle_report",
           textSummary: appendRowsMarkdownSummary(result.summary, rows),
