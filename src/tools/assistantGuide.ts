@@ -27,10 +27,10 @@ const sections: GuideSection[] = [
     items: [
       {
         tool: "discovery_cost",
-        purpose: "Coûts IT / Value Review, en 4 modes (paramètre `mode`). categories : familles du catalogue. search : composants par texte/catégorie/sous-catégorie. estimate : min/médian/max pour un `component` × `quantity` sur un horizon (mensuel/annuel/5 ans). compare : alternatives annualisées + économie face à `current_solution`.",
-        useCase: "Value Review : mode=categories pour cadrer, puis mode=search pour trouver 'VM 4 vCPU/16 Go' ou 'Oracle', mode=estimate pour chiffrer 200 VMs VMware, mode=compare pour classer VMware vs Azure/AWS/GCP et les économies médianes.",
-        purposeEn: "IT costs / Value Review, in 4 modes (`mode` param). categories: catalog families. search: components by text/category/subcategory. estimate: min/median/max for a `component` × `quantity` over a horizon (monthly/annual/5-year). compare: annualized alternatives + savings versus `current_solution`.",
-        useCaseEn: "Value Review: mode=categories to frame, then mode=search to find '4 vCPU/16 GB VM' or 'Oracle', mode=estimate to price 200 VMware VMs, mode=compare to rank VMware vs Azure/AWS/GCP and median savings."
+        purpose: "Coûts IT / Value Review, en 4 modes (paramètre `mode`). categories : familles du catalogue. search : composants par texte/catégorie/sous-catégorie. estimate : min/médian/max pour un `component` × `quantity` sur un horizon (mensuel/annuel/5 ans). compare : alternatives annualisées + économie face à `current_solution`. En estimate/compare, `scope` (service/fleet) chiffre un parc RÉEL : résout les VMs depuis Discovery, les bucketise par taille (vCPU/RAM), dérive la quantité.",
+        useCase: "Value Review : mode=categories pour cadrer, mode=search pour trouver 'VM 4 vCPU/16 Go', mode=estimate pour chiffrer une charge. Économies sur un service réel : mode=compare + scope={type:'service', name:'Apex'} → on-prem vs Azure/AWS/GCP automatiquement. mode=compare + scope={type:'fleet'} pour tout le parc virtuel.",
+        purposeEn: "IT costs / Value Review, in 4 modes (`mode` param). categories: catalog families. search: components by text/category/subcategory. estimate: min/median/max for a `component` × `quantity`. compare: annualized alternatives + savings versus `current_solution`. In estimate/compare, `scope` (service/fleet) prices a REAL fleet: resolves the VMs from Discovery, buckets them by size (vCPU/RAM), derives the quantity.",
+        useCaseEn: "Value Review: mode=categories to frame, mode=search to find '4 vCPU/16 GB VM', mode=estimate to price a workload. Savings on a real service: mode=compare + scope={type:'service', name:'Apex'} → on-prem vs Azure/AWS/GCP automatically. mode=compare + scope={type:'fleet'} for the whole virtual estate."
       },
       {
         tool: "discovery_windows_license_report",

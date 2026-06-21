@@ -5,6 +5,8 @@ import { estimateCost, estimateCostSchema } from "./estimate.js";
 import { compareAlternatives, compareAlternativesSchema } from "./compare.js";
 import { eur, kpiDashboard, countBy, type Kpi, type BarDatum } from "../../svg/kpi.js";
 import { renderVisual } from "../../svg/renderer.js";
+import type { DiscoveryClient } from "../../discoveryClient.js";
+import { scopeSchema, resolveScopeVms, buildScopeCostReport } from "./scope.js";
 
 function slug(value: string): string {
   return value.replace(/[^a-z0-9_-]+/gi, "_").replace(/^_+|_+$/g, "").toLowerCase() || "it_cost";
@@ -33,7 +35,9 @@ const costSchema = z.object({
   quantity: z.number().positive().optional().describe("[estimate/compare] Quantité (requise pour estimate et compare)."),
   // [compare]
   workload_type: z.string().min(1).optional().describe("[compare] Type de charge à comparer (ex: VM 4vCPU 16Go)."),
-  current_solution: z.string().min(1).optional().describe("[compare] Solution actuelle (fuzzy), pour calculer l'économie.")
+  current_solution: z.string().min(1).optional().describe("[compare] Solution actuelle (fuzzy), pour calculer l'économie."),
+  // [estimate/compare] — chiffrage piloté par l'inventaire Discovery (remplace workload_type/quantity manuels)
+  scope: scopeSchema.optional().describe("[estimate/compare] Périmètre Discovery à chiffrer (service / fleet) : résout les VMs réelles, les bucketise par taille (vCPU/RAM) et chiffre le parc. Dérive la quantité automatiquement.")
 }).strict();
 
 function missingArgs(mode: string, fields: string): { content: { type: "text"; text: string }[]; structuredContent: Record<string, unknown>; isError: true } {
@@ -41,13 +45,50 @@ function missingArgs(mode: string, fields: string): { content: { type: "text"; t
   return { content: [{ type: "text", text }], structuredContent: { mode, error: text }, isError: true };
 }
 
-export function itCostTools() {
+export function itCostTools(client?: DiscoveryClient) {
   const rows = loadItCostRows();
   return {
     discovery_cost: {
-      description: "Coûts IT de référence / Value Review (base de connaissance locale `it_cost_knowledge_base.csv`). Un seul outil, paramètre `mode` :\n- categories : liste hiérarchique des catégories/sous-catégories (cadrage avant recherche).\n- search : recherche du catalogue (filtres query/category/subcategory).\n- estimate : coût total min/médian/max d'un `component` × `quantity` sur un `horizon`.\n- compare : alternatives annualisées pour un `workload_type` × `quantity`, et l'économie médiane si `current_solution` est fourni.",
+      description: "Coûts IT de référence / Value Review (base de connaissance locale `it_cost_knowledge_base.csv`). Un seul outil, paramètre `mode` :\n- categories : liste hiérarchique des catégories/sous-catégories (cadrage avant recherche).\n- search : recherche du catalogue (filtres query/category/subcategory).\n- estimate : coût total min/médian/max d'un `component` × `quantity` sur un `horizon`.\n- compare : alternatives annualisées pour un `workload_type` × `quantity`, et l'économie médiane si `current_solution` est fourni.\nChiffrage piloté par l'inventaire : passe `scope` (service/host/fleet) en mode estimate/compare → résout les VMs réelles depuis Discovery, les bucketise par taille (vCPU/RAM) et chiffre le parc, sans saisir la quantité.",
       schema: costSchema,
       handler: async (input: z.infer<typeof costSchema>) => {
+        if (input.scope && (input.mode === "estimate" || input.mode === "compare")) {
+          if (!client) return missingArgs(input.mode, "un accès Discovery (scope indisponible ici)");
+          const vms = await resolveScopeVms(client, input.scope);
+          const scopeLabel = input.scope.name ?? input.scope.type;
+          if (vms.length === 0) {
+            return { content: [{ type: "text", text: `Aucune VM (Host virtuel) trouvée pour le scope ${input.scope.type}${input.scope.name ? ` "${input.scope.name}"` : ""}.` }], structuredContent: { scope: input.scope, vmCount: 0 }, isError: true };
+          }
+          const report = buildScopeCostReport(rows, vms, input.scope, input.mode);
+          if (input.mode === "compare") {
+            const kpis: Kpi[] = [
+              { label: "VMs", value: String(report.vmCount), hint: `${report.buckets.length} taille(s)` },
+              { label: "Coût actuel /an", value: eur(report.currentAnnual), hint: "profils internes" }
+            ];
+            if (report.bestProvider) {
+              kpis.push({ label: "Économie /an", value: eur(report.bestProvider.savingsAnnual), hint: report.bestProvider.provider, delta: { text: `${report.bestProvider.savingsPct}%`, positive: report.bestProvider.savingsAnnual >= 0 } });
+            }
+            const bars: BarDatum[] = [{ label: "Actuel (on-prem)", value: report.currentAnnual }, ...report.providers.filter((provider) => provider.complete).map((provider) => ({ label: provider.provider, value: provider.annual }))];
+            const svg = kpiDashboard(`Économies — ${scopeLabel}`, kpis, bars, { barTitle: "Coût annuel par option", formatValue: eur });
+            const warn = report.warnings.length > 0 ? ` ⚠ ${report.warnings.join(" ")}` : "";
+            return renderVisual(svg, {
+              name: visualName("cost_scope_compare", scopeLabel),
+              textSummary: `${report.vmCount} VMs ; coût actuel ${eur(report.currentAnnual)}/an${report.bestProvider ? ` ; meilleure option ${report.bestProvider.provider} → ${eur(report.bestProvider.savingsAnnual)}/an d'économie (${report.bestProvider.savingsPct}%)` : ""}.${warn}`,
+              structuredContent: report
+            });
+          }
+          const kpis: Kpi[] = [
+            { label: "VMs", value: String(report.vmCount), hint: `${report.buckets.length} taille(s)` },
+            { label: "Coût total /an", value: eur(report.currentAnnual), hint: "profils internes" }
+          ];
+          const bars: BarDatum[] = report.buckets.map((bucket) => ({ label: `${bucket.label} ×${bucket.count}`, value: bucket.annual }));
+          const svg = kpiDashboard(`Coût parc — ${scopeLabel}`, kpis, bars, { barTitle: "Coût annuel par taille de VM", formatValue: eur });
+          return renderVisual(svg, {
+            name: visualName("cost_scope_estimate", scopeLabel),
+            textSummary: `${report.vmCount} VMs ; coût total ${eur(report.currentAnnual)}/an.`,
+            structuredContent: report
+          });
+        }
         switch (input.mode) {
           case "categories": {
             const result = listCategories(rows);
