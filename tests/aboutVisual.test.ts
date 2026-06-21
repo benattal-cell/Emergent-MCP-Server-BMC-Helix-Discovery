@@ -12,12 +12,12 @@ describe("about visual tools", () => {
     expect(result.content.some((block) => block.type === "image" || block.resource?.mimeType === "image/svg+xml")).toBe(true);
   });
 
-  it("advertises and returns structuredContent for API status", async () => {
+  it("returns the API health-check when called with check=true", async () => {
     const client = { getAbout: vi.fn().mockResolvedValue({ supportedApiVersions: ["v1.18"] }) } as never;
-    const tool = aboutTools(client, "v1.18").discovery_get_api_status;
+    const tool = aboutTools(client, "v1.18").discovery_about;
     expect(tool.outputSchema).toBeTruthy();
 
-    const result = await tool.handler({});
+    const result = await tool.handler({ check: true });
     expect(result.structuredContent).toMatchObject({ reachable: true, configuredApiVersion: "v1.18", supportedApiVersions: ["v1.18"] });
   });
 });
