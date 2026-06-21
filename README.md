@@ -89,6 +89,17 @@ Le serveur expose ~23 outils (préfixe `discovery_`). La liste exacte est décou
 
 Une **resource** MCP est aussi exposée : `mcp://discovery/dsl-cookbook` (référence complète du DSL Discovery).
 
+## Prompts MCP (workflows guidés)
+
+Le serveur expose des **prompts** — des workflows déclenchés par l'utilisateur (ex. slash commands du client) qui pré-câblent le bon enchaînement d'outils, pour éviter que l'IA improvise :
+
+- `cve_impact` (arg : `cve_id`) — briefing d'exposition à un CVE (résumé exécutif puis inventaire complet sur demande).
+- `value_review` (args : `workload`, `current_solution`) — analyse de coûts / Value Review.
+- `eol_audit` (args : `scope`, `vendor`, `product`) — audit fin de support (logiciel ou OS, focus à risque).
+- `dependency_analysis` (args : `target`, `target_kind`) — cartographie de dépendances (taille puis graphe).
+
+Rappel des 3 primitives MCP : **Tools** (l'IA agit) · **Resources** (l'IA lit) · **Prompts** (l'utilisateur lance).
+
 ## Authentification (OAuth 2.1)
 
 Le serveur est son propre **serveur d'autorisation** OAuth 2.1 (auto-hébergé, pas d'IdP externe). Il n'y a **plus de bearer statique**.

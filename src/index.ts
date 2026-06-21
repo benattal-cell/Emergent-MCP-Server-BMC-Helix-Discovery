@@ -25,6 +25,7 @@ import { serviceArchitectureTools } from "./tools/serviceArchitecture.js";
 import { orphansTools } from "./tools/orphans.js";
 import { itCostTools } from "./tools/itCosts/index.js";
 import { createOAuthServer } from "./oauth.js";
+import { registerDiscoveryPrompts } from "./prompts.js";
 import { kpiGrid, type Kpi } from "./svg/kpi.js";
 import { renderVisual, setVisualSettings, visualsEnabled } from "./svg/renderer.js";
 import { structuredOutputSchema as emptyOutputSchema } from "./tools/outputSchemas.js";
@@ -245,6 +246,8 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
       contents: [{ uri: uri.href, mimeType: "text/markdown", text: buildDslCookbook() }]
     })
   );
+
+  registerDiscoveryPrompts(mcpServer);
 
   return mcpServer;
 }
