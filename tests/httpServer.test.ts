@@ -116,6 +116,34 @@ describe("http server security", () => {
     expect(tokens.access_token).toBeTruthy();
   });
 
+  it("advertises server instructions in the MCP initialize response", async () => {
+    const { baseUrl } = await startServer();
+    const { accessToken } = await obtainAccessToken(baseUrl);
+    const response = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "content-type": "application/json",
+        accept: "application/json, text/event-stream"
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "smoke", version: "0" } }
+      })
+    });
+    expect(response.status).toBe(200);
+    const text = await response.text();
+    const dataLine = text.split("\n").find((line) => line.startsWith("data:"));
+    const payload = JSON.parse(dataLine ? dataLine.slice(5).trim() : text);
+    const instructions: string = payload.result.instructions;
+    expect(instructions).toContain("discovery_tool_guide");
+    expect(instructions).toContain("SoftwareContainer");
+    expect(instructions).toContain("MCP_RESULT_LIMIT");
+    expect(instructions).toContain("mcp://discovery/dsl-cookbook");
+  });
+
   it("never reveals BMC token in normalized errors", () => {
     const normalized = normalizeApiError(new Error("operation failed with super-secret-bmc-token"));
     expect(JSON.stringify(normalized)).not.toContain("super-secret-bmc-token");

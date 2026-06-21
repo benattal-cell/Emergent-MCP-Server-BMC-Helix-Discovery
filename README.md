@@ -89,6 +89,8 @@ Le serveur expose ~20 outils (préfixe `discovery_`). La liste exacte est décou
 
 Une **resource** MCP est aussi exposée : `mcp://discovery/dsl-cookbook` (référence complète du DSL Discovery).
 
+Au handshake MCP (`initialize`), le serveur renvoie un champ **`instructions`** : un briefing d'orchestration court (classes de nœud réelles, discipline DSL `build_query`→`execute_dsl`, limites gérées côté serveur, pointeurs vers `discovery_tool_guide`, les Prompts et le cookbook). Les clients conformes l'injectent dans le contexte du modèle **dès la connexion**. La doc DSL complète n'y est PAS dupliquée : elle reste dans la resource `dsl-cookbook` (lue à la demande) et la description de `discovery_execute_dsl`.
+
 ## Authentification (OAuth 2.1)
 
 Le serveur est son propre **serveur d'autorisation** OAuth 2.1 (auto-hébergé, pas d'IdP externe). Il n'y a **plus de bearer statique**.

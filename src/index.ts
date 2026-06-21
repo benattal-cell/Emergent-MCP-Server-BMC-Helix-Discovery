@@ -17,7 +17,7 @@ import { cveTools } from "./tools/cve.js";
 import { lifecycleTools } from "./tools/lifecycle.js";
 import { patchComplianceTools } from "./tools/patchCompliance.js";
 import { windowsLicenseTools } from "./tools/windowsLicense.js";
-import { assistantGuideTools } from "./tools/assistantGuide.js";
+import { assistantGuideTools, buildServerInstructions } from "./tools/assistantGuide.js";
 import { topologyTools } from "./tools/topology.js";
 import { orphansTools } from "./tools/orphans.js";
 import { itCostTools } from "./tools/itCosts/index.js";
@@ -168,7 +168,10 @@ ${errorNote}
 }
 
 function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
-  const mcpServer = new McpServer({ name: "bmc-helix-discovery-mcp", version: "0.4.0" });
+  const mcpServer = new McpServer(
+    { name: "bmc-helix-discovery-mcp", version: "0.4.0" },
+    { instructions: buildServerInstructions() }
+  );
   const tools = {
     ...aboutTools(client, config.apiVersion),
     ...executeDslTools(client),

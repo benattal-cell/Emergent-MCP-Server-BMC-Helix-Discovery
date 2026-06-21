@@ -270,6 +270,26 @@ const GLOBAL_RULES_EN = [
   "RULE 6: Traversal paths must come from the referential through `discovery_build_query`/`common_relationships`; fall back to `discovery_taxonomy` only for a path ABSENT from the referential."
 ];
 
+// Server instructions: delivered in the MCP `initialize` response (handshake),
+// injected by compliant clients into the model context at connection time.
+// Keep it SHORT — orchestration rules + pointers. The full DSL grammar stays in
+// the `mcp://discovery/dsl-cookbook` resource and the discovery_execute_dsl
+// description (loaded on demand), NOT here. Reuses GLOBAL_RULES_FR (single source).
+export function buildServerInstructions(): string {
+  return [
+    "Serveur MCP BMC Helix Discovery (inventaire, CVE, obsolescence, conformité, licences, coûts/Value Review, dépendances/topologie, DSL).",
+    "À LA CONNEXION : pour toute demande sur des données Discovery, appelle d'abord `discovery_tool_guide` avec la question brute de l'utilisateur — il renvoie les bons outils, le catalogue connu et les règles complètes (FR/EN).",
+    "",
+    "Classes de nœud RÉELLES : Host, SoftwareInstance, NetworkDevice, SoftwareContainer, BusinessService, BusinessApplicationInstance, Cluster, StorageSystem… Mappe les alias FR/EN vers la vraie classe avec `discovery_resolve_kind` ; ne devine jamais un kind.",
+    "Limites : gérées UNIQUEMENT côté serveur (MCP_RESULT_LIMIT) avec pagination via `nextOffset`. N'invente aucun paramètre de limite par appel.",
+    "DSL : n'écris jamais de DSL à la main → `discovery_build_query` compose+valide, puis `discovery_execute_dsl` exécute. Référence complète = resource `mcp://discovery/dsl-cookbook` (lue à la demande).",
+    "Prompts MCP disponibles (workflows guidés) : cve_impact, value_review, eol_audit, dependency_analysis.",
+    "",
+    "Règles d'orchestration :",
+    ...GLOBAL_RULES_FR.map((rule) => `- ${rule}`)
+  ].join("\n");
+}
+
 function previewList(values: string[], max = 12): string {
   const visible = values.slice(0, max);
   const suffix = values.length > max ? ` (+${values.length - max})` : "";
