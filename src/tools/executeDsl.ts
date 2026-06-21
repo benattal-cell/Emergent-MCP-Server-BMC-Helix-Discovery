@@ -13,6 +13,7 @@ const executeDslSchema = z
     userConfirmed: z.boolean().optional(),
     // deprecated: ignoré, conservé pour compat appelants
     provenance: z.enum(["curated", "exploratory"]).optional(),
+    offset: z.number().int().min(0).default(0),
     language: z.enum(["fr", "en"]).optional()
   })
   .strict();
@@ -181,7 +182,8 @@ export function executeDslTools(client: DiscoveryClient) {
         try {
           result = await client.queryJson(input.query, undefined, {
             entityLabel: msg(lang, "résultats execute DSL", "execute DSL results"),
-            appliedFilters: {}
+            appliedFilters: {},
+            offset: input.offset
           });
         } catch (error) {
           if (error instanceof ApiError && error.status === 400) {

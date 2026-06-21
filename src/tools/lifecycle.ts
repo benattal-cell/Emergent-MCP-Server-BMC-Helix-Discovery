@@ -23,6 +23,7 @@ const lifecycleSchema = z.object({
 
 const lifecycleReportSchema = z.object({
   scope: z.enum(["software", "os"]).default("software"),
+  offset: z.number().int().min(0).default(0),
   riskWindowDays: z.number().int().min(1).max(3650).default(riskWindowDaysDefault),
   onlyAtRisk: z.boolean().default(false),
   osContains: z.string().min(1).optional(),
@@ -126,7 +127,8 @@ export function lifecycleTools(client: DiscoveryClient) {
           return runOsLifecycleReport(client, {
             osContains: input.osContains,
             onlyAtRisk: input.onlyAtRisk,
-            riskWindowDays: input.riskWindowDays
+            riskWindowDays: input.riskWindowDays,
+            offset: input.offset
           });
         }
         const query = buildLifecycleQuery({
@@ -140,7 +142,8 @@ export function lifecycleTools(client: DiscoveryClient) {
         });
         const result = await client.queryJson(query, undefined, {
           entityLabel: "logiciels avec dates de cycle de vie",
-          appliedFilters: appliedFiltersFor(input)
+          appliedFilters: appliedFiltersFor(input),
+          offset: input.offset
         });
         const rows = Array.isArray(result.rows) ? result.rows : [];
         const svg = kpiGrid("Lifecycle", [

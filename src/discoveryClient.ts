@@ -7,6 +7,7 @@ const REQUEST_TIMEOUT_MS = 30000;
 
 interface SearchOptions {
   limit?: number;
+  offset?: number;
   maxRows?: number;
   pageSize?: number;
   format?: "object" | "tree";
@@ -100,7 +101,7 @@ export class DiscoveryClient {
   }
 
 
-  async queryJson(query: string, limit?: number, options: { entityLabel?: string; appliedFilters?: Record<string, unknown> } = {}): Promise<FlatQueryResult> {
+  async queryJson(query: string, limit?: number, options: { entityLabel?: string; appliedFilters?: Record<string, unknown>; offset?: number } = {}): Promise<FlatQueryResult> {
     return this.searchData(query, { ...(limit === undefined ? {} : { limit }), format: "object", ...options });
   }
 
@@ -122,13 +123,22 @@ export class DiscoveryClient {
     // Internal single-page aggregate calls (omitOffset) keep their explicit limit.
     if (options.omitOffset) return fetchPage(0, options.limit);
 
-    // Normal single-page search: the server-side result-limit policy governs (null = no limit).
+    // Normal single-page search: the server-side result-limit policy governs (null = no limit),
+    // with offset-based pagination so callers can request the next page.
     if (options.maxRows === undefined) {
       const policy = this.config.resultLimit ?? null;
+      // policy null -> honor an explicit per-call limit (incl. 0 for count-only); otherwise no limit.
       const effectiveLimit = policy === null
-        ? undefined
+        ? options.limit
         : (options.limit !== undefined ? Math.min(options.limit, policy) : policy);
-      return fetchPage(0, effectiveLimit);
+      const offset = options.offset ?? 0;
+      const page = await fetchPage(offset, effectiveLimit);
+      const hasMore = page.returnedCount > 0 && offset + page.returnedCount < page.totalCount;
+      const nextOffset = hasMore ? offset + page.returnedCount : undefined;
+      const summary = hasMore
+        ? `${page.summary} (${page.returnedCount} affichés depuis l'offset ${offset} ; rappeler avec offset=${nextOffset} pour la suite)`
+        : page.summary;
+      return { ...page, offset, hasMore, ...(nextOffset !== undefined ? { nextOffset } : {}), summary };
     }
 
     const pageSize = options.pageSize ?? options.limit ?? 500;

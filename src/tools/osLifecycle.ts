@@ -11,7 +11,8 @@ const riskWindowDaysDefault = 182;
 const osLifecycleSchema = z.object({
   osContains: z.string().min(1).optional(),
   onlyAtRisk: z.boolean().default(false),
-  riskWindowDays: z.number().int().min(1).max(3650).default(riskWindowDaysDefault)
+  riskWindowDays: z.number().int().min(1).max(3650).default(riskWindowDaysDefault),
+  offset: z.number().int().min(0).default(0)
 }).strict();
 
 type OsLifecycleInput = z.infer<typeof osLifecycleSchema>;
@@ -111,7 +112,7 @@ function appliedFiltersFor(input: OsLifecycleInput): Record<string, unknown> {
 export async function runOsLifecycleReport(client: DiscoveryClient, input: OsLifecycleInput) {
   const appliedFilters = appliedFiltersFor(input);
   const [hosts, atRisk, inWindow] = await Promise.all([
-    client.queryJson(buildOsLifecycleQuery(input), undefined, { entityLabel: "hôtes avec lifecycle OS", appliedFilters }),
+    client.queryJson(buildOsLifecycleQuery(input), undefined, { entityLabel: "hôtes avec lifecycle OS", appliedFilters, offset: input.offset }),
     client.queryJson(buildOsLifecycleQuery({ ...input, onlyAtRisk: false }, "atRisk"), 0, { entityLabel: "hôtes OS à risque", appliedFilters }),
     client.queryJson(buildOsLifecycleQuery({ ...input, onlyAtRisk: false }, "window"), 0, { entityLabel: "hôtes OS dans la fenêtre de risque", appliedFilters })
   ]);

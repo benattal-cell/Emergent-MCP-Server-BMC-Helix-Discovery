@@ -16,7 +16,7 @@ Renseignez ces variables uniquement dans votre plateforme de déploiement (Emerg
 - `OAUTH_LOGIN_PASSWORD` (optionnel) — si défini, `/oauth/authorize` affiche une page de consentement protégée par ce mot de passe
 - `MCP_DEFAULT_VISUAL` (défaut `true`) — voir « Sortie visuelle & optimisation »
 - `MCP_INCLUDE_SVG` (défaut `true`) — voir « Sortie visuelle & optimisation »
-- `MCP_RESULT_LIMIT` (optionnel, défaut: **aucune limite**) — cap serveur du nombre de lignes renvoyées par les recherches (`discovery_find`, lifecycle, etc.). Non défini = tout est renvoyé ; une valeur entière positive borne les résultats.
+- `MCP_RESULT_LIMIT` (optionnel, défaut: **aucune limite**) — cap serveur du nombre de lignes renvoyées par les recherches (`discovery_find`, lifecycle, etc.). Non défini = tout est renvoyé ; une valeur entière positive borne chaque page. Quand un cap est actif, les recherches **paginent** : le résultat expose `hasMore` / `nextOffset` — rappeler l'outil avec `offset = nextOffset` pour la page suivante.
 
 ## Installation
 

@@ -2,6 +2,12 @@ export interface FlatQueryResult {
   summary: string;
   totalCount: number;
   returnedCount: number;
+  /** Offset of the first returned row (pagination). */
+  offset?: number;
+  /** True when more rows exist beyond this page (offset + returnedCount < totalCount). */
+  hasMore?: boolean;
+  /** Offset to pass to fetch the next page (only present when hasMore). */
+  nextOffset?: number;
   appliedFilters?: Record<string, unknown>;
   kind?: string;
   headings?: string[];

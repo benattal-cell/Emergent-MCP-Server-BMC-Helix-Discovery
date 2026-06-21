@@ -37,7 +37,8 @@ export const findOrphansSchema = z.object({
   noise_filters: noiseFiltersSchema.default({}),
   include_active: z.boolean().default(false),
   include_inbound_detail: z.boolean().default(false),
-  group_by: z.enum(["host", "publisher", "product", "type"]).nullable().default(null)
+  group_by: z.enum(["host", "publisher", "product", "type"]).nullable().default(null),
+  offset: z.number().int().min(0).default(0)
 }).strict();
 
 export type FindOrphansInput = z.infer<typeof findOrphansSchema>;
@@ -175,7 +176,8 @@ Use discovery_execute_dsl if you want to inspect or run raw Discovery DSL. Limit
         const generated_dsl_query = buildFindOrphansQuery(input);
         const result = await client.queryJson(generated_dsl_query, undefined, {
           entityLabel: input.target_kind,
-          appliedFilters: input as unknown as Record<string, unknown>
+          appliedFilters: input as unknown as Record<string, unknown>,
+          offset: input.offset
         });
         const hasNoise = hasDslNoiseFilters(input);
         const allRows = result.rows.map((row) => {

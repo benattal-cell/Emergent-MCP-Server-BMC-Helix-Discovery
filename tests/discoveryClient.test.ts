@@ -79,4 +79,30 @@ describe("DiscoveryClient", () => {
     expect(url).toContain("limit=25");
   });
 
+  it("honors an explicit limit=0 (count-only) even with no result-limit policy", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ items: [{ count: 42, headings: ["name"], results: [] }] }) }));
+    const client = new DiscoveryClient(config);
+
+    const result = await client.searchData("SEARCH Host SHOW name", { limit: 0 });
+
+    const url = String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0]);
+    expect(url).toContain("limit=0");
+    expect(result.totalCount).toBe(42);
+    expect(result.returnedCount).toBe(0);
+  });
+
+  it("exposes pagination (offset/hasMore/nextOffset) when the policy caps a page", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ items: [{ count: 30, headings: ["name"], results: Array.from({ length: 10 }, (_, i) => [`row-${i}`]) }] }) }));
+    const client = new DiscoveryClient({ ...config, resultLimit: 10 } as never);
+
+    const result = await client.searchData("SEARCH Host SHOW name", { offset: 0 });
+
+    const url = String((fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0]);
+    expect(url).toContain("limit=10");
+    expect(url).toContain("offset=0");
+    expect(result.offset).toBe(0);
+    expect(result.hasMore).toBe(true);
+    expect(result.nextOffset).toBe(10);
+  });
+
 });
