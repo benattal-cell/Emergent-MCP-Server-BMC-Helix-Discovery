@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { enrichDslError, getDslExamples, queryTools, validateDiscoveryQuery } from "../src/tools/query.js";
+import { enrichDslError, getDslExamples, validateDiscoveryQuery } from "../src/tools/query.js";
 
 describe("DSL helper ergonomics", () => {
   it("enriches misplaced traversal syntax errors", () => {
@@ -60,13 +60,4 @@ describe("DSL helper ergonomics", () => {
     expect(result.errors).toEqual([]);
   });
 
-  it("does not expose discovery_execute_dsl as an MCP query tool", () => {
-    const tools = queryTools({} as never);
-
-    expect(tools).not.toHaveProperty("discovery_execute_dsl");
-    expect(tools).not.toHaveProperty("discovery_search_tree_data");
-    expect(tools).not.toHaveProperty("discovery_dsl_examples");
-    expect(tools).toHaveProperty("discovery_validate_query");
-    expect(tools).not.toHaveProperty("discovery_topology_services");
-  });
 });

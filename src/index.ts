@@ -6,7 +6,7 @@ import { loadConfig, type AppConfig } from "./config.js";
 import { DiscoveryClient } from "./discoveryClient.js";
 import { normalizeApiError } from "./utils/errors.js";
 import { aboutTools } from "./tools/about.js";
-import { queryTools, buildDslCookbook } from "./tools/query.js";
+import { buildDslCookbook } from "./tools/query.js";
 import { executeDslTools } from "./tools/executeDsl.js";
 import { findTools } from "./tools/find.js";
 import { taxonomyTools } from "./tools/taxonomy.js";
@@ -174,7 +174,6 @@ function buildMcpServer(client: DiscoveryClient, config: AppConfig): McpServer {
   const mcpServer = new McpServer({ name: "bmc-helix-discovery-mcp", version: "0.4.0" });
   const tools = {
     ...aboutTools(client, config.apiVersion),
-    ...queryTools(client),
     ...executeDslTools(client),
     ...findTools(client),
     ...taxonomyTools(client),

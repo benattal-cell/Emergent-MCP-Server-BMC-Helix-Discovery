@@ -228,13 +228,6 @@ const sections: GuideSection[] = [
         useCase: "Après présentation de la dslQuery à l'utilisateur, exécuter la requête validée et conserver generated_dsl_query dans le résultat.",
         purposeEn: "Execute a validated dslQuery — typically one produced by discovery_build_query after user approval.",
         useCaseEn: "After showing the dslQuery to the user, execute the validated query and keep generated_dsl_query in the result."
-      },
-      {
-        tool: "discovery_validate_query",
-        purpose: "OPTIONNEL — Valider localement les pièges courants sans exécuter la requête Discovery.",
-        useCase: "À appeler seulement si tu doutes d'une syntaxe complexe (EXPAND, STEP IN/OUT, named traversal).",
-        purposeEn: "OPTIONAL — Locally validate common traps without executing the Discovery query.",
-        useCaseEn: "Call only when unsure about complex syntax (EXPAND, STEP IN/OUT, named traversal)."
       }
     ]
   },
@@ -274,7 +267,7 @@ const GLOBAL_RULES_FR = [
   "R-A3: Si l'objet nommé est absent À LA FOIS du registre nominatif (services/apps/hosts) ET des types SoftwareInstance connus, demande DE QUEL TYPE d'objet il s'agit plutôt que de deviner ou de lancer un execute_dsl.",
   "R-A4: Ne JAMAIS improviser une requête DSL brute pour contourner une ambiguïté.",
   "R-A5: Si aucun outil paramétré de niveau 1 ne couvre le besoin, NE rédige PAS de DSL toi-même. Appelle discovery_build_query en lui fournissant l'intention structurée (searchKind, conditions where avec opérateurs fermés, traversals depuis le référentiel, show). Il compose et valide la requête.",
-  "R-A6: discovery_build_query renvoie une dslQuery SANS l'exécuter. Présente-la à l'utilisateur (il peut la modifier), puis exécute-la via discovery_execute_dsl. discovery_validate_query reste une aide OPTIONNELLE, jamais une étape obligatoire. Le cookbook DSL complet est disponible en resource MCP (mcp://discovery/dsl-cookbook).",
+  "R-A6: discovery_build_query renvoie une dslQuery SANS l'exécuter (il valide déjà la syntaxe). Présente-la à l'utilisateur (il peut la modifier), puis exécute-la via discovery_execute_dsl (qui revalide avant exécution). Le cookbook DSL complet est disponible en resource MCP (mcp://discovery/dsl-cookbook).",
   "RÈGLE 1: N'invente JAMAIS du DSL Discovery (search/show) si un outil spécialisé couvre le besoin. Utilise d'abord les outils paramétrés ci-dessous.",
   "RÈGLE 2: Si l'utilisateur mentionne un éditeur (Microsoft, Oracle...) ou un produit (Windows Server, JBoss...), passe-le DIRECTEMENT en paramètre `publisherContains` / `productContains` à `discovery_lifecycle_report`. Pas d'enchaînement.",
   "RÈGLE 3: La réponse de chaque outil contient généralement un champ `summary` avec le chiffre clé. Cite-le textuellement avant tout détail.",
@@ -289,7 +282,7 @@ const GLOBAL_RULES_EN = [
   "R-A3: If the named object is absent from BOTH the nominal registry (services/apps/hosts) and known SoftwareInstance types, ask WHAT TYPE of object it is instead of guessing or launching execute_dsl.",
   "R-A4: NEVER improvise a raw DSL query to work around ambiguity.",
   "R-A5: If no level-1 parameterized tool covers the need, do NOT write DSL yourself. Call discovery_build_query with structured intent (searchKind, where conditions with closed operators, traversals from the referential, show). It composes and validates the query.",
-  "R-A6: discovery_build_query returns a dslQuery WITHOUT executing it. Show it to the user (they can edit it), then execute it via discovery_execute_dsl. discovery_validate_query remains an OPTIONAL helper, never a mandatory step. The full DSL cookbook is available as an MCP resource (mcp://discovery/dsl-cookbook).",
+  "R-A6: discovery_build_query returns a dslQuery WITHOUT executing it (it already validates syntax). Show it to the user (they can edit it), then execute it via discovery_execute_dsl (which re-validates before running). The full DSL cookbook is available as an MCP resource (mcp://discovery/dsl-cookbook).",
   "RULE 1: NEVER invent Discovery DSL (search/show) when a specialized tool covers the need. Use the parameterized tools below first.",
   "RULE 2: If the user mentions a vendor (Microsoft, Oracle...) or a product (Windows Server, JBoss...), pass it DIRECTLY as `publisherContains` / `productContains` to `discovery_lifecycle_report`. No chaining.",
   "RULE 3: Tool responses usually include a `summary` field with the headline count. Quote it verbatim before any detail.",
