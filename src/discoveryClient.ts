@@ -131,6 +131,29 @@ export class DiscoveryClient {
       const effectiveLimit = policy === null
         ? options.limit
         : (options.limit !== undefined ? Math.min(options.limit, policy) : policy);
+
+      // No cap at all (no MCP_RESULT_LIMIT and no explicit per-call limit): honor the
+      // documented "tout est renvoyé" contract by paginating to completion. Discovery's
+      // /data/search returns only its default page (~100) when no limit is sent, so we
+      // walk the offset until the whole result set is collected (still no limit param).
+      if (effectiveLimit === undefined) {
+        const all: Array<Record<string, unknown>> = [];
+        let first: FlatQueryResult | undefined;
+        let totalCount = 0;
+        let offset = options.offset ?? 0;
+        for (;;) {
+          const page = await fetchPage(offset, undefined);
+          if (!first) first = page;
+          totalCount = page.totalCount;
+          all.push(...page.rows);
+          if (page.returnedCount === 0 || all.length >= totalCount) break;
+          offset += page.returnedCount;
+        }
+        const base = first ?? await fetchPage(0, 0);
+        const label = options.entityLabel ?? base.kind ?? "objet";
+        return { ...base, summary: `${totalCount} ${label} correspondants en base.`, totalCount, returnedCount: all.length, rows: all, offset: 0, hasMore: false };
+      }
+
       const offset = options.offset ?? 0;
       const page = await fetchPage(offset, effectiveLimit);
       const hasMore = page.returnedCount > 0 && offset + page.returnedCount < page.totalCount;
