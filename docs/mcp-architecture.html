@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BMC Helix Discovery MCP — Architecture &amp; Design</title>
+<style>
+  :root{
+    --bmc-orange:#fe5000;
+    --bmc-orange-soft:#ff7a33;
+    --bmc-navy:#0b1733;
+    --bmc-navy-2:#13224a;
+    --bmc-blue:#00a3e0;
+    --bmc-teal:#00c2b2;
+    --ink:#10233f;
+    --muted:#5b6b86;
+    --line:#e3e9f2;
+    --bg:#f5f7fb;
+    --card:#ffffff;
+    --code-bg:#0e1b33;
+    --code-ink:#d7e3ff;
+    --ok:#1f9d6b;
+    --warn:#d98a00;
+    --shadow:0 10px 30px rgba(13,30,64,.08);
+    --shadow-lg:0 24px 60px rgba(13,30,64,.16);
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;font-family:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.55;-webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--bmc-orange);text-decoration:none}
+  a:hover{text-decoration:underline}
+  h1,h2,h3,h4{line-height:1.2;color:var(--bmc-navy);margin:0 0 .4em}
+  h2{font-size:clamp(1.5rem,3vw,2.1rem)}
+  h3{font-size:1.25rem}
+  p{margin:0 0 1em}
+  code{font-family:'JetBrains Mono','SF Mono',Consolas,monospace;font-size:.86em}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 22px}
+
+  /* ---------- top nav ---------- */
+  header.topbar{
+    position:sticky;top:0;z-index:50;background:rgba(11,23,51,.92);
+    backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .topbar .wrap{display:flex;align-items:center;gap:18px;height:62px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;color:#fff;white-space:nowrap}
+  .brand .dot{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--bmc-orange),var(--bmc-orange-soft));box-shadow:0 4px 14px rgba(254,80,0,.5)}
+  .brand small{display:block;font-weight:500;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--bmc-blue)}
+  nav.links{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+  nav.links a{color:#c7d4ec;font-size:.82rem;padding:7px 11px;border-radius:8px;font-weight:600}
+  nav.links a:hover{background:rgba(255,255,255,.08);color:#fff;text-decoration:none}
+  nav.links a.active{background:var(--bmc-orange);color:#fff}
+  .navtoggle{display:none;margin-left:auto;background:none;border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:8px 10px;font-size:1rem;cursor:pointer}
+  @media(max-width:900px){
+    nav.links{display:none;position:absolute;top:62px;left:0;right:0;background:var(--bmc-navy);flex-direction:column;padding:10px 22px;border-bottom:1px solid rgba(255,255,255,.1)}
+    nav.links.open{display:flex}
+    .navtoggle{display:block}
+  }
+
+  /* ---------- hero ---------- */
+  .hero{position:relative;overflow:hidden;background:radial-gradient(1200px 600px at 85% -10%,rgba(0,163,224,.25),transparent 60%),radial-gradient(900px 500px at 5% 110%,rgba(254,80,0,.22),transparent 55%),linear-gradient(160deg,var(--bmc-navy),var(--bmc-navy-2));color:#fff}
+  .hero .wrap{padding:74px 22px 90px}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--bmc-blue);font-weight:700;border:1px solid rgba(0,163,224,.4);padding:6px 12px;border-radius:999px;margin-bottom:20px}
+  .hero h1{color:#fff;font-size:clamp(2.1rem,5vw,3.5rem);max-width:18ch;margin-bottom:.3em}
+  .hero h1 span{background:linear-gradient(90deg,var(--bmc-orange),#ffb37a);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.lede{font-size:clamp(1.05rem,2vw,1.3rem);color:#cad8f0;max-width:62ch}
+  .hero .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:11px;font-weight:700;font-size:.95rem;cursor:pointer;border:0;transition:transform .15s ease}
+  .btn:hover{transform:translateY(-2px);text-decoration:none}
+  .btn.primary{background:linear-gradient(135deg,var(--bmc-orange),var(--bmc-orange-soft));color:#fff;box-shadow:0 12px 30px rgba(254,80,0,.4)}
+  .btn.ghost{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)}
+  .heroStats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:46px}
+  .heroStats .s{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:16px 18px}
+  .heroStats .s b{display:block;font-size:1.7rem;color:#fff}
+  .heroStats .s span{font-size:.8rem;color:#aebfe0}
+  @media(max-width:760px){.heroStats{grid-template-columns:repeat(2,1fr)}}
+
+  /* ---------- sections ---------- */
+  section.band{padding:72px 0;border-bottom:1px solid var(--line)}
+  section.band.alt{background:linear-gradient(180deg,#fff,#f7f9fd)}
+  .kicker{color:var(--bmc-orange);font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:.76rem;margin-bottom:10px}
+  .lead{font-size:1.12rem;color:var(--muted);max-width:72ch}
+  .sec-head{margin-bottom:38px;max-width:80ch}
+
+  .grid{display:grid;gap:20px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:900px){.g3,.g4{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:640px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);transition:transform .18s ease,box-shadow .18s ease,border-color .18s}
+  .card.hov:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:#cfdcf0}
+  .card .ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:1.35rem;margin-bottom:14px;background:linear-gradient(135deg,rgba(254,80,0,.12),rgba(0,163,224,.12));color:var(--bmc-orange)}
+  .card h3{margin-bottom:.35em}
+  .card p{color:var(--muted);font-size:.95rem;margin-bottom:0}
+  .pill{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.04em;padding:3px 9px;border-radius:999px;background:rgba(0,163,224,.12);color:#0a6f96;margin:2px 4px 2px 0}
+  .pill.q{background:rgba(254,80,0,.12);color:#b53a00}
+
+  /* ---------- business cases ---------- */
+  .bizcase{display:grid;grid-template-columns:1.1fr 1fr;gap:0;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);background:#fff}
+  .bizcase .q{padding:26px;background:linear-gradient(160deg,var(--bmc-navy),var(--bmc-navy-2));color:#fff}
+  .bizcase .q .who{font-size:.74rem;text-transform:uppercase;letter-spacing:.12em;color:var(--bmc-blue);font-weight:700}
+  .bizcase .q blockquote{margin:.6em 0 0;font-size:1.18rem;font-weight:600;color:#fff;line-height:1.4}
+  .bizcase .a{padding:26px}
+  .bizcase .a .lab{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;margin-bottom:6px}
+  .bizcase .a p{font-size:.95rem;color:var(--ink)}
+  .bizcase .a .tools code{display:inline-block;background:rgba(254,80,0,.1);color:#b53a00;padding:3px 8px;border-radius:7px;margin:3px 4px 0 0;font-weight:600}
+  @media(max-width:760px){.bizcase{grid-template-columns:1fr}}
+
+  /* ---------- flow strip ---------- */
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin-top:8px}
+  .flow .step{flex:1;min-width:150px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;position:relative;box-shadow:var(--shadow)}
+  .flow .arrow{display:grid;place-items:center;color:var(--bmc-orange);font-size:1.5rem;padding:0 6px}
+  .flow .step .n{font-size:.72rem;font-weight:800;color:var(--bmc-blue);letter-spacing:.08em}
+  .flow .step h4{margin:.3em 0 .3em;font-size:1rem}
+  .flow .step p{font-size:.84rem;color:var(--muted);margin:0}
+  @media(max-width:760px){.flow{flex-direction:column}.flow .arrow{transform:rotate(90deg)}}
+
+  /* ---------- architecture diagram ---------- */
+  .arch{display:flex;flex-direction:column;gap:14px}
+  .layer{border:1px solid var(--line);border-radius:14px;padding:0;overflow:hidden;background:#fff;box-shadow:var(--shadow);cursor:pointer;transition:border-color .15s,box-shadow .15s}
+  .layer:hover{border-color:var(--bmc-orange)}
+  .layer .lhead{display:flex;align-items:center;gap:16px;padding:18px 20px}
+  .layer .lnum{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--bmc-orange),var(--bmc-orange-soft));flex:none}
+  .layer .ltitle{font-weight:700;color:var(--bmc-navy);font-size:1.05rem}
+  .layer .lsub{color:var(--muted);font-size:.86rem}
+  .layer .chev{margin-left:auto;color:var(--muted);transition:transform .2s;font-size:1.1rem}
+  .layer.open .chev{transform:rotate(90deg)}
+  .layer .lbody{max-height:0;overflow:hidden;transition:max-height .3s ease;border-top:0 solid var(--line)}
+  .layer.open .lbody{max-height:600px;border-top:1px solid var(--line)}
+  .layer .lbody .inner{padding:18px 20px;background:#fbfcfe}
+  .layer .lbody ul{margin:0;padding-left:18px;color:var(--muted);font-size:.92rem}
+  .layer .lbody ul li{margin:.3em 0}
+  .layer .tag{display:inline-block;font-size:.72rem;font-weight:700;color:#0a6f96;background:rgba(0,163,224,.12);padding:3px 9px;border-radius:999px;margin:2px 5px 2px 0}
+  .archconn{height:14px;width:2px;background:linear-gradient(var(--bmc-orange),transparent);margin:-6px auto;border-radius:2px}
+
+  /* ---------- tech choices accordion ---------- */
+  .acc{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;box-shadow:var(--shadow)}
+  .acc .row{border-top:1px solid var(--line)}
+  .acc .row:first-child{border-top:0}
+  .acc .qrow{display:flex;align-items:center;gap:14px;padding:18px 20px;cursor:pointer}
+  .acc .qrow .tch{font-weight:700;color:var(--bmc-navy)}
+  .acc .qrow .badge{font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:999px;background:rgba(31,157,107,.12);color:var(--ok);flex:none}
+  .acc .qrow .plus{margin-left:auto;color:var(--bmc-orange);font-weight:800;font-size:1.3rem;transition:transform .2s}
+  .acc .row.open .plus{transform:rotate(45deg)}
+  .acc .arow{max-height:0;overflow:hidden;transition:max-height .3s ease}
+  .acc .row.open .arow{max-height:340px}
+  .acc .arow .inner{padding:0 20px 20px;color:var(--muted);font-size:.94rem}
+  .acc .arow .inner .why{color:var(--ink)}
+  .acc .arow .inner b{color:var(--bmc-navy)}
+
+  /* ---------- primitives ---------- */
+  .prim{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  @media(max-width:760px){.prim{grid-template-columns:1fr}}
+  .prim .card{border-top:4px solid var(--bmc-orange)}
+  .prim .card:nth-child(2){border-top-color:var(--bmc-blue)}
+  .prim .card:nth-child(3){border-top-color:var(--bmc-teal)}
+  .prim .who{font-size:.78rem;font-weight:700;color:var(--muted)}
+  .prim ul{padding-left:18px;color:var(--muted);font-size:.9rem;margin:.4em 0 0}
+
+  /* ---------- tool explorer ---------- */
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:22px}
+  .toolbar input[type=search]{flex:1;min-width:200px;padding:11px 14px;border:1px solid var(--line);border-radius:11px;font-size:.95rem;background:#fff}
+  .toolbar input[type=search]:focus{outline:2px solid var(--bmc-orange);border-color:transparent}
+  .chip{border:1px solid var(--line);background:#fff;color:var(--muted);padding:8px 13px;border-radius:999px;font-size:.82rem;font-weight:600;cursor:pointer;transition:.15s}
+  .chip:hover{border-color:var(--bmc-orange);color:var(--bmc-navy)}
+  .chip.active{background:var(--bmc-navy);color:#fff;border-color:var(--bmc-navy)}
+  .toolgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  @media(max-width:760px){.toolgrid{grid-template-columns:1fr}}
+  .tool{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+  .tool .th{display:flex;align-items:center;gap:12px;padding:16px 18px;cursor:pointer}
+  .tool .th .dm{font-size:.66rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff;padding:4px 9px;border-radius:7px;flex:none}
+  .tool .th code{font-size:.92rem;font-weight:700;color:var(--bmc-navy)}
+  .tool .th .x{margin-left:auto;color:var(--muted);font-weight:800;transition:transform .2s}
+  .tool.open .th .x{transform:rotate(45deg)}
+  .tool .body{max-height:0;overflow:hidden;transition:max-height .35s ease}
+  .tool.open .body{max-height:520px}
+  .tool .body .inner{padding:0 18px 18px}
+  .tool .desc{color:var(--muted);font-size:.9rem;margin:0 0 14px}
+  .io{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+  @media(max-width:520px){.io{grid-template-columns:1fr}}
+  .io .box{background:#fbfcfe;border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+  .io .box .h{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+  .io .box.in .h{color:var(--bmc-blue)}
+  .io .box.out .h{color:var(--ok)}
+  .io .box code{display:block;font-size:.78rem;color:var(--ink);margin:2px 0}
+  .uc{background:rgba(254,80,0,.06);border-left:3px solid var(--bmc-orange);padding:10px 12px;border-radius:0 8px 8px 0;font-size:.86rem;color:var(--ink)}
+  .uc b{color:#b53a00}
+
+  /* domain colors */
+  .d-orch{background:#6b4bd6}.d-inv{background:#0a6f96}.d-dsl{background:#1f7a4d}
+  .d-life{background:#b53a00}.d-comp{background:#a8430a}.d-cve{background:#c01616}
+  .d-cost{background:#0a7d6e}.d-dep{background:#5a3bb5}.d-gov{background:#946000}.d-health{background:#3a5a8c}
+
+  /* ---------- io / data flow ---------- */
+  .seq{display:grid;gap:10px}
+  .seq .s{display:grid;grid-template-columns:38px 1fr;gap:14px;align-items:start;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+  .seq .s .n{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--bmc-navy),var(--bmc-navy-2));color:#fff;display:grid;place-items:center;font-weight:800}
+  .seq .s h4{margin:.1em 0 .25em;font-size:1rem}
+  .seq .s p{margin:0;color:var(--muted);font-size:.9rem}
+  .seq .s code{background:var(--code-bg);color:var(--code-ink);padding:2px 6px;border-radius:5px}
+
+  /* code block */
+  pre.code{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:18px;overflow:auto;font-size:.82rem;line-height:1.6;box-shadow:var(--shadow)}
+  pre.code .k{color:#7fb4ff}.code .s{color:#9be7a7}.code .c{color:#6a7da3}
+
+  .note{display:flex;gap:12px;align-items:flex-start;background:rgba(0,163,224,.07);border:1px solid rgba(0,163,224,.25);border-radius:12px;padding:14px 16px;font-size:.9rem;color:var(--ink)}
+  .note .i{font-size:1.2rem}
+
+  footer{background:var(--bmc-navy);color:#aebfe0;padding:40px 0;font-size:.88rem}
+  footer .wrap{display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:center}
+  footer b{color:#fff}
+
+  .toTop{position:fixed;right:20px;bottom:20px;width:46px;height:46px;border-radius:50%;background:var(--bmc-orange);color:#fff;border:0;font-size:1.2rem;cursor:pointer;box-shadow:0 10px 24px rgba(254,80,0,.45);opacity:0;pointer-events:none;transition:opacity .2s}
+  .toTop.show{opacity:1;pointer-events:auto}
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span><div>BMC Helix Discovery&nbsp;MCP<small>Architecture &amp; Design</small></div></div>
+    <button class="navtoggle" aria-label="Menu" onclick="document.getElementById('nav').classList.toggle('open')">☰</button>
+    <nav class="links" id="nav">
+      <a href="#why">Why</a>
+      <a href="#business">Business cases</a>
+      <a href="#flow">From question to answer</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#stack">Tech choices</a>
+      <a href="#primitives">MCP I/O</a>
+      <a href="#tools">Tools</a>
+      <a href="#workflows">Workflows</a>
+      <a href="#security">Security</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="wrap">
+    <span class="eyebrow">● Model Context Protocol · v0.4.0 · Node.js + TypeScript</span>
+    <h1>Turn your <span>Discovery CMDB</span> into answers anyone can ask for.</h1>
+    <p class="lede">A remote MCP server that lets conversational AI (ChatGPT, Claude, Mistral) query <b>BMC Helix Discovery</b> in plain language — vulnerabilities, obsolescence, compliance, licensing, cloud cost cases and dependency maps — without anyone writing a line of Discovery DSL.</p>
+    <div class="cta">
+      <a class="btn primary" href="#business">Start with the business case →</a>
+      <a class="btn ghost" href="#architecture">Jump to architecture</a>
+    </div>
+    <div class="heroStats">
+      <div class="s"><b>16</b><span>MCP tools across 8 domains</span></div>
+      <div class="s"><b>4</b><span>Guided workflow prompts</span></div>
+      <div class="s"><b>3</b><span>MCP primitives wired (Tools · Resources · Prompts)</span></div>
+      <div class="s"><b>0</b><span>Static secrets · OAuth 2.1 only</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= WHY ================= -->
+<section class="band" id="why">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">The problem</div>
+      <h2>The data already exists. The answers are locked behind expertise.</h2>
+      <p class="lead">BMC Helix Discovery continuously maps every host, software instance, network device, container and business service in the estate — a goldmine for security, audit, finance and architecture teams. But extracting an answer means writing <b>Discovery DSL</b>, knowing the exact node kinds and traversal paths, and reading raw query output. In practice, every question becomes a ticket to a small group of specialists.</p>
+    </div>
+    <div class="grid g3">
+      <div class="card hov reveal"><div class="ic">🔒</div><h3>Knowledge bottleneck</h3><p>Only a handful of people can write the DSL. Business stakeholders wait days for a number that already exists in the database.</p></div>
+      <div class="card hov reveal"><div class="ic">🧩</div><h3>Wrong-tool / hallucination risk</h3><p>Hand an LLM raw database access and it invents node kinds and relationships that don't exist, returning confident but wrong answers.</p></div>
+      <div class="card hov reveal"><div class="ic">⏱️</div><h3>Decisions can't wait</h3><p>A new CVE drops, an audit lands, a cloud-migration business case is due. These need answers <i>now</i>, in natural language, with evidence.</p></div>
+    </div>
+    <div class="note reveal" style="margin-top:24px"><span class="i">💡</span><div><b>The design bet:</b> wrap Discovery behind the Model Context Protocol with <b>opinionated, guard-railed tools</b> — so any compliant AI client can answer business questions safely, and the AI is steered away from improvising bad queries.</div></div>
+  </div>
+</section>
+
+<!-- ================= BUSINESS CASES ================= -->
+<section class="band alt" id="business">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Business cases first</div>
+      <h2>The questions that drove every design decision</h2>
+      <p class="lead">Each tool exists because a real stakeholder asked a real question. These are the conversations the server is built to answer — start here, the architecture follows from them.</p>
+    </div>
+    <div class="grid" style="gap:18px">
+
+      <div class="bizcase reveal">
+        <div class="q"><div class="who">🛡️ CISO / Security</div><blockquote>"A critical CVE just dropped. Are we exposed, and exactly where?"</blockquote></div>
+        <div class="a"><div class="lab">How the server answers</div><p>An executive exposure briefing — impacted asset count, top business services / hosts / versions — with CPE targets pulled automatically from the NVD, then a full inventory on demand.</p><div class="tools"><code>discovery_cve_executive_summary</code><code>discovery_get_cve_cpes_from_nvd</code></div></div>
+      </div>
+
+      <div class="bizcase reveal">
+        <div class="q"><div class="who">📉 IT Risk / Architecture</div><blockquote>"What software and operating systems are out of support — and what's already past end-of-life?"</blockquote></div>
+        <div class="a"><div class="lab">How the server answers</div><p>A lifecycle report filtered by vendor/product (Microsoft, Oracle…) for software, or OS obsolescence straight from the hosts (EOS/EOSS/EOL dates), focused on at-risk items only.</p><div class="tools"><code>discovery_lifecycle_report</code></div></div>
+      </div>
+
+      <div class="bizcase reveal">
+        <div class="q"><div class="who">📋 Audit / Compliance</div><blockquote>"Which Windows servers are missing these critical KB patches?"</blockquote></div>
+        <div class="a"><div class="lab">How the server answers</div><p>KB patch compliance across virtual and bare-metal Windows hosts, with "missing all / any" logic and optional targeting of hosts running a specific software.</p><div class="tools"><code>discovery_patch_compliance_report</code></div></div>
+      </div>
+
+      <div class="bizcase reveal">
+        <div class="q"><div class="who">💰 FinOps / Sourcing</div><blockquote>"Are we over-licensing Windows Server? And what would moving service 'Apex' to Azure save us?"</blockquote></div>
+        <div class="a"><div class="lab">How the server answers</div><p>Windows licensing modelled per physical host (Standard vs Datacenter) with ranked savings; plus a Value Review that prices a <b>real</b> fleet from Discovery and compares on-prem vs Azure/AWS/GCP.</p><div class="tools"><code>discovery_windows_license_report</code><code>discovery_cost</code></div></div>
+      </div>
+
+      <div class="bizcase reveal">
+        <div class="q"><div class="who">🔧 Change / Operations</div><blockquote>"If this host fails, what breaks? Show me the service's architecture."</blockquote></div>
+        <div class="a"><div class="lab">How the server answers</div><p>Topology around any object — size it first, then draw an interactive dependency graph (hierarchical for architecture, concentric for blast-radius), or walk the business-service tree.</p><div class="tools"><code>discovery_topology</code></div></div>
+      </div>
+
+      <div class="bizcase reveal">
+        <div class="q"><div class="who">🧹 Governance / Rationalization</div><blockquote>"Which databases have no application using them? What can we decommission?"</blockquote></div>
+        <div class="a"><div class="lab">How the server answers</div><p>A neutral orphan scan — nodes of a kind with no meaningful inbound relationship — with caller-controlled noise filters and the generated DSL kept for audit.</p><div class="tools"><code>discovery_find_orphans</code></div></div>
+      </div>
+
+      <div class="bizcase reveal">
+        <div class="q"><div class="who">📊 Anyone</div><blockquote>"How many Linux servers do we have? What's running on SAP-PROD-01?"</blockquote></div>
+        <div class="a"><div class="lab">How the server answers</div><p>A generic search over any node kind with full-text matching and optional relationship scoping — the everyday inventory question, answered in one call.</p><div class="tools"><code>discovery_find</code></div></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= FLOW ================= -->
+<section class="band" id="flow">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">From question to answer</div>
+      <h2>What actually happens when someone asks</h2>
+      <p class="lead">A plain-language question becomes a validated query and a narrated answer — with guardrails at every hop so the AI never improvises a broken query.</p>
+    </div>
+    <div class="flow reveal">
+      <div class="step"><div class="n">01 · USER</div><h4>Asks in natural language</h4><p>"Which Microsoft software is end-of-life?" — typed into ChatGPT / Claude / Mistral.</p></div>
+      <div class="arrow">➜</div>
+      <div class="step"><div class="n">02 · GUIDE</div><h4>Routes the request</h4><p>The AI reads <code>discovery_tool_guide</code> first: which tool, the catalog, and the rules to avoid wrong-tool picks.</p></div>
+      <div class="arrow">➜</div>
+      <div class="step"><div class="n">03 · TOOL</div><h4>Runs the right call</h4><p>A parameterized tool (here <code>lifecycle_report</code>, <code>publisherContains=Microsoft</code>) — no hand-written DSL.</p></div>
+      <div class="arrow">➜</div>
+      <div class="step"><div class="n">04 · DISCOVERY</div><h4>Validated &amp; executed</h4><p>The server validates against the live taxonomy, queries <code>/data/search</code>, paginates, flattens.</p></div>
+      <div class="arrow">➜</div>
+      <div class="step"><div class="n">05 · ANSWER</div><h4>Text + visual</h4><p>A headline summary, structured data, and a rendered PNG/SVG chart — narrated back to the user.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ARCHITECTURE ================= -->
+<section class="band alt" id="architecture">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Architecture</div>
+      <h2>Six layers, one request path</h2>
+      <p class="lead">Click any layer to expand it. The whole stack is a single Node.js process — the React/FastAPI front- and back-ends were deliberately removed to keep one runtime, one deployment, one thing to secure.</p>
+    </div>
+    <div class="arch reveal">
+
+      <div class="layer" onclick="this.classList.toggle('open')">
+        <div class="lhead"><div class="lnum">1</div><div><div class="ltitle">AI client</div><div class="lsub">ChatGPT · Claude · Mistral — any MCP-compatible host</div></div><div class="chev">›</div></div>
+        <div class="lbody"><div class="inner">
+          <span class="tag">natural language</span><span class="tag">tools/list</span><span class="tag">tool calls (JSON-RPC)</span>
+          <ul><li>Discovers the server from just a URL, registers itself, and runs the OAuth flow automatically.</li><li>Receives the server <b>instructions</b> at handshake and the tool descriptions with <code>tools/list</code> — context is loaded without any user action.</li></ul>
+        </div></div>
+      </div>
+      <div class="archconn"></div>
+
+      <div class="layer" onclick="this.classList.toggle('open')">
+        <div class="lhead"><div class="lnum">2</div><div><div class="ltitle">Transport &amp; auth</div><div class="lsub">Streamable HTTP on <code>/mcp</code> · OAuth 2.1 self-hosted</div></div><div class="chev">›</div></div>
+        <div class="lbody"><div class="inner">
+          <span class="tag">Streamable HTTP</span><span class="tag">OAuth 2.1</span><span class="tag">PKCE S256</span><span class="tag">Dynamic Client Registration</span>
+          <ul><li>The server <b>is its own authorization server</b> — no external IdP, no static bearer token.</li><li><code>authorization_code</code> + mandatory PKCE + refresh-token rotation; redirect URIs validated against an allowlist.</li><li>Endpoints duplicated under <code>/api/*</code> for Emergent preview routing; <code>/health</code> for probes.</li></ul>
+        </div></div>
+      </div>
+      <div class="archconn"></div>
+
+      <div class="layer" onclick="this.classList.toggle('open')">
+        <div class="lhead"><div class="lnum">3</div><div><div class="ltitle">MCP server core</div><div class="lsub">@modelcontextprotocol/sdk · McpServer</div></div><div class="chev">›</div></div>
+        <div class="lbody"><div class="inner">
+          <span class="tag">16 Tools</span><span class="tag">Resources</span><span class="tag">Prompts</span><span class="tag">instructions</span>
+          <ul><li>Registers all three MCP primitives and, at <code>initialize</code>, ships a short orchestration briefing in the <b>instructions</b> field.</li><li>Wraps every tool result into MCP shape: a text summary, <code>structuredContent</code>, and an optional rendered visual.</li><li>Central registration loop applies default annotations (<code>readOnlyHint</code>, <code>openWorldHint</code>) and Zod-derived input schemas.</li></ul>
+        </div></div>
+      </div>
+      <div class="archconn"></div>
+
+      <div class="layer" onclick="this.classList.toggle('open')">
+        <div class="lhead"><div class="lnum">4</div><div><div class="ltitle">Tool layer</div><div class="lsub">8 domains · parameterized intent, not raw DSL</div></div><div class="chev">›</div></div>
+        <div class="lbody"><div class="inner">
+          <span class="tag">inventory</span><span class="tag">CVE</span><span class="tag">lifecycle</span><span class="tag">compliance</span><span class="tag">cost</span><span class="tag">topology</span><span class="tag">governance</span><span class="tag">DSL helpers</span>
+          <ul><li>Each tool turns a structured intent into a validated Discovery query and a business-ready answer.</li><li>Guardrails: <code>build_query</code> composes &amp; validates, <code>execute_dsl</code> re-validates against taxonomy, <code>common_relationships</code> supplies real traversal paths.</li><li>A startup catalog cache and an IT-cost CSV knowledge base ground the answers.</li></ul>
+        </div></div>
+      </div>
+      <div class="archconn"></div>
+
+      <div class="layer" onclick="this.classList.toggle('open')">
+        <div class="lhead"><div class="lnum">5</div><div><div class="ltitle">Discovery client</div><div class="lsub">Typed REST adapter · pagination · sanitization</div></div><div class="chev">›</div></div>
+        <div class="lbody"><div class="inner">
+          <span class="tag">/data/search</span><span class="tag">/taxonomy/*</span><span class="tag">offset pagination</span><span class="tag">30s timeout</span>
+          <ul><li>Single choke-point for every outbound call: bearer injection, 30s abort timeout, status→error-code mapping.</li><li>Flattens Discovery results, applies the server-side result-limit policy, and walks offsets to completion when no cap is set.</li><li>Secrets are redacted from any error detail before it ever leaves the process.</li></ul>
+        </div></div>
+      </div>
+      <div class="archconn"></div>
+
+      <div class="layer" onclick="this.classList.toggle('open')">
+        <div class="lhead"><div class="lnum">6</div><div><div class="ltitle">BMC Helix Discovery</div><div class="lsub">REST API · <code>/api/&lt;version&gt;</code> (default v1.18)</div></div><div class="chev">›</div></div>
+        <div class="lbody"><div class="inner">
+          <span class="tag">data/search</span><span class="tag">taxonomy</span><span class="tag">about</span>
+          <ul><li><code>discovery_about</code> hits <code>/api/about</code> unauthenticated for health/version; everything else goes through the versioned, token-authenticated API.</li><li>The CMDB itself: hosts, software instances, network devices, containers, business services and their relationships.</li></ul>
+        </div></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= TECH CHOICES ================= -->
+<section class="band" id="stack">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Technology choices &amp; rationale</div>
+      <h2>Every dependency earns its place</h2>
+      <p class="lead">Click each choice to see the trade-off it resolves. The recurring theme: minimize the attack/maintenance surface, maximize how reliably a non-expert AI can drive Discovery.</p>
+    </div>
+    <div class="acc reveal">
+
+      <div class="row">
+        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">Model Context Protocol (MCP)</span><span class="badge">@modelcontextprotocol/sdk 1.29</span><span class="plus">+</span></div>
+        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> one open protocol means <i>any</i> compliant client (ChatGPT, Claude, Mistral…) connects from just a URL — no per-client integration. MCP's three primitives map cleanly onto the need: <b>Tools</b> (the AI acts), <b>Resources</b> (the AI reads), <b>Prompts</b> (the user launches a workflow).</p></div></div>
+      </div>
+
+      <div class="row">
+        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">Node.js 20 + pure TypeScript</span><span class="badge">FastAPI/React removed</span><span class="plus">+</span></div>
+        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> the project deliberately collapsed an earlier React + FastAPI design into a <b>single TypeScript runtime</b>. One language end-to-end, one process to deploy and secure, and the MCP SDK is first-class in TS. Static typing + compile step catch schema/contract drift before runtime.</p></div></div>
+      </div>
+
+      <div class="row">
+        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">Streamable HTTP transport (remote)</span><span class="badge">deployable online</span><span class="plus">+</span></div>
+        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> a <b>remote</b> HTTP server (vs a local stdio one) can be hosted once (Emergent/Railway) and shared by many users and clients, with centralized auth and updates. Endpoints are mirrored under <code>/api/*</code> to satisfy preview-environment routing.</p></div></div>
+      </div>
+
+      <div class="row">
+        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">OAuth 2.1, self-hosted</span><span class="badge">PKCE · DCR · refresh rotation</span><span class="plus">+</span></div>
+        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> static bearer tokens leak and never rotate. The server acts as its own authorization server so clients onboard with <b>zero manual config</b> (Dynamic Client Registration), use <b>authorization_code + PKCE S256</b>, and rotate refresh tokens. An optional shared-password consent gate adds friction only when you want it.</p></div></div>
+      </div>
+
+      <div class="row">
+        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">Zod schemas</span><span class="badge">zod 3.25</span><span class="plus">+</span></div>
+        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> every tool input is a Zod schema — it doubles as <b>runtime validation</b> and as the JSON Schema advertised to the AI. The model sees exactly which parameters exist (with closed enums), which is the first line of defense against hallucinated arguments.</p></div></div>
+      </div>
+
+      <div class="row">
+        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">Guard-railed DSL pipeline</span><span class="badge">build_query → execute_dsl</span><span class="plus">+</span></div>
+        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> letting an LLM write Discovery DSL freely produces invented kinds and relationships. So raw DSL is fenced: <code>build_query</code> composes from structured intent and validates, <code>execute_dsl</code> re-checks clause ordering <i>and</i> referenced kinds against the live taxonomy before running, and a curated <code>common_relationships</code> referential supplies only real traversal paths. The full DSL cookbook is embedded in the tool description and exposed as a resource.</p></div></div>
+      </div>
+
+      <div class="row">
+        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">Visual rendering pipeline</span><span class="badge">resvg · graphology · cytoscape · d3</span><span class="plus">+</span></div>
+        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> answers land better as pictures. Tools emit SVG, rasterized to PNG with <code>@resvg/resvg-js</code> (no headless browser). Dependency graphs use <b>ForceAtlas2</b> (graphology) — chosen to replace a Graphviz dependency — plus Cytoscape/d3 for an interactive, self-contained HTML graph. Output is tunable via env vars for token-frugal, text-only deployments.</p></div></div>
+      </div>
+
+      <div class="row">
+        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">Server-side limits &amp; CSV knowledge base</span><span class="badge">policy + grounding</span><span class="plus">+</span></div>
+        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> result size is governed <b>server-side</b> (<code>MCP_RESULT_LIMIT</code>) with offset pagination (<code>hasMore</code>/<code>nextOffset</code>) so the AI can't invent per-call limits. IT-cost answers are grounded in a <b>CSV reference catalog</b> loaded at startup — the single source of truth, with no live pricing guesswork.</p></div></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= PRIMITIVES / IO ================= -->
+<section class="band alt" id="primitives">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Inputs &amp; outputs</div>
+      <h2>Three MCP primitives — who drives what</h2>
+      <p class="lead">The server speaks the full MCP vocabulary. Understanding which primitive does what explains the entire input/output contract.</p>
+    </div>
+    <div class="prim reveal">
+      <div class="card">
+        <div class="ic">⚙️</div><h3>Tools</h3><div class="who">the AI acts</div>
+        <p style="margin-top:10px;color:var(--muted);font-size:.92rem">16 callable tools. <b>In:</b> a Zod-validated JSON object. <b>Out:</b> a text summary + <code>structuredContent</code> + an optional PNG/SVG visual.</p>
+        <ul><li>Always read-only against Discovery</li><li>Every response carries a headline <code>summary</code></li><li>Errors are normalized &amp; secret-redacted</li></ul>
+      </div>
+      <div class="card">
+        <div class="ic">📚</div><h3>Resources</h3><div class="who">the AI reads</div>
+        <p style="margin-top:10px;color:var(--muted);font-size:.92rem">Pull-on-demand reference content the model can fetch.</p>
+        <ul><li><code>mcp://discovery/dsl-cookbook</code> — the full DSL grammar + curated examples</li><li>A Cytoscape UI resource backs the interactive graph view</li><li>Same single source that's embedded in tool descriptions</li></ul>
+      </div>
+      <div class="card">
+        <div class="ic">🎬</div><h3>Prompts</h3><div class="who">the user launches</div>
+        <p style="margin-top:10px;color:var(--muted);font-size:.92rem">User-triggered workflows (e.g. client slash-commands) that pre-wire the correct tool sequence.</p>
+        <ul><li><code>cve_impact</code> · <code>value_review</code></li><li><code>eol_audit</code> · <code>dependency_analysis</code></li><li>Keep the AI on the documented path instead of improvising</li></ul>
+      </div>
+    </div>
+
+    <h3 class="reveal" style="margin-top:48px">A single tool call, end to end</h3>
+    <div class="grid g2" style="margin-top:14px;align-items:start">
+      <div class="seq reveal">
+        <div class="s"><div class="n">1</div><div><h4>Validate input</h4><p>The raw JSON is parsed by the tool's Zod schema — unknown or malformed args are rejected before anything runs.</p></div></div>
+        <div class="s"><div class="n">2</div><div><h4>Compose &amp; verify</h4><p>The handler builds a Discovery query and verifies referenced kinds/relationships against the live taxonomy.</p></div></div>
+        <div class="s"><div class="n">3</div><div><h4>Call Discovery</h4><p>Through the one client: <code>POST /api/&lt;ver&gt;/data/search</code>, bearer-authenticated, 30s timeout, offset pagination.</p></div></div>
+        <div class="s"><div class="n">4</div><div><h4>Shape the result</h4><p>Flatten rows, compute a headline <code>summary</code>, render an SVG→PNG visual when relevant.</p></div></div>
+        <div class="s"><div class="n">5</div><div><h4>Return MCP payload</h4><p><code>content[]</code> (text + image) and <code>structuredContent</code> the client can render or chain.</p></div></div>
+      </div>
+      <div class="reveal">
+        <p style="color:var(--muted);font-size:.9rem;margin-bottom:8px"><b>Example — a CVE exposure briefing</b></p>
+<pre class="code"><span class="c">// 1 · the AI calls a tool</span>
+{
+  <span class="k">"name"</span>: <span class="s">"discovery_cve_executive_summary"</span>,
+  <span class="k">"arguments"</span>: { <span class="k">"cveId"</span>: <span class="s">"CVE-2026-12345"</span>,
+                  <span class="k">"detail"</span>: <span class="s">"summary"</span> }
+}
+
+<span class="c">// 2 · the server returns</span>
+{
+  <span class="k">"content"</span>: [
+    { <span class="k">"type"</span>: <span class="s">"text"</span>,  <span class="k">"text"</span>: <span class="s">"42 assets exposed…"</span> },
+    { <span class="k">"type"</span>: <span class="s">"image"</span>, <span class="k">"data"</span>: <span class="s">"&lt;PNG&gt;"</span> }
+  ],
+  <span class="k">"structuredContent"</span>: {
+    <span class="k">"summary"</span>: <span class="s">"42 impacted assets"</span>,
+    <span class="k">"topServices"</span>: [ … ],
+    <span class="k">"topHosts"</span>: [ … ]
+  }
+}</pre>
+        <div class="note" style="margin-top:14px"><span class="i">📡</span><div><b>Loaded automatically:</b> the handshake <code>instructions</code> field and the <code>tools/list</code> descriptions are injected into the model at connection time — including the full DSL cookbook — so the AI is oriented before the user types anything.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TOOLS EXPLORER ================= -->
+<section class="band" id="tools">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">The 16 tools</div>
+      <h2>Tool explorer</h2>
+      <p class="lead">Filter by domain or search by name. Click a tool to see its inputs, outputs and the use case it answers.</p>
+    </div>
+    <div class="toolbar reveal">
+      <input type="search" id="toolSearch" placeholder="🔎 Search tools — e.g. cost, CVE, license, topology…" />
+    </div>
+    <div class="toolbar reveal" id="chips" style="margin-top:-8px"></div>
+    <div class="toolgrid" id="toolgrid"></div>
+    <p id="noresult" style="display:none;color:var(--muted);text-align:center;padding:30px">No tool matches that filter.</p>
+  </div>
+</section>
+
+<!-- ================= WORKFLOWS ================= -->
+<section class="band alt" id="workflows">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Guided workflows</div>
+      <h2>Prompts that pre-wire the right sequence</h2>
+      <p class="lead">For multi-step questions, a single user-launched prompt orchestrates the correct chain of tools — and bakes in the rules (quote the summary, don't hand-write DSL, size before you draw).</p>
+    </div>
+    <div class="grid g2 reveal">
+      <div class="card hov"><div class="ic">🛡️</div><h3>cve_impact</h3><p style="margin-bottom:10px"><span class="pill q">arg: cve_id</span></p><p>Exposure briefing for a CVE: executive summary first (count + top services/hosts/versions), then the full inventory on demand. CPEs come from the NVD — never guessed.</p></div>
+      <div class="card hov"><div class="ic">💰</div><h3>value_review</h3><p style="margin-bottom:10px"><span class="pill q">arg: workload</span><span class="pill q">arg: current_solution</span></p><p>Costing &amp; alternatives from the reference catalog: frame categories → search → estimate → compare. For a real scope, prices the fleet straight from Discovery (on-prem vs cloud).</p></div>
+      <div class="card hov"><div class="ic">📉</div><h3>eol_audit</h3><p style="margin-bottom:10px"><span class="pill q">arg: scope</span><span class="pill q">arg: vendor</span><span class="pill q">arg: product</span></p><p>End-of-support audit for software or OS, filtered by vendor/product, with <code>onlyAtRisk=true</code> to surface what's already out of support — in a single direct call.</p></div>
+      <div class="card hov"><div class="ic">🕸️</div><h3>dependency_analysis</h3><p style="margin-bottom:10px"><span class="pill q">arg: target</span><span class="pill q">arg: target_kind</span></p><p>Dependency mapping for any object: size the topology first, then draw — hierarchical for architecture, concentric for blast-radius — or walk the business-service tree.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SECURITY / DEPLOY ================= -->
+<section class="band" id="security">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Security &amp; deployment</div>
+      <h2>Safe by construction, deployable anywhere</h2>
+    </div>
+    <div class="grid g3 reveal">
+      <div class="card hov"><div class="ic">🔑</div><h3>No static secrets</h3><p>Nothing sensitive is committed. Configuration comes entirely from environment variables; OAuth replaces any static bearer to <code>/mcp</code>.</p></div>
+      <div class="card hov"><div class="ic">🧽</div><h3>Secret redaction</h3><p>Keys like <code>token</code>, <code>password</code>, <code>authorization</code>, <code>api_key</code> are scrubbed from every error and log. The Discovery <code>Authorization</code> header is never echoed back.</p></div>
+      <div class="card hov"><div class="ic">👁️</div><h3>Read-only by default</h3><p>Tools are annotated <code>readOnlyHint</code> / <code>openWorldHint</code>. The server queries Discovery; it does not mutate the CMDB.</p></div>
+      <div class="card hov"><div class="ic">🚦</div><h3>Bounded &amp; timed</h3><p>1&nbsp;MB request-body cap, 30s outbound timeout, server-side result limits with pagination — the AI can't run away with the query.</p></div>
+      <div class="card hov"><div class="ic">🌐</div><h3>Remote &amp; portable</h3><p>A single <code>node dist/index.js</code> listening on <code>$PORT</code>, mirrored <code>/api/*</code> routes, and a <code>/health</code> probe — runs on Emergent, Railway, or any container host.</p></div>
+      <div class="card hov"><div class="ic">🎛️</div><h3>Tunable output</h3><p><code>MCP_DEFAULT_VISUAL</code> and <code>MCP_INCLUDE_SVG</code> trade richness for token cost — full visuals, PNG-only, or text-only for frugal LLM deployments.</p></div>
+    </div>
+
+    <h3 class="reveal" style="margin-top:46px">Connecting a client</h3>
+    <p class="reveal" style="color:var(--muted)">With OAuth, a compatible MCP client needs only the URL — it discovers the authorization server, registers itself, and runs the flow automatically.</p>
+<pre class="code reveal">{
+  <span class="k">"mcpServers"</span>: {
+    <span class="k">"bmc-helix-discovery"</span>: {
+      <span class="k">"url"</span>: <span class="s">"https://your-server.example.com/mcp"</span>
+    }
+  }
+}</pre>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div><b>BMC Helix Discovery MCP Server</b> · v0.4.0 · Node.js 20 + TypeScript · MIT</div>
+    <div>Tools <b>discovery_*</b> · Resource <b>dsl-cookbook</b> · Prompts <b>cve_impact · value_review · eol_audit · dependency_analysis</b></div>
+  </div>
+</footer>
+
+<button class="toTop" id="toTop" aria-label="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+/* ---------------- Tool data ---------------- */
+const DOMAINS = {
+  orch:  {label:'Orchestration', cls:'d-orch'},
+  inv:   {label:'Inventory',     cls:'d-inv'},
+  dsl:   {label:'DSL / Model',   cls:'d-dsl'},
+  life:  {label:'Lifecycle',     cls:'d-life'},
+  comp:  {label:'Compliance',    cls:'d-comp'},
+  cve:   {label:'CVE',           cls:'d-cve'},
+  cost:  {label:'Cost',          cls:'d-cost'},
+  dep:   {label:'Dependencies',  cls:'d-dep'},
+  gov:   {label:'Governance',    cls:'d-gov'},
+  health:{label:'Health',        cls:'d-health'}
+};
+
+const TOOLS = [
+  { name:'discovery_tool_guide', dom:'orch',
+    desc:'Read first, always. Routes any Discovery request to the right tool(s), returns the known catalog, example use cases, and the global rules that prevent wrong-tool picks and DSL improvisation.',
+    in:['request: string','maxUseCases: int (1–12)','language: fr|en'],
+    out:['relevant tools to call','catalog digest (cache)','global rules + guidance'],
+    uc:'The AI calls this with the raw user question before any action, then follows the suggested tool and rules.' },
+
+  { name:'discovery_about', dom:'health',
+    desc:'Discovery instance metadata (version, capabilities). With check=true it runs a health-check: reachability + whether the configured API version is supported (warning on mismatch).',
+    in:['check: boolean (default false)'],
+    out:['instance metadata','reachable + supported API versions','warning on version mismatch'],
+    uc:'Diagnose connectivity after a deploy, or before a batch of analyses. Hits /api/about with no token.' },
+
+  { name:'discovery_find', dom:'inv',
+    desc:'Generic search over any node kind, with full-text matching across every attribute and optional relationship scoping.',
+    in:['kind: Host|SoftwareInstance|…','contains: string (matches all attrs)','relatedToKind / relatedToName'],
+    out:['matching nodes (paginated)','headline count summary'],
+    uc:'"How many Linux servers?" → kind=Host, contains=Linux. "What runs on SAP-PROD-01?" → kind=SoftwareInstance, relatedToKind=Host, relatedToName=SAP-PROD-01.' },
+
+  { name:'discovery_lifecycle_report', dom:'life',
+    desc:'Runs an end-of-support report directly. scope=software filters SoftwareInstance by vendor/product/host/type; scope=os derives OS obsolescence straight from hosts (EOS/EOSS/EOL dates).',
+    in:['scope: software|os','publisherContains / productContains','hostNameContains / typeIn / osContains','onlyAtRisk: boolean'],
+    out:['lifecycle report + at-risk items','EOS/EOL dates','headline summary'],
+    uc:'"Which Microsoft software is end-of-life?" → publisherContains=Microsoft. "Obsolete Windows Server?" → scope=os, onlyAtRisk=true.' },
+
+  { name:'discovery_patch_compliance_report', dom:'comp',
+    desc:'Checks Windows host KB patch compliance across virtual and bare-metal hosts, with optional OS and hosted-software filters.',
+    in:['kbList: string[]','complianceMode: all|any','hostsSoftwareMatching / hostingFilter'],
+    out:['compliant / non-compliant hosts','per-host missing KBs','summary'],
+    uc:'"Which servers are missing KB4018271?" → kbList + complianceMode. Target hosts running a given software via hostingFilter.' },
+
+  { name:'discovery_windows_license_report', dom:'cost',
+    desc:'Models Windows Server licensing per physical host, prices Standard vs Datacenter and precomputes optimization opportunities.',
+    in:['price assumptions (optional)'],
+    out:['licensing by physical host','Standard vs Datacenter cost','ranked optimizationOpportunities'],
+    uc:'Windows/Datacenter/Hyper-V/VMware licensing audit — narrate the savings opportunities by descending value.' },
+
+  { name:'discovery_cost', dom:'cost',
+    desc:'IT cost / Value Review in 4 modes. categories: catalog families. search: components by text. estimate: min/median/max for a component × quantity over a horizon. compare: annualized alternatives + savings vs current solution.',
+    in:['mode: categories|search|estimate|compare','component / quantity / horizon','scope: service|fleet','current_solution'],
+    out:['cost ranges (min/median/max)','annualized alternatives + median savings','fleet priced from real Discovery VMs'],
+    uc:'"Move service Apex to cloud?" → mode=compare, scope={type:service,name:Apex} → on-prem vs Azure/AWS/GCP, quantity derived from Discovery.' },
+
+  { name:'discovery_cve_executive_summary', dom:'cve',
+    desc:'Produces a briefing-style CVE summary — risk + top business/host/version impacts — then offers the full inventory on demand.',
+    in:['cveId: string','detail: summary|full'],
+    out:['exposure summary + impacted count','top services / hosts / versions','full inventory when detail=full'],
+    uc:'"Are we exposed to CVE-2026-X?" → summary first for the headline, drill down to full only if asked.' },
+
+  { name:'discovery_get_cve_cpes_from_nvd', dom:'cve',
+    desc:'Fetches the CPEs associated with a CVE from the NVD, so technical targets are resolved automatically.',
+    in:['cveId: string'],
+    out:['CPE list from NVD'],
+    uc:'Get a CVE’s technical targets without manual data entry — feeds the exposure analysis.' },
+
+  { name:'discovery_topology', dom:'dep',
+    desc:'Topology / dependencies around any object, in 4 modes. scope: size first (counts, no draw). summary: CMDB rollup. map: interactive graph (PNG+SVG+HTML). service: BusinessService tree.',
+    in:['target: name|nodeId','targetKind (to disambiguate)','mode: scope|summary|map|service','depth / layout: hierarchical|concentric'],
+    out:['counts / CMDB rollup','interactive graph (PNG + SVG + self-contained HTML)','service→service tree'],
+    uc:'Run mode=scope first to size, then mode=map. layout=hierarchical for architecture, concentric for blast-radius.' },
+
+  { name:'discovery_find_orphans', dom:'gov',
+    desc:'Neutral governance scan: finds nodes of a kind with no significant inbound relationship. No hidden noise presets — filters are caller-controlled.',
+    in:['target_kind / target_filter','inbound_relation {kind, source_kind, direction}','noise_filters / include_active'],
+    out:['orphan nodes','the generated DSL (kept for audit)','summary'],
+    uc:'"Databases with no application client", "hosts hosting no software", "load-balancer pools with no backend".' },
+
+  { name:'discovery_build_query', dom:'dsl',
+    desc:'Composes a DSL query from structured intent (the LLM does not write DSL). Validates syntax + taxonomy, refuses unknown traversal paths, and does NOT execute.',
+    in:['searchKind','where conditions (closed operators)','traversals (from referential)','show'],
+    out:['a validated dslQuery (not run)','validation result'],
+    uc:'Any need no parameterized tool covers, e.g. "ESX hosts with >10 Windows VMs" → NODECOUNT over a VirtualMachine traversal.' },
+
+  { name:'discovery_execute_dsl', dom:'dsl',
+    desc:'Guarded DSL execution. Validates clause ordering locally, verifies referenced kinds against the live taxonomy, then runs. Its description embeds the full DSL cookbook.',
+    in:['dslQuery: string (validated)'],
+    out:['query results','generated_dsl_query (echoed for audit)','stage / errors / hints + relationship hints on failure'],
+    uc:'Execute the validated query from build_query after the user approves it — always keep generated_dsl_query in the result.' },
+
+  { name:'discovery_common_relationships', dom:'dsl',
+    desc:'Returns curated, real TRAVERSE paths from the referential so callers use genuine traversal specs instead of inventing relationships.',
+    in:['(source / target kinds)'],
+    out:['curated TRAVERSE paths','matchedDirection (forward/reverse)'],
+    uc:'Supply a real traverseSpec for build_query instead of guessing a relationship that may not exist.' },
+
+  { name:'discovery_resolve_kind', dom:'dsl',
+    desc:'Maps an FR/EN alias (“serveur”, “machine”…) to the real Discovery node class, so the AI never guesses a kind.',
+    in:['alias / term'],
+    out:['canonical node kind (Host, SoftwareInstance, …)'],
+    uc:'Normalize a user’s wording to a real class before any search or query.' },
+
+  { name:'discovery_taxonomy', dom:'dsl',
+    desc:'Introspects the live model (node kinds, fields, field lists, relationships) via the resource parameter — the fallback when the referential isn’t enough.',
+    in:['resource: nodekinds|fields|relkinds|…'],
+    out:['live node kinds / fields / relationships'],
+    uc:'Fallback for an unknown kind/attribute/relationship absent from the curated referential.' }
+];
+
+/* ---------------- Render explorer ---------------- */
+const grid = document.getElementById('toolgrid');
+const chipsBox = document.getElementById('chips');
+let activeDom = 'all';
+let q = '';
+
+function chip(id,label){
+  const b=document.createElement('button');
+  b.className='chip'+(activeDom===id?' active':'');
+  b.textContent=label;
+  b.onclick=()=>{activeDom=id;renderChips();render();};
+  return b;
+}
+function renderChips(){
+  chipsBox.innerHTML='';
+  chipsBox.appendChild(chip('all','All ('+TOOLS.length+')'));
+  Object.keys(DOMAINS).forEach(d=>{
+    const n=TOOLS.filter(t=>t.dom===d).length;
+    if(n) chipsBox.appendChild(chip(d,DOMAINS[d].label+' ('+n+')'));
+  });
+}
+function toolCard(t){
+  const d=DOMAINS[t.dom];
+  const el=document.createElement('div');
+  el.className='tool';
+  el.innerHTML=`
+    <div class="th">
+      <span class="dm ${d.cls}">${d.label}</span>
+      <code>${t.name}</code>
+      <span class="x">+</span>
+    </div>
+    <div class="body"><div class="inner">
+      <p class="desc">${t.desc}</p>
+      <div class="io">
+        <div class="box in"><div class="h">▸ Inputs</div>${t.in.map(i=>`<code>${i}</code>`).join('')}</div>
+        <div class="box out"><div class="h">▸ Outputs</div>${t.out.map(o=>`<code>${o}</code>`).join('')}</div>
+      </div>
+      <div class="uc"><b>Use case · </b>${t.uc}</div>
+    </div></div>`;
+  el.querySelector('.th').onclick=()=>el.classList.toggle('open');
+  return el;
+}
+function render(){
+  grid.innerHTML='';
+  const list=TOOLS.filter(t=>{
+    const okDom=activeDom==='all'||t.dom===activeDom;
+    const hay=(t.name+' '+t.desc+' '+t.uc+' '+DOMAINS[t.dom].label).toLowerCase();
+    const okQ=!q||hay.includes(q);
+    return okDom&&okQ;
+  });
+  document.getElementById('noresult').style.display=list.length?'none':'block';
+  list.forEach(t=>grid.appendChild(toolCard(t)));
+}
+document.getElementById('toolSearch').addEventListener('input',e=>{q=e.target.value.trim().toLowerCase();render();});
+renderChips();render();
+
+/* ---------------- Scroll spy ---------------- */
+const navLinks=[...document.querySelectorAll('nav.links a')];
+const sections=navLinks.map(a=>document.querySelector(a.getAttribute('href')));
+const spy=new IntersectionObserver(entries=>{
+  entries.forEach(en=>{
+    if(en.isIntersecting){
+      const id='#'+en.target.id;
+      navLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-45% 0px -50% 0px'});
+sections.forEach(s=>s&&spy.observe(s));
+navLinks.forEach(a=>a.addEventListener('click',()=>document.getElementById('nav').classList.remove('open')));
+
+/* ---------------- Reveal on scroll ---------------- */
+const rev=new IntersectionObserver(entries=>{
+  entries.forEach(en=>{if(en.isIntersecting){en.target.classList.add('in');rev.unobserve(en.target);}});
+},{rootMargin:'0px 0px -10% 0px'});
+document.querySelectorAll('.reveal').forEach(el=>rev.observe(el));
+
+/* ---------------- Back to top ---------------- */
+const toTop=document.getElementById('toTop');
+addEventListener('scroll',()=>toTop.classList.toggle('show',scrollY>600));
+
+/* open first architecture layer by default */
+document.querySelector('.layer')?.classList.add('open');
+</script>
+</body>
+</html>
