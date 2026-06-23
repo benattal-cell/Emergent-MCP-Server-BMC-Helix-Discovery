@@ -210,6 +210,60 @@
 
   .note{display:flex;gap:12px;align-items:flex-start;background:rgba(0,163,224,.07);border:1px solid rgba(0,163,224,.25);border-radius:12px;padding:14px 16px;font-size:.9rem;color:var(--ink)}
   .note .i{font-size:1.2rem}
+  .note.warn{background:rgba(217,138,0,.08);border-color:rgba(217,138,0,.35)}
+
+  /* ---------- quantified stakes ---------- */
+  .stakes{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  @media(max-width:860px){.stakes{grid-template-columns:1fr}}
+  .stake{background:linear-gradient(160deg,var(--bmc-navy),var(--bmc-navy-2));color:#fff;border-radius:var(--radius);padding:26px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .stake::after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(254,80,0,.35),transparent 70%)}
+  .stake .fig{font-size:2.5rem;font-weight:800;line-height:1;background:linear-gradient(90deg,#fff,#ffd0b0);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stake .unit{font-size:.95rem;color:#cad8f0;font-weight:600;margin-top:4px}
+  .stake h4{color:#fff;margin:14px 0 6px;font-size:1.05rem}
+  .stake p{color:#aebfe0;font-size:.88rem;margin:0}
+  .stake .src{display:block;margin-top:10px;font-size:.72rem;color:#7f8db0}
+
+  /* ---------- matrix table ---------- */
+  .matrix{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);font-size:.9rem}
+  .matrix th,.matrix td{padding:13px 15px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  .matrix thead th{background:var(--bmc-navy);color:#fff;font-size:.82rem;letter-spacing:.02em}
+  .matrix tbody tr:last-child td{border-bottom:0}
+  .matrix tbody tr:nth-child(even){background:#fafbfe}
+  .matrix td b{color:var(--bmc-navy)}
+  .matrix .ok{color:var(--ok);font-weight:700}
+  .matrix .no{color:#c01616;font-weight:700}
+  .matrix code{background:rgba(0,163,224,.1);color:#0a6f96;padding:1px 6px;border-radius:5px;font-size:.82em}
+  .matrix .cost{font-variant-numeric:tabular-nums;font-weight:700;color:var(--bmc-orange)}
+  .tablewrap{overflow-x:auto;border-radius:14px}
+
+  /* verdict chips */
+  .verdict{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:800;padding:3px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em}
+  .verdict.keep{background:rgba(31,157,107,.14);color:var(--ok)}
+  .verdict.watch{background:rgba(217,138,0,.14);color:var(--warn)}
+
+  /* ---------- exec summary dashboard ---------- */
+  .dash{background:linear-gradient(160deg,#0c1838,#16264e);border-radius:18px;padding:26px;color:#fff;box-shadow:var(--shadow-lg)}
+  .dash .dhead{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:16px;margin-bottom:20px}
+  .dash .dhead .t{font-weight:800;font-size:1.15rem;color:#fff;display:flex;align-items:center;gap:10px}
+  .dash .dhead .cve{font-family:'JetBrains Mono',monospace;background:rgba(192,22,22,.25);color:#ff9b9b;border:1px solid rgba(192,22,22,.5);padding:4px 10px;border-radius:8px;font-size:.85rem}
+  .dash .sev{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:4px 10px;border-radius:7px;background:#c01616;color:#fff}
+  .dash .kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+  @media(max-width:760px){.dash .kgrid{grid-template-columns:repeat(2,1fr)}}
+  .dash .kpi{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px}
+  .dash .kpi .v{font-size:1.9rem;font-weight:800;line-height:1;color:#fff}
+  .dash .kpi .v.red{color:#ff8a8a}.dash .kpi .v.amber{color:#ffce6b}.dash .kpi .v.green{color:#7fe0b0}
+  .dash .kpi .l{font-size:.75rem;color:#aebfe0;margin-top:6px}
+  .dash .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:760px){.dash .cols{grid-template-columns:1fr}}
+  .dash .col h5{margin:0 0 10px;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--bmc-blue)}
+  .dash .bar{margin-bottom:9px}
+  .dash .bar .br{display:flex;justify-content:space-between;font-size:.84rem;margin-bottom:4px;color:#e6edf6}
+  .dash .bar .br b{color:#fff}
+  .dash .track{height:7px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
+  .dash .track i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--bmc-orange),#ff9b5a)}
+  .dash .foot{margin-top:20px;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);font-size:.82rem;color:#cad8f0;display:flex;gap:10px;align-items:flex-start}
+  .dash .foot .ic{color:var(--bmc-orange)}
+  .illustr{display:inline-block;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#16264e;background:#ffce6b;padding:3px 9px;border-radius:6px}
 
   footer{background:var(--bmc-navy);color:#aebfe0;padding:40px 0;font-size:.88rem}
   footer .wrap{display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:center}
@@ -230,10 +284,12 @@
     <nav class="links" id="nav">
       <a href="#why">Why</a>
       <a href="#business">Business cases</a>
-      <a href="#flow">From question to answer</a>
+      <a href="#stakes">What's at stake</a>
       <a href="#architecture">Architecture</a>
       <a href="#stack">Tech choices</a>
+      <a href="#rendering">Rendering &amp; cost</a>
       <a href="#primitives">MCP I/O</a>
+      <a href="#example">Example output</a>
       <a href="#tools">Tools</a>
       <a href="#workflows">Workflows</a>
       <a href="#security">Security</a>
@@ -245,7 +301,7 @@
 <section class="hero">
   <div class="wrap">
     <span class="eyebrow">● Model Context Protocol · v0.4.0 · Node.js + TypeScript</span>
-    <h1>Turn your <span>Discovery CMDB</span> into answers anyone can ask for.</h1>
+    <h1>Turn your <span>discovered estate</span> into answers anyone can ask for.</h1>
     <p class="lede">A remote MCP server that lets conversational AI (ChatGPT, Claude, Mistral) query <b>BMC Helix Discovery</b> in plain language — vulnerabilities, obsolescence, compliance, licensing, cloud cost cases and dependency maps — without anyone writing a line of Discovery DSL.</p>
     <div class="cta">
       <a class="btn primary" href="#business">Start with the business case →</a>
@@ -323,6 +379,56 @@
       </div>
 
     </div>
+  </div>
+</section>
+
+<!-- ================= STAKES ================= -->
+<section class="band" id="stakes">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">What's at stake</div>
+      <h2>These aren't reports. They're seven- and eight-figure exposures.</h2>
+      <p class="lead">The questions on the previous slide map to real money and real regulatory risk. The common thread: every one of them is decided by how accurately the estate is mapped — and a single mis-presented dependency can swing the number by millions.</p>
+    </div>
+
+    <div class="stakes reveal">
+      <div class="stake">
+        <div class="fig">~€150M</div>
+        <div class="unit">compliance exposure · top-5 publishers</div>
+        <h4>Software audit risk</h4>
+        <p>A Tier-1 European telecom operator quantified its software-compliance exposure across just its five largest publishers at roughly €150&nbsp;million — the gap between what it could prove it was entitled to and what auditors could claim.</p>
+        <span class="src">Anonymized operator estimate · illustrative order of magnitude</span>
+      </div>
+      <div class="stake">
+        <div class="fig">whole farm</div>
+        <div class="unit">licensed from one bad flow</div>
+        <h4>The virtualization licensing trap</h4>
+        <p>Under Oracle's and Microsoft's virtualization rules, a single VM that <i>could</i> migrate across an ESX cluster can make the <b>entire farm</b> licensable. One mis-mapped dependency, one unpinned VM — and you license dozens of hosts you never meant to, or pay twice for the same server.</p>
+        <span class="src">Oracle soft-partitioning / Windows Server per-core on virtual hosts</span>
+      </div>
+      <div class="stake">
+        <div class="fig">up to 2%</div>
+        <div class="unit">of worldwide annual turnover</div>
+        <h4>DORA — now enforced</h4>
+        <p>Under the EU Digital Operational Resilience Act (applicable since Jan&nbsp;2025, <b>active enforcement from 2026</b>), financial entities face fines up to <b>2% of total worldwide turnover</b> — some national transpositions reach <b>10%</b> — plus up to <b>€1M</b> personal liability for executives. Running unsupported software is a resilience finding.</p>
+        <span class="src">Regulation (EU) 2022/2554 · see sources below</span>
+      </div>
+    </div>
+
+    <div class="grid g2 reveal" style="margin-top:24px;align-items:start">
+      <div class="card">
+        <div class="ic">🎯</div><h3>Why the estate map <i>is</i> the money</h3>
+        <p style="color:var(--muted);font-size:.95rem">License math is downstream of topology. "Which hosts could this Oracle VM run on?" and "is this server licensed once or twice?" are <b>dependency questions</b> — answered by what Discovery observed, not by a spreadsheet. Mis-state the flow and the cost is wrong by an order of magnitude; state it accurately and you defend the smaller, true number.</p>
+        <p style="margin-top:12px"><span class="pill">discovery_windows_license_report</span><span class="pill">discovery_topology</span><span class="pill">discovery_find</span></p>
+      </div>
+      <div class="card">
+        <div class="ic">📅</div><h3>Obsolescence is now a regulator's question</h3>
+        <p style="color:var(--muted);font-size:.95rem">DORA mandates that financial entities <b>know and manage their ICT estate</b>. A fleet running end-of-life OS and software is a documented resilience gap — and 2026 is when supervisors move from dialogue to penalties. An on-demand, evidence-backed end-of-life inventory turns a multi-week audit scramble into a single question.</p>
+        <p style="margin-top:12px"><span class="pill">discovery_lifecycle_report</span><span class="pill">discovery_patch_compliance_report</span></p>
+      </div>
+    </div>
+
+    <div class="note reveal" style="margin-top:22px"><span class="i">📎</span><div><b>Figures are illustrative orders of magnitude</b> for framing the value, not audited claims. DORA penalty mechanics are public: up to 2% of worldwide annual turnover (1% of average daily turnover for certain breaches), up to €1M for individuals, €5M for critical ICT third-party providers — with national transpositions ranging to 10% of turnover. Sources: <a href="https://www.regulation-dora.eu/blog/dora-penalties-fines-enforcement-guide-2025" target="_blank" rel="noopener">regulation-dora.eu</a>, <a href="https://aqmetrics.com/blog/dora-2026-the-end-of-the-grace-period-for-digital-resilience/" target="_blank" rel="noopener">AQMetrics</a>, <a href="https://www.ibm.com/think/topics/digital-operational-resilience-act" target="_blank" rel="noopener">IBM</a>.</div></div>
   </div>
 </section>
 
@@ -407,7 +513,7 @@
         <div class="lhead"><div class="lnum">6</div><div><div class="ltitle">BMC Helix Discovery</div><div class="lsub">REST API · <code>/api/&lt;version&gt;</code> (default v1.18)</div></div><div class="chev">›</div></div>
         <div class="lbody"><div class="inner">
           <span class="tag">data/search</span><span class="tag">taxonomy</span><span class="tag">about</span>
-          <ul><li><code>discovery_about</code> hits <code>/api/about</code> unauthenticated for health/version; everything else goes through the versioned, token-authenticated API.</li><li>The CMDB itself: hosts, software instances, network devices, containers, business services and their relationships.</li></ul>
+          <ul><li><code>discovery_about</code> hits <code>/api/about</code> unauthenticated for health/version; everything else goes through the versioned, token-authenticated API.</li><li>The discovered estate itself: hosts, software instances, network devices, containers, business services and the relationships Discovery maps between them.</li></ul>
         </div></div>
       </div>
 
@@ -466,6 +572,56 @@
       </div>
 
     </div>
+  </div>
+</section>
+
+<!-- ================= RENDERING ================= -->
+<section class="band" id="rendering">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Rendering &amp; token cost</div>
+      <h2>Why three graphics libraries — and what each one costs in tokens</h2>
+      <p class="lead">A picture lands better than a table, but every byte a model ingests is billed. Here's the honest breakdown: which library does what, which choices are validated, where a redundancy hides, and what each visual actually costs on Claude Sonnet 4.6.</p>
+    </div>
+
+    <div class="grid g4 reveal" style="margin-bottom:26px">
+      <div class="card hov"><div class="ic">🧲</div><h3>ForceAtlas2</h3><span class="verdict keep">✓ validated</span><p style="margin-top:10px">graphology, <b>server-side</b>. Positions nodes for the static PNG/SVG with no browser. Replaced Graphviz → pure-JS, no native binary, deterministic.</p></div>
+      <div class="card hov"><div class="ic">🖼️</div><h3>resvg</h3><span class="verdict keep">✓ validated</span><p style="margin-top:10px">@resvg/resvg-js (Rust). Rasterizes SVG→PNG with <b>no headless Chromium</b> — tiny, fast, container-friendly. Excellent fit.</p></div>
+      <div class="card hov"><div class="ic">🕸️</div><h3>Cytoscape</h3><span class="verdict keep">✓ earns its weight</span><p style="margin-top:10px"><b>Client-side</b> interactive mesh. Pan/zoom, neighbor spotlight, mini-map, search, legend, dark mode — all native. Re-deriving this in raw code would be hundreds of lines.</p></div>
+      <div class="card hov"><div class="ic">🌳</div><h3>D3</h3><span class="verdict watch">△ redundancy</span><p style="margin-top:10px"><b>Client-side</b> service tree (<code>d3.hierarchy</code>/<code>tree</code>). Prettier tree — but Cytoscape's <code>breadthfirst</code> layout already renders hierarchies, so two graph engines ship where one could do.</p></div>
+    </div>
+
+    <div class="note warn reveal" style="margin-bottom:30px"><span class="i">⚖️</span><div><b>The honest trade-off:</b> the static-layout (ForceAtlas2) and interactive-layout (Cytoscape) split is genuinely justified — the PNG needs server positions, the browser view needs a live layout. <b>D3 is the one true double-employment:</b> it only renders the service-architecture tree, which Cytoscape's <code>breadthfirst</code> layout could already cover. Keeping D3 buys a nicer tree at the cost of inlining a second graph engine (~280&nbsp;KB) on every <code>mode=service</code> response. A defensible call — but worth naming.</div></div>
+
+    <h3 class="reveal">Same answer, four shapes — because LLM clients don't render alike</h3>
+    <p class="reveal" style="color:var(--muted);max-width:74ch">This is exactly why the server emits a PNG <i>and</i> an SVG (and an HTML resource, and always text): no single representation renders everywhere, and the cost profile differs by client.</p>
+    <div class="tablewrap reveal" style="margin-top:14px">
+      <table class="matrix">
+        <thead><tr><th>Representation</th><th>Renders on…</th><th>Billed as</th><th>Why it exists</th></tr></thead>
+        <tbody>
+          <tr><td><b>PNG</b> (raster)</td><td>Vision/raster clients — most chat UIs (ChatGPT, Claude). They show images inline but <span class="no">can't</span> render raw SVG markup as a picture.</td><td>Image patches (28×28)</td><td>The universal inline visual. Default width 1200&nbsp;px.</td></tr>
+          <tr><td><b>SVG</b> (vector)</td><td>Clients that render/preview vectors. Crisp, scalable, sharper than PNG for simple charts.</td><td>Text tokens (XML length)</td><td>Cheaper &amp; sharper for simple charts; opt-out via <code>MCP_INCLUDE_SVG</code>.</td></tr>
+          <tr><td><b>HTML</b> (interactive)</td><td>Only <span class="ok">artifact-capable</span> clients (downloadable / openable resources). Full Cytoscape/D3 experience.</td><td>Text tokens (inlined lib)</td><td>The interactive map — meant to be <i>rendered</i>, not read by the model.</td></tr>
+          <tr><td><b>Text summary</b></td><td>Every client, always — including text-only / token-frugal deployments.</td><td>Text tokens (small)</td><td>The headline number is never lost. <code>MCP_DEFAULT_VISUAL=false</code> → text only.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="reveal" style="margin-top:36px">What each visual costs — Claude Sonnet 4.6</h3>
+    <p class="reveal" style="color:var(--muted);max-width:74ch">Sonnet 4.6 is <b>$3 / M input tokens</b>. Images aren't billed by pixels but by 28×28 patches: <code>⌈w/28⌉ × ⌈h/28⌉</code> tokens, capped at 1568 on Sonnet 4.6. The PNG is trivially cheap; the thing to watch is an inlined-library HTML resource if a client ingests it as context.</p>
+    <div class="tablewrap reveal" style="margin-top:14px">
+      <table class="matrix">
+        <thead><tr><th>Output</th><th>Size</th><th>Input tokens</th><th>Cost / call (Sonnet 4.6)</th></tr></thead>
+        <tbody>
+          <tr><td>PNG — topology graph</td><td>1200×760</td><td>~1,204</td><td class="cost">~$0.0036</td></tr>
+          <tr><td>PNG — KPI / status badge</td><td>~1200×400</td><td>~645</td><td class="cost">~$0.0019</td></tr>
+          <tr><td>SVG resource (no lib inlined)</td><td>~5–30 KB text</td><td>~1.3k–7.5k</td><td class="cost">~$0.004–0.02</td></tr>
+          <tr><td>HTML — D3 service tree <span class="verdict watch">if ingested</span></td><td>~280 KB inlined</td><td>~70,000</td><td class="cost">~$0.21</td></tr>
+          <tr><td>HTML — Cytoscape map <span class="verdict watch">if ingested</span></td><td>~1 MB inlined</td><td>~250,000</td><td class="cost">~$0.75</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note warn reveal" style="margin-top:18px"><span class="i">🔥</span><div><b>The token-burn signal to manage:</b> the PNG costs a fraction of a cent and works everywhere. The risk is the <b>interactive HTML resource</b> — the graph library is inlined (a deliberate "no-CDN" choice for offline / air-gapped / self-contained portability). If a client feeds that resource into the model as context, a single map call is ~250k tokens (~$0.75 on Sonnet 4.6). The tool description already says <i>"do not summarize the raw HTML — it is meant for rendering"</i>, and the per-deployment env flags (<code>MCP_DEFAULT_VISUAL</code>, <code>MCP_INCLUDE_SVG</code>) tune what's emitted. <span style="opacity:.85">Bundle sizes are published approximations — the figures scale with graph size.</span></div></div>
   </div>
 </section>
 
@@ -531,6 +687,62 @@
   </div>
 </section>
 
+<!-- ================= EXAMPLE OUTPUT ================= -->
+<section class="band" id="example">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Example output</div>
+      <h2>What an executive summary actually delivers</h2>
+      <p class="lead">A raw CVE query returns hundreds of rows no executive will read. <code>discovery_cve_executive_summary</code> collapses that into a decision-ready briefing — headline exposure, prioritized blast radius, and an offer to drill deeper only if needed. Here's the shape of that output, rendered as a dashboard.</p>
+    </div>
+
+    <div class="dash reveal">
+      <div class="dhead">
+        <div class="t">🛡️ CVE exposure briefing <span class="cve">CVE-2026-21982</span> <span class="sev">Critical · CVSS 9.8</span></div>
+        <span class="illustr">Illustrative</span>
+      </div>
+      <div class="kgrid">
+        <div class="kpi"><div class="v red">47</div><div class="l">Impacted assets</div></div>
+        <div class="kpi"><div class="v amber">6</div><div class="l">Business services hit</div></div>
+        <div class="kpi"><div class="v">38</div><div class="l">Hosts affected</div></div>
+        <div class="kpi"><div class="v">5</div><div class="l">Distinct versions</div></div>
+      </div>
+      <div class="cols">
+        <div class="col">
+          <h5>Top business services</h5>
+          <div class="bar"><div class="br"><span>Online Banking</span><b>14</b></div><div class="track"><i style="width:100%"></i></div></div>
+          <div class="bar"><div class="br"><span>Payments Gateway</span><b>11</b></div><div class="track"><i style="width:79%"></i></div></div>
+          <div class="bar"><div class="br"><span>Customer Portal</span><b>8</b></div><div class="track"><i style="width:57%"></i></div></div>
+          <div class="bar"><div class="br"><span>Fraud Scoring</span><b>6</b></div><div class="track"><i style="width:43%"></i></div></div>
+        </div>
+        <div class="col">
+          <h5>Most-affected hosts</h5>
+          <div class="bar"><div class="br"><span>PROD-APP-07</span><b>5 inst.</b></div><div class="track"><i style="width:100%"></i></div></div>
+          <div class="bar"><div class="br"><span>PROD-APP-03</span><b>4 inst.</b></div><div class="track"><i style="width:80%"></i></div></div>
+          <div class="bar"><div class="br"><span>DMZ-WEB-11</span><b>3 inst.</b></div><div class="track"><i style="width:60%"></i></div></div>
+          <div class="bar"><div class="br"><span>PROD-APP-12</span><b>2 inst.</b></div><div class="track"><i style="width:40%"></i></div></div>
+        </div>
+        <div class="col">
+          <h5>Vulnerable versions</h5>
+          <div class="bar"><div class="br"><span>2.14.1</span><b>19</b></div><div class="track"><i style="width:100%"></i></div></div>
+          <div class="bar"><div class="br"><span>2.13.0</span><b>12</b></div><div class="track"><i style="width:63%"></i></div></div>
+          <div class="bar"><div class="br"><span>2.12.2</span><b>9</b></div><div class="track"><i style="width:47%"></i></div></div>
+          <div class="bar"><div class="br"><span>2.11.0</span><b>7</b></div><div class="track"><i style="width:37%"></i></div></div>
+        </div>
+      </div>
+      <div class="foot"><span class="ic">▸</span><div><b>Headline:</b> 47 assets across 6 business services are exposed; concentration is in <b>Online Banking</b> and <b>Payments Gateway</b>, on hosts <b>PROD-APP-07/03</b>, driven by version <b>2.14.1</b>. CPEs were resolved automatically from the NVD. <i>Want the full asset inventory?</i> — the model offers <code>detail="full"</code> on request, so the heavy list is fetched only when someone actually needs it.</div></div>
+    </div>
+
+    <div class="grid g3 reveal" style="margin-top:26px">
+      <div class="card hov"><div class="ic">🎯</div><h3>From rows to a decision</h3><p>Hundreds of raw matches become one headline plus a ranked blast radius — the reader sees <i>what to patch first</i>, not a spreadsheet to triage.</p></div>
+      <div class="card hov"><div class="ic">🪙</div><h3>Token- and attention-frugal</h3><p>Summary first, full inventory only on demand (<code>detail="full"</code>). The expensive, exhaustive list is never paid for unless someone asks.</p></div>
+      <div class="card hov"><div class="ic">🔗</div><h3>Evidence, not vibes</h3><p>Every number traces to observed Discovery data; CPE targets come from the NVD — no guessed package names, no hand-written DSL.</p></div>
+    </div>
+
+    <div class="note warn reveal" style="margin-top:22px"><span class="i">🧪</span><div><b>This dashboard uses illustrative figures</b> — a Claude rendering of the tool's real output shape (<code>summary</code>, impacted-asset count, top services / hosts / versions), not live instance data. Drop in an actual <code>discovery_cve_executive_summary</code> export and the same layout reflects your estate verbatim. <span style="opacity:.85">(Labelled as a Claude analysis on exported Discovery data.)</span></div></div>
+  </div>
+</section>
+
 <!-- ================= TOOLS EXPLORER ================= -->
 <section class="band" id="tools">
   <div class="wrap">
@@ -575,7 +787,7 @@
     <div class="grid g3 reveal">
       <div class="card hov"><div class="ic">🔑</div><h3>No static secrets</h3><p>Nothing sensitive is committed. Configuration comes entirely from environment variables; OAuth replaces any static bearer to <code>/mcp</code>.</p></div>
       <div class="card hov"><div class="ic">🧽</div><h3>Secret redaction</h3><p>Keys like <code>token</code>, <code>password</code>, <code>authorization</code>, <code>api_key</code> are scrubbed from every error and log. The Discovery <code>Authorization</code> header is never echoed back.</p></div>
-      <div class="card hov"><div class="ic">👁️</div><h3>Read-only by default</h3><p>Tools are annotated <code>readOnlyHint</code> / <code>openWorldHint</code>. The server queries Discovery; it does not mutate the CMDB.</p></div>
+      <div class="card hov"><div class="ic">👁️</div><h3>Read-only by default</h3><p>Tools are annotated <code>readOnlyHint</code> / <code>openWorldHint</code>. The server queries Discovery; it never writes back to the estate.</p></div>
       <div class="card hov"><div class="ic">🚦</div><h3>Bounded &amp; timed</h3><p>1&nbsp;MB request-body cap, 30s outbound timeout, server-side result limits with pagination — the AI can't run away with the query.</p></div>
       <div class="card hov"><div class="ic">🌐</div><h3>Remote &amp; portable</h3><p>A single <code>node dist/index.js</code> listening on <code>$PORT</code>, mirrored <code>/api/*</code> routes, and a <code>/health</code> probe — runs on Emergent, Railway, or any container host.</p></div>
       <div class="card hov"><div class="ic">🎛️</div><h3>Tunable output</h3><p><code>MCP_DEFAULT_VISUAL</code> and <code>MCP_INCLUDE_SVG</code> trade richness for token cost — full visuals, PNG-only, or text-only for frugal LLM deployments.</p></div>
@@ -673,9 +885,9 @@ const TOOLS = [
     uc:'Get a CVE’s technical targets without manual data entry — feeds the exposure analysis.' },
 
   { name:'discovery_topology', dom:'dep',
-    desc:'Topology / dependencies around any object, in 4 modes. scope: size first (counts, no draw). summary: CMDB rollup. map: interactive graph (PNG+SVG+HTML). service: BusinessService tree.',
+    desc:'Topology / dependencies around any object, in 4 modes. scope: size first (counts, no draw). summary: inventory rollup. map: interactive graph (PNG+SVG+HTML). service: BusinessService tree.',
     in:['target: name|nodeId','targetKind (to disambiguate)','mode: scope|summary|map|service','depth / layout: hierarchical|concentric'],
-    out:['counts / CMDB rollup','interactive graph (PNG + SVG + self-contained HTML)','service→service tree'],
+    out:['counts / inventory rollup','interactive graph (PNG + SVG + self-contained HTML)','service→service tree'],
     uc:'Run mode=scope first to size, then mode=map. layout=hierarchical for architecture, concentric for blast-radius.' },
 
   { name:'discovery_find_orphans', dom:'gov',
