@@ -436,6 +436,11 @@
       </div>
 
       <div class="bizcase reveal">
+        <div class="q"><div class="who">🚨 Security Operations</div><blockquote>"Critical security incidents from unpatched software — and it takes us up to 6 months just to identify which VMs are vulnerable."</blockquote></div>
+        <div class="a"><div class="lab">How the server answers</div><p>The 6-month manual hunt collapses to one query: resolve the CVE to its CPE targets, then list every affected VM / host and the patch-compliance gaps — vulnerable assets pinpointed in seconds, not quarters, so remediation starts the same day.</p><div class="tools"><code>discovery_get_cve_cpes_from_nvd</code><code>discovery_cve_executive_summary</code><code>discovery_patch_compliance_report</code></div></div>
+      </div>
+
+      <div class="bizcase reveal">
         <div class="q"><div class="who">📉 IT Risk / Architecture</div><blockquote>"What software and operating systems are out of support — and what's already past end-of-life?"</blockquote></div>
         <div class="a"><div class="lab">How the server answers</div><p>A lifecycle report filtered by vendor/product (Microsoft, Oracle…) for software, or OS obsolescence straight from the hosts (EOS/EOSS/EOL dates), focused on at-risk items only.</p><div class="tools"><code>discovery_lifecycle_report</code></div></div>
       </div>
@@ -480,11 +485,11 @@
 
     <div class="stakes reveal">
       <div class="stake">
-        <div class="fig">~€150M</div>
-        <div class="unit">compliance exposure · top-5 publishers</div>
-        <h4>Software audit risk</h4>
-        <p>A Tier-1 European telecom operator quantified its software-compliance exposure across just its five largest publishers at roughly €150&nbsp;million — the gap between what it could prove it was entitled to and what auditors could claim.</p>
-        <span class="src">Anonymized operator estimate · illustrative order of magnitude</span>
+        <div class="fig">€120M</div>
+        <div class="unit">annual license spend · Top-5 vendors €100M</div>
+        <h4>Licensing &amp; compliance spend</h4>
+        <p>A Tier-1 European telecom operator spends ~€120&nbsp;million a year on software licenses — ~€100&nbsp;million on its five largest vendors alone — plus a ~€15&nbsp;million / year Microsoft compliance cost. A targeted rationalization aims at ~€4&nbsp;million / year in savings.</p>
+        <span class="src">Anonymized operator figures · order of magnitude</span>
       </div>
       <div class="stake">
         <div class="fig">whole farm</div>
@@ -576,7 +581,7 @@
             <p class="bsub">Any MCP-compatible host — connects with just a URL via OAuth 2.1.</p>
           </a>
         </div>
-        <div class="bconn"><span class="ar">→</span><small>asks in plain language</small></div>
+        <div class="bconn"><span class="ar">→</span><small>asks in plain language</small><span class="ar back">←</span><small>answers + visuals</small></div>
         <div class="bmcp">
           <div class="bbox mcp">
             <div class="bmcp-head"><span class="mdot"></span><a href="#layer-core" class="hlink" title="See the MCP-server-core layer below"><b>BMC Helix Discovery MCP</b></a><span class="btag">16 tools</span></div>
