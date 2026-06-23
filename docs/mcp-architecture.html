@@ -139,6 +139,48 @@
   .layer .tag{display:inline-block;font-size:.72rem;font-weight:700;color:#0a6f96;background:rgba(0,163,224,.12);padding:3px 9px;border-radius:999px;margin:2px 5px 2px 0}
   .archconn{height:14px;width:2px;background:linear-gradient(var(--bmc-orange),transparent);margin:-6px auto;border-radius:2px}
 
+  /* ---------- big-picture architecture diagram ---------- */
+  .bigarch{margin:0 0 46px}
+  .bigarch .blead{color:var(--muted);max-width:78ch;margin:0 0 22px}
+  .b3{display:flex;align-items:stretch;gap:0}
+  .b3 .bcol{flex:1;display:flex}
+  .b3 .bmcp{flex:2.2;display:flex}
+  .bconn{flex:0 0 52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:var(--bmc-orange)}
+  .bconn .ar{font-size:1.8rem;line-height:1;font-weight:700}
+  .bconn small{font-size:.62rem;color:var(--muted);text-align:center;line-height:1.15}
+  .bbox{flex:1;border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);background:#fff}
+  .bbox.navy{background:linear-gradient(160deg,var(--bmc-navy),var(--bmc-navy-2));color:#fff;border-color:transparent}
+  .bbox.mcp{border-top:4px solid var(--bmc-orange);display:flex;flex-direction:column}
+  .beye{font-size:.68rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--bmc-blue);margin-bottom:9px}
+  .bchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .bchips span{font-size:.78rem;font-weight:700;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;padding:4px 9px;border-radius:7px}
+  .bsub{font-size:.82rem;color:#c7d4ec;margin:0;line-height:1.45}
+  .bbox:not(.navy) .bsub{color:var(--muted)}
+  .bmcp-head{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+  .bmcp-head b{color:var(--bmc-navy);font-size:1.02rem}
+  .bmcp-head .mdot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--bmc-orange),var(--bmc-orange-soft));flex:none}
+  .bmcp-head .btag{margin-left:auto;font-size:.68rem;font-weight:800;background:rgba(254,80,0,.12);color:#b53a00;padding:3px 9px;border-radius:999px}
+  .bcaps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:520px){.bcaps{grid-template-columns:1fr}}
+  .bcap{background:#fbfcfe;border:1px solid var(--line);border-radius:11px;padding:11px 12px}
+  .bcap .ci{font-size:1.1rem}
+  .bcap b{display:block;color:var(--bmc-navy);font-size:.9rem;margin:3px 0 4px}
+  .bcap span{display:block;font-size:.76rem;color:var(--muted);line-height:1.4}
+  .bguard{margin-top:12px;font-size:.74rem;color:#0a6f96;background:rgba(0,163,224,.09);border:1px solid rgba(0,163,224,.22);border-radius:9px;padding:8px 11px;text-align:center;font-weight:600}
+  .bext{display:flex;flex-direction:column;gap:12px;flex:1}
+  .bext .bbox{flex:1}
+  .bext code{background:rgba(255,255,255,.12);color:#9bd6ff;padding:1px 5px;border-radius:5px;font-size:.85em}
+  .bval-conn{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--bmc-orange);margin:16px 0}
+  .bval-conn .ar{font-size:1.8rem;line-height:1;font-weight:700}
+  .bval-conn small{font-size:.66rem;color:var(--muted)}
+  .bval .bvpills{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+  .bval .bvpills span{font-size:.84rem;font-weight:700;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;padding:6px 12px;border-radius:9px}
+  @media(max-width:880px){
+    .b3{flex-direction:column}
+    .bconn{flex-direction:row;padding:8px 0}
+    .bconn .ar{transform:rotate(90deg)}
+  }
+
   /* ---------- tech choices accordion ---------- */
   .acc{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;box-shadow:var(--shadow)}
   .acc .row{border-top:1px solid var(--line)}
@@ -510,6 +552,52 @@
       <h2>Six layers, one request path</h2>
       <p class="lead">Click any layer to expand it. The whole stack is a single Node.js process — the React/FastAPI front- and back-ends were deliberately removed to keep one runtime, one deployment, one thing to secure.</p>
     </div>
+    <div class="bigarch reveal">
+      <p class="blead">The whole system on one page: a conversational AI calls the MCP; the MCP combines its own <b>resources</b> and a <b>graphical-modeling engine</b> with live connections to the <b>NVD</b> and <b>BMC Helix Discovery</b> — and turns all of it into decision-ready answers.</p>
+      <div class="b3">
+        <div class="bcol">
+          <div class="bbox navy">
+            <div class="beye">AI clients</div>
+            <div class="bchips"><span>ChatGPT</span><span>Claude</span><span>Mistral</span></div>
+            <p class="bsub">Any MCP-compatible host — connects with just a URL via OAuth 2.1.</p>
+          </div>
+        </div>
+        <div class="bconn"><span class="ar">→</span><small>asks in plain language</small></div>
+        <div class="bmcp">
+          <div class="bbox mcp">
+            <div class="bmcp-head"><span class="mdot"></span><b>BMC Helix Discovery MCP</b><span class="btag">16 tools</span></div>
+            <div class="bcaps">
+              <div class="bcap"><span class="ci">⚙️</span><b>Tools</b><span>inventory · CVE · lifecycle · compliance · licensing · cost · topology</span></div>
+              <div class="bcap"><span class="ci">📚</span><b>Resources</b><span>DSL cheat-sheet · IT-cost pricing (CSV) · relationships · taxonomy cache</span></div>
+              <div class="bcap"><span class="ci">🎨</span><b>Graphical modeling</b><span>ForceAtlas2 · Cytoscape · D3 · resvg → PNG / SVG / interactive HTML</span></div>
+              <div class="bcap"><span class="ci">🎬</span><b>Prompts</b><span>cve_impact · value_review · eol_audit · dependency_analysis</span></div>
+            </div>
+            <div class="bguard">🛡 Guard-rails — build_query → execute_dsl · taxonomy-verified · read-only</div>
+          </div>
+        </div>
+        <div class="bconn"><span class="ar">⇄</span><small>queries</small></div>
+        <div class="bcol">
+          <div class="bext">
+            <div class="bbox navy"><div class="beye">🛰 NVD</div><p class="bsub">Resolves a CVE to its CPE targets — no guessed package names.</p></div>
+            <div class="bbox navy"><div class="beye">🗺 BMC Helix Discovery</div><p class="bsub"><code>/api/&lt;ver&gt;/data/search</code> · taxonomy · the discovered estate — hosts, software, services, dependencies.</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="bval-conn"><span class="ar">↓</span><small>decision-ready answers + visuals</small></div>
+      <div class="bbox navy bval">
+        <div class="beye">Value delivered</div>
+        <div class="bvpills">
+          <span>📉 EOL &amp; DORA audit</span>
+          <span>🛡 CVE exposure</span>
+          <span>💰 License optimization</span>
+          <span>📊 Cloud cost / Value Review</span>
+          <span>🕸 Dependency &amp; blast-radius maps</span>
+          <span>🧹 Rationalization</span>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="reveal" style="margin-bottom:18px">Layer by layer</h3>
     <div class="arch reveal">
 
       <div class="layer" onclick="this.classList.toggle('open')">
