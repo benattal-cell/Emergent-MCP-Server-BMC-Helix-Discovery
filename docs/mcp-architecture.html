@@ -226,6 +226,25 @@
   .ducase b{display:block;color:var(--bmc-navy);font-size:.98rem}
   .ducase .dq{display:block;font-size:.84rem;color:var(--muted);margin:4px 0 9px}
 
+  /* ---------- interactive service map (Cytoscape) ---------- */
+  .svcmap-wrap{position:relative;border:1px solid #22324f;border-radius:16px;overflow:hidden;box-shadow:var(--shadow-lg);background:#0c1838}
+  #svcmap{width:100%;height:540px}
+  @media(max-width:640px){#svcmap{height:440px}}
+  .svc-toolbar{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:8px;flex-wrap:wrap;z-index:5}
+  .svc-toolbar button{font:inherit;font-size:.82rem;font-weight:600;color:#e6edf6;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);border-radius:8px;padding:6px 11px;cursor:pointer}
+  .svc-toolbar button:hover{background:rgba(255,255,255,.16)}
+  .svc-toolbar button.on{background:var(--bmc-orange);border-color:var(--bmc-orange);color:#fff}
+  .svc-legend{position:absolute;left:12px;bottom:12px;z-index:5;background:rgba(12,24,56,.92);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:11px 13px;font-size:.8rem;color:#e6edf6;max-width:240px}
+  .svc-legend h5{margin:0 0 8px;color:#fff;font-size:.74rem;text-transform:uppercase;letter-spacing:.06em}
+  .svc-legend .lr{display:flex;align-items:center;gap:9px;margin:5px 0}
+  .svc-legend .sw{width:16px;height:16px;border-radius:4px;flex:none}
+  .svc-legend .ring{width:14px;height:14px;border-radius:50%;border:3px solid #ff4d4d;flex:none}
+  .svc-tip{position:fixed;z-index:60;pointer-events:none;display:none;background:#101a2e;border:1px solid #2b3d5e;border-radius:8px;padding:8px 11px;font-size:.78rem;color:#e6edf6;box-shadow:0 8px 22px rgba(0,0,0,.5);max-width:280px}
+  .svc-tip .k{color:#8b97ad;text-transform:uppercase;font-size:.64rem;letter-spacing:.06em}
+  .svc-tip .n{font-weight:700;margin-top:1px}
+  .svc-tip .o{color:#ff9b9b;margin-top:4px}
+  .svc-fallback{display:none;padding:48px 24px;color:#aebfe0;text-align:center;font-size:.92rem}
+
   /* ---------- matrix table ---------- */
   .matrix{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);font-size:.9rem}
   .matrix th,.matrix td{padding:13px 15px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
@@ -293,6 +312,7 @@
       <a href="#rendering">Rendering &amp; cost</a>
       <a href="#primitives">MCP I/O</a>
       <a href="#example">Example output</a>
+      <a href="#servicemap">Service map</a>
       <a href="#tools">Tools</a>
       <a href="#workflows">Workflows</a>
       <a href="#security">Security</a>
@@ -763,6 +783,120 @@
     <div class="note reveal" style="margin-top:22px"><span class="i">✅</span><div><b>This is live data</b> from a BMC Helix Discovery instance, produced by <code>discovery_lifecycle_report</code> and <code>discovery_os_lifecycle_report</code> (June 2026) and rendered by Claude from the tool output. The totals, at-risk counts and fleet split are exact; the worst-offender lists cite real End-of-Support dates from the returned rows.</div></div>
   </div>
 </section>
+
+<!-- ================= SERVICE MAP (INTERACTIVE) ================= -->
+<section class="band alt" id="servicemap">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Example output · interactive</div>
+      <h2>Service → Host map, obsolete CIs ringed in red</h2>
+      <p class="lead">Same live instance, now visualized: the <b>Service Management</b> business service, the BMC Remedy / Atrium software that delivers it, and the Windows hosts underneath. Every CI past End-of-Support is <span style="color:#c01616;font-weight:700">circled in red</span>. <b>Drag</b> to pan, <b>scroll</b> to zoom, <b>click</b> a node to spotlight its neighbours, <b>hover</b> for the EOS/EOL date. This is the kind of artifact <code>discovery_dependency_map</code> returns — here re-rendered with an obsolescence overlay.</p>
+    </div>
+    <div class="svcmap-wrap reveal">
+      <div class="svc-toolbar">
+        <button id="svc-fit">⤢ Fit</button>
+        <button id="svc-obs" class="on">🔴 Highlight obsolete</button>
+        <button id="svc-layout">⇄ Layout: hierarchical</button>
+      </div>
+      <div id="svcmap"></div>
+      <div class="svc-fallback" id="svc-fallback">This interactive graph loads the Cytoscape library from a CDN. You appear to be offline — reopen the file with an internet connection to explore it. <br><span style="opacity:.7">(In production the MCP server inlines the library so its graphs work fully offline / air-gapped.)</span></div>
+      <div class="svc-legend">
+        <h5>Legend</h5>
+        <div class="lr"><span class="sw" style="background:#00a3e0"></span>BusinessService</div>
+        <div class="lr"><span class="sw" style="background:#6b4bd6"></span>SoftwareInstance</div>
+        <div class="lr"><span class="sw" style="background:#0a6f96"></span>Host</div>
+        <div class="lr"><span class="ring"></span>Past End-of-Support</div>
+      </div>
+    </div>
+    <div class="svc-tip" id="svc-tip"><div class="k"></div><div class="n"></div><div class="o"></div></div>
+    <div class="note warn reveal" style="margin-top:20px"><span class="i">🔴</span><div><b>Every CI under this service is obsolete.</b> The Remedy / Atrium stack (BMC, EOL 2021) runs on Windows Server 2008 R2 hosts (EOS Jan 2015) — a fully unsupported critical service, and exactly the blast-radius DORA wants surfaced. <span style="opacity:.85">Software-on-host edges are real (from the lifecycle rows); the Service→software grouping is the ITSM membership. Node names and EOS/EOL dates are live Discovery data.</span></div></div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+<script>
+(function(){
+  const host = document.getElementById('svcmap');
+  if (typeof cytoscape === 'undefined') { document.getElementById('svc-fallback').style.display='block'; if(host) host.style.display='none'; return; }
+  const KIND = { service:'#00a3e0', software:'#6b4bd6', host:'#0a6f96' };
+  const N = [
+    {id:'svc',kind:'service',label:'Service Management',sub:'BusinessService',obsolete:false},
+    {id:'sw1',kind:'software',label:'Remedy AR System Server 18.08',sub:'BMC · EOL 2021-08-31',obsolete:true},
+    {id:'sw2',kind:'software',label:'Atrium CMDB 18.08',sub:'BMC · EOL 2021-08-31',obsolete:true},
+    {id:'sw3',kind:'software',label:'Remedy AR Mid Tier 18.08',sub:'BMC · EOL 2021-08-31',obsolete:true},
+    {id:'sw4',kind:'software',label:'Atrium Integrator 18.08',sub:'BMC · EOL 2021-08-31',obsolete:true},
+    {id:'sw5',kind:'software',label:'Remedy SSO 18.11',sub:'BMC · EOL 2021-11-29',obsolete:true},
+    {id:'h1',kind:'host',label:'onbmc',sub:'Windows Server 2008 R2 · EOS 2015-01-13',obsolete:true},
+    {id:'h2',kind:'host',label:'onbmc-s',sub:'Windows Server 2008 R2 · EOS 2015-01-13',obsolete:true},
+    {id:'h3',kind:'host',label:'clm-ais-007439',sub:'Windows Server 2008 R2 · EOS 2015-01-13',obsolete:true},
+    {id:'h4',kind:'host',label:'clm-ais-007441',sub:'Windows Server 2008 R2 · EOS 2015-01-13',obsolete:true}
+  ];
+  const E = [['svc','sw1'],['svc','sw2'],['svc','sw3'],['svc','sw4'],['svc','sw5'],
+             ['sw1','h2'],['sw1','h3'],['sw1','h4'],['sw2','h2'],['sw2','h3'],['sw2','h4'],
+             ['sw3','h1'],['sw4','h2'],['sw5','h1']];
+  const elements = [
+    ...N.map(n => ({ data:{ ...n, color: KIND[n.kind] }, classes: n.obsolete ? 'obs ringon' : '' })),
+    ...E.map((e,i) => ({ data:{ id:'e'+i, source:e[0], target:e[1] } }))
+  ];
+  const cy = cytoscape({
+    container: host,
+    elements,
+    minZoom:0.3, maxZoom:2.5,
+    style:[
+      { selector:'node', style:{
+        'background-color':'data(color)','label':'data(label)','color':'#e6edf6','font-size':10,
+        'text-valign':'bottom','text-margin-y':6,'text-wrap':'wrap','text-max-width':'130px',
+        'width':34,'height':34,'border-width':2,'border-color':'#0c1838' } },
+      { selector:'node[kind="service"]', style:{ 'width':56,'height':56,'shape':'round-rectangle','font-size':12,'font-weight':'bold' } },
+      { selector:'node[kind="host"]', style:{ 'shape':'round-rectangle' } },
+      { selector:'node.obs.ringon', style:{ 'border-width':4,'border-color':'#ff4d4d' } },
+      { selector:'edge', style:{ 'width':1.4,'line-color':'#3a4a66','target-arrow-color':'#3a4a66',
+        'target-arrow-shape':'triangle','arrow-scale':0.85,'curve-style':'bezier','opacity':0.85 } },
+      { selector:'.dim', style:{ 'opacity':0.12,'text-opacity':0.12 } },
+      { selector:'.hit', style:{ 'border-width':4,'border-color':'#ffce6b' } }
+    ],
+    layout:{ name:'breadthfirst', directed:true, padding:34, spacingFactor:1.35, roots:'#svc', animate:false }
+  });
+
+  /* hover tooltip */
+  const tip = document.getElementById('svc-tip');
+  cy.on('mouseover','node', (ev) => {
+    const d = ev.target.data();
+    tip.querySelector('.k').textContent = d.kind;
+    tip.querySelector('.n').textContent = d.label;
+    tip.querySelector('.o').textContent = d.obsolete ? '⚠ ' + d.sub : d.sub;
+    tip.querySelector('.o').style.color = d.obsolete ? '#ff9b9b' : '#8b97ad';
+    tip.style.display = 'block';
+  });
+  cy.on('mouseout','node', () => { tip.style.display='none'; });
+  document.addEventListener('mousemove', (e) => {
+    if (tip.style.display==='block'){ tip.style.left=(e.clientX+14)+'px'; tip.style.top=(e.clientY+14)+'px'; }
+  });
+
+  /* click to spotlight neighbours */
+  let pinned=null;
+  cy.on('tap','node', (ev) => {
+    const n=ev.target;
+    if (pinned && pinned.id()===n.id()){ cy.elements().removeClass('dim hit'); pinned=null; return; }
+    pinned=n;
+    cy.batch(() => { cy.elements().addClass('dim'); const c=n.closedNeighborhood(); c.removeClass('dim'); n.addClass('hit'); });
+  });
+  cy.on('tap', (ev) => { if (ev.target===cy){ cy.elements().removeClass('dim hit'); pinned=null; } });
+
+  /* controls */
+  document.getElementById('svc-fit').onclick = () => cy.fit(undefined,40);
+  const obsBtn = document.getElementById('svc-obs');
+  obsBtn.onclick = () => { const on=obsBtn.classList.toggle('on'); cy.$('.obs').toggleClass('ringon', on); };
+  let hier=true;
+  const layBtn = document.getElementById('svc-layout');
+  layBtn.onclick = () => {
+    hier=!hier;
+    layBtn.textContent = '⇄ Layout: ' + (hier?'hierarchical':'force');
+    cy.layout(hier ? { name:'breadthfirst', directed:true, padding:34, spacingFactor:1.35, roots:'#svc', animate:true, animationDuration:300 }
+                   : { name:'cose', padding:34, animate:true, animationDuration:400, nodeRepulsion:9000, idealEdgeLength:95 }).run();
+  };
+})();
+</script>
 
 <!-- ================= TOOLS EXPLORER ================= -->
 <section class="band" id="tools">
