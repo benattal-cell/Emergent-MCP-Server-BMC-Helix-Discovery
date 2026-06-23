@@ -713,53 +713,54 @@
     <div class="sec-head reveal">
       <div class="kicker">Example output</div>
       <h2>What an executive summary actually delivers</h2>
-      <p class="lead">A raw CVE query returns hundreds of rows no executive will read. <code>discovery_cve_executive_summary</code> collapses that into a decision-ready briefing — headline exposure, prioritized blast radius, and an offer to drill deeper only if needed. Here's the shape of that output, rendered as a dashboard.</p>
+      <p class="lead">A raw lifecycle query returns 1,453 software rows and 455 hosts no executive will read. The lifecycle tools collapse that into a decision-ready briefing — headline exposure and a prioritized worst-offender list. Below is a <b>real</b> run against a BMC Helix Discovery instance, rendered as a dashboard.</p>
     </div>
 
     <div class="dash reveal">
       <div class="dhead">
-        <div class="t">🛡️ CVE exposure briefing <span class="cve">CVE-2026-21982</span> <span class="sev">Critical · CVSS 9.8</span></div>
-        <span class="illustr">Illustrative</span>
+        <div class="t">📉 Obsolescence exec summary — software &amp; OS end-of-support</div>
+        <span class="illustr" style="background:#7fe0b0;color:#0c1838">● Live Discovery data</span>
       </div>
       <div class="kgrid">
-        <div class="kpi"><div class="v red">47</div><div class="l">Impacted assets</div></div>
-        <div class="kpi"><div class="v amber">6</div><div class="l">Business services hit</div></div>
-        <div class="kpi"><div class="v">38</div><div class="l">Hosts affected</div></div>
-        <div class="kpi"><div class="v">5</div><div class="l">Distinct versions</div></div>
+        <div class="kpi"><div class="v">1,453</div><div class="l">Software instances tracked</div></div>
+        <div class="kpi"><div class="v red">1,439</div><div class="l">Software at risk · 99%</div></div>
+        <div class="kpi"><div class="v">455</div><div class="l">Hosts assessed</div></div>
+        <div class="kpi"><div class="v red">403</div><div class="l">Hosts past End-of-Support · 89%</div></div>
       </div>
       <div class="cols">
         <div class="col">
-          <h5>Top business services</h5>
-          <div class="bar"><div class="br"><span>Online Banking</span><b>14</b></div><div class="track"><i style="width:100%"></i></div></div>
-          <div class="bar"><div class="br"><span>Payments Gateway</span><b>11</b></div><div class="track"><i style="width:79%"></i></div></div>
-          <div class="bar"><div class="br"><span>Customer Portal</span><b>8</b></div><div class="track"><i style="width:57%"></i></div></div>
-          <div class="bar"><div class="br"><span>Fraud Scoring</span><b>6</b></div><div class="track"><i style="width:43%"></i></div></div>
+          <h5>OS fleet status · 455 hosts</h5>
+          <div class="bar"><div class="br"><span>Past End-of-Support</span><b>403</b></div><div class="track"><i style="width:100%"></i></div></div>
+          <div class="bar"><div class="br"><span>EOS within 182 days</span><b>52</b></div><div class="track"><i style="width:13%;background:linear-gradient(90deg,#d98a00,#ffce6b)"></i></div></div>
+          <div class="bar"><div class="br"><span>Still in support</span><b>0</b></div><div class="track"><i style="width:1.5%;background:#3a4a66"></i></div></div>
         </div>
         <div class="col">
-          <h5>Most-affected hosts</h5>
-          <div class="bar"><div class="br"><span>PROD-APP-07</span><b>5 inst.</b></div><div class="track"><i style="width:100%"></i></div></div>
-          <div class="bar"><div class="br"><span>PROD-APP-03</span><b>4 inst.</b></div><div class="track"><i style="width:80%"></i></div></div>
-          <div class="bar"><div class="br"><span>DMZ-WEB-11</span><b>3 inst.</b></div><div class="track"><i style="width:60%"></i></div></div>
-          <div class="bar"><div class="br"><span>PROD-APP-12</span><b>2 inst.</b></div><div class="track"><i style="width:40%"></i></div></div>
+          <h5>Most-exposed OS · real EOS dates</h5>
+          <div class="bar"><div class="br"><span>Windows Server 2008 R2</span><b>EOS 2015</b></div></div>
+          <div class="bar"><div class="br"><span>Windows Server 2012 / R2</span><b>EOS 2018</b></div></div>
+          <div class="bar"><div class="br"><span>RHEL 5 / 6</span><b>2017 / 2020</b></div></div>
+          <div class="bar"><div class="br"><span>Oracle Solaris 10</span><b>EOS 2018</b></div></div>
+          <div class="bar"><div class="br"><span>IBM AIX 6.1 · HP-UX 11.11</span><b>2017 / 2022</b></div></div>
         </div>
         <div class="col">
-          <h5>Vulnerable versions</h5>
-          <div class="bar"><div class="br"><span>2.14.1</span><b>19</b></div><div class="track"><i style="width:100%"></i></div></div>
-          <div class="bar"><div class="br"><span>2.13.0</span><b>12</b></div><div class="track"><i style="width:63%"></i></div></div>
-          <div class="bar"><div class="br"><span>2.12.2</span><b>9</b></div><div class="track"><i style="width:47%"></i></div></div>
-          <div class="bar"><div class="br"><span>2.11.0</span><b>7</b></div><div class="track"><i style="width:37%"></i></div></div>
+          <h5>Most-exposed software · real EOS dates</h5>
+          <div class="bar"><div class="br"><span>Oracle Database 11g R2</span><b>EOS 2015</b></div></div>
+          <div class="bar"><div class="br"><span>Apache Tomcat 7.0</span><b>EOS 2021</b></div></div>
+          <div class="bar"><div class="br"><span>Microsoft Exchange 2013</span><b>EOS 2018</b></div></div>
+          <div class="bar"><div class="br"><span>IBM DB2 11.1</span><b>EOS 2022</b></div></div>
+          <div class="bar"><div class="br"><span>VMware vCenter 6.7</span><b>EOS 2022</b></div></div>
         </div>
       </div>
-      <div class="foot"><span class="ic">▸</span><div><b>Headline:</b> 47 assets across 6 business services are exposed; concentration is in <b>Online Banking</b> and <b>Payments Gateway</b>, on hosts <b>PROD-APP-07/03</b>, driven by version <b>2.14.1</b>. CPEs were resolved automatically from the NVD. <i>Want the full asset inventory?</i> — the model offers <code>detail="full"</code> on request, so the heavy list is fetched only when someone actually needs it.</div></div>
+      <div class="foot"><span class="ic">▸</span><div><b>Headline:</b> 1,439 of 1,453 software instances (99%) and 403 of 455 hosts (89%) are already past a support date — the estate is effectively unsupported end-to-end, much of it years beyond even <i>extended</i> support (risk label <code>EOES&nbsp;Exceeded</code>). Worst offenders: Windows Server 2008&nbsp;R2 / 2012&nbsp;R2, Oracle DB&nbsp;11g, Apache Tomcat&nbsp;7, plus legacy Solaris / AIX / HP-UX. Under DORA, this is a documented operational-resilience gap.</div></div>
     </div>
 
     <div class="grid g3 reveal" style="margin-top:26px">
-      <div class="card hov"><div class="ic">🎯</div><h3>From rows to a decision</h3><p>Hundreds of raw matches become one headline plus a ranked blast radius — the reader sees <i>what to patch first</i>, not a spreadsheet to triage.</p></div>
-      <div class="card hov"><div class="ic">🪙</div><h3>Token- and attention-frugal</h3><p>Summary first, full inventory only on demand (<code>detail="full"</code>). The expensive, exhaustive list is never paid for unless someone asks.</p></div>
-      <div class="card hov"><div class="ic">🔗</div><h3>Evidence, not vibes</h3><p>Every number traces to observed Discovery data; CPE targets come from the NVD — no guessed package names, no hand-written DSL.</p></div>
+      <div class="card hov"><div class="ic">🎯</div><h3>From rows to a decision</h3><p>1,453 software rows and 455 hosts become four numbers and a ranked worst-offender list — the reader sees <i>what to remediate first</i>, not a spreadsheet to triage.</p></div>
+      <div class="card hov"><div class="ic">🪙</div><h3>Token- and attention-frugal</h3><p>The summary card travels light; the full 1,453-row list stays server-side behind <code>MCP_RESULT_LIMIT</code> + pagination, fetched only when someone drills in.</p></div>
+      <div class="card hov"><div class="ic">🔗</div><h3>Evidence, not vibes</h3><p>Every number traces to observed Discovery data — real EOS/EOL dates from each node's SupportDetail. No guessed versions, no hand-written DSL.</p></div>
     </div>
 
-    <div class="note warn reveal" style="margin-top:22px"><span class="i">🧪</span><div><b>This dashboard uses illustrative figures</b> — a Claude rendering of the tool's real output shape (<code>summary</code>, impacted-asset count, top services / hosts / versions), not live instance data. Drop in an actual <code>discovery_cve_executive_summary</code> export and the same layout reflects your estate verbatim. <span style="opacity:.85">(Labelled as a Claude analysis on exported Discovery data.)</span></div></div>
+    <div class="note reveal" style="margin-top:22px"><span class="i">✅</span><div><b>This is live data</b> from a BMC Helix Discovery instance, produced by <code>discovery_lifecycle_report</code> and <code>discovery_os_lifecycle_report</code> (June 2026) and rendered by Claude from the tool output. The totals, at-risk counts and fleet split are exact; the worst-offender lists cite real End-of-Support dates from the returned rows.</div></div>
   </div>
 </section>
 
