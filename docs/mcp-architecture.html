@@ -627,20 +627,20 @@
     </div>
 
     <h3 class="reveal" style="margin-top:36px">What each visual costs — frontier vs cheap model</h3>
-    <p class="reveal" style="color:var(--muted);max-width:78ch"><b>Claude Sonnet 4.6</b> bills input at <b>$3 / M tokens</b>; a cheap model like <b>OpenAI GPT-5 mini</b> bills <b>$0.25 / M</b> — ~12× less, same token counts. Images aren't billed by pixels: Claude uses 28×28 patches (<code>⌈w/28⌉ × ⌈h/28⌉</code>, capped 1568 on Sonnet 4.6); OpenAI tiles differently, so the PNG rows below are order-of-magnitude. The text rows (SVG, HTML) are exact and directly comparable.</p>
+    <p class="reveal" style="color:var(--muted);max-width:80ch"><b>Claude Sonnet 4.6</b> bills input at <b>$3 / M tokens</b>; mid-tier <b>Mistral Medium 3</b> at <b>$0.40 / M</b>; cheap <b>OpenAI GPT-5 mini</b> at <b>$0.25 / M</b> — same token counts, ~7.5× and ~12× less. Images aren't billed by pixels: Claude uses 28×28 patches (<code>⌈w/28⌉ × ⌈h/28⌉</code>, capped 1568 on Sonnet 4.6); other vendors tile differently, so the PNG rows below are order-of-magnitude. The text rows (SVG, HTML) are exact and directly comparable.</p>
     <div class="tablewrap reveal" style="margin-top:14px">
       <table class="matrix">
-        <thead><tr><th>Output</th><th>Size</th><th>Input tokens</th><th>Sonnet 4.6 · $3/M</th><th>GPT-5 mini · $0.25/M</th></tr></thead>
+        <thead><tr><th>Output</th><th>Size</th><th>Input tokens</th><th>Sonnet 4.6 · $3/M</th><th>Mistral Medium 3 · $0.40/M</th><th>GPT-5 mini · $0.25/M</th></tr></thead>
         <tbody>
-          <tr><td>PNG — topology graph</td><td>1200×760</td><td>~1,204</td><td class="cost">~$0.0036</td><td class="cost">~$0.0003*</td></tr>
-          <tr><td>PNG — KPI / status badge</td><td>~1200×400</td><td>~645</td><td class="cost">~$0.0019</td><td class="cost">~$0.0002*</td></tr>
-          <tr><td>SVG resource (no lib inlined)</td><td>~5–30 KB text</td><td>~1.3k–7.5k</td><td class="cost">~$0.004–0.02</td><td class="cost">~$0.0003–0.002</td></tr>
-          <tr><td>HTML — D3 service tree <span class="verdict watch">if ingested</span></td><td>~280 KB inlined</td><td>~70,000</td><td class="cost">~$0.21</td><td class="cost">~$0.018</td></tr>
-          <tr><td>HTML — Cytoscape map <span class="verdict watch">if ingested</span></td><td>~1 MB inlined</td><td>~250,000</td><td class="cost">~$0.75</td><td class="cost">~$0.063</td></tr>
+          <tr><td>PNG — topology graph</td><td>1200×760</td><td>~1,204</td><td class="cost">~$0.0036</td><td class="cost">~$0.0005*</td><td class="cost">~$0.0003*</td></tr>
+          <tr><td>PNG — KPI / status badge</td><td>~1200×400</td><td>~645</td><td class="cost">~$0.0019</td><td class="cost">~$0.0003*</td><td class="cost">~$0.0002*</td></tr>
+          <tr><td>SVG resource (no lib inlined)</td><td>~5–30 KB text</td><td>~1.3k–7.5k</td><td class="cost">~$0.004–0.02</td><td class="cost">~$0.0005–0.003</td><td class="cost">~$0.0003–0.002</td></tr>
+          <tr><td>HTML — D3 service tree <span class="verdict watch">if ingested</span></td><td>~280 KB inlined</td><td>~70,000</td><td class="cost">~$0.21</td><td class="cost">~$0.028</td><td class="cost">~$0.018</td></tr>
+          <tr><td>HTML — Cytoscape map <span class="verdict watch">if ingested</span></td><td>~1 MB inlined</td><td>~250,000</td><td class="cost">~$0.75</td><td class="cost">~$0.10</td><td class="cost">~$0.063</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="reveal" style="color:var(--muted);font-size:.82rem;margin-top:8px">* PNG rows are order-of-magnitude — OpenAI tiles images differently from Claude's 28×28 patches. Text rows are exact. GPT-5 mini pricing: <a href="https://openai.com/api/pricing/" target="_blank" rel="noopener">openai.com/api/pricing</a>.</p>
+    <p class="reveal" style="color:var(--muted);font-size:.82rem;margin-top:8px">* PNG rows are order-of-magnitude — vendors tile images differently from Claude's 28×28 patches. Text rows are exact. Pricing: <a href="https://openai.com/api/pricing/" target="_blank" rel="noopener">OpenAI</a> · <a href="https://mistral.ai/pricing/" target="_blank" rel="noopener">Mistral</a>.</p>
     <div class="note warn reveal" style="margin-top:18px"><span class="i">🔥</span><div><b>The token-burn signal to manage:</b> the PNG costs a fraction of a cent and works everywhere. The risk is the <b>interactive HTML resource</b> — the graph library is inlined (a deliberate "no-CDN" choice for offline / air-gapped / self-contained portability). If a client feeds that resource into the model as context, a single map call is ~250k tokens — ~$0.75 on Sonnet 4.6, and still ~$0.06 even on a cheap model like GPT-5 mini (so the fix is to not ingest it, not to switch model). The tool description already says <i>"do not summarize the raw HTML — it is meant for rendering"</i>, and the per-deployment env flags (<code>MCP_DEFAULT_VISUAL</code>, <code>MCP_INCLUDE_SVG</code>) tune what's emitted. <span style="opacity:.85">Bundle sizes are published approximations — the figures scale with graph size.</span></div></div>
   </div>
 </section>
