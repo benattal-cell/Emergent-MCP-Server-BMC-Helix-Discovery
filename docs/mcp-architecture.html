@@ -222,6 +222,9 @@
   .stake h4{color:#fff;margin:14px 0 6px;font-size:1.05rem}
   .stake p{color:#aebfe0;font-size:.88rem;margin:0}
   .stake .src{display:block;margin-top:10px;font-size:.72rem;color:#7f8db0}
+  .ducase{border:1px solid var(--line);border-radius:11px;padding:13px 15px;background:#fbfcfe}
+  .ducase b{display:block;color:var(--bmc-navy);font-size:.98rem}
+  .ducase .dq{display:block;font-size:.84rem;color:var(--muted);margin:4px 0 9px}
 
   /* ---------- matrix table ---------- */
   .matrix{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);font-size:.9rem}
@@ -425,6 +428,22 @@
         <div class="ic">📅</div><h3>Obsolescence is now a regulator's question</h3>
         <p style="color:var(--muted);font-size:.95rem">DORA mandates that financial entities <b>know and manage their ICT estate</b>. A fleet running end-of-life OS and software is a documented resilience gap — and 2026 is when supervisors move from dialogue to penalties. An on-demand, evidence-backed end-of-life inventory turns a multi-week audit scramble into a single question.</p>
         <p style="margin-top:12px"><span class="pill">discovery_lifecycle_report</span><span class="pill">discovery_patch_compliance_report</span></p>
+      </div>
+    </div>
+
+    <div class="card reveal" style="margin-top:24px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+        <div class="ic" style="margin-bottom:0">🇪🇺</div>
+        <h3 style="margin:0">DORA-aligned use cases the server answers on demand</h3>
+      </div>
+      <p style="color:var(--muted);font-size:.93rem;margin-bottom:14px">DORA's ICT-risk-management pillar rests on <b>knowing and mapping your estate</b>. Each requirement below maps to a question the MCP can answer with evidence — turning a multi-week audit scramble into a single tool call.</p>
+      <div class="grid g2" style="gap:12px">
+        <div class="ducase"><b>Know your ICT estate</b><span class="dq">Maintain an up-to-date inventory of ICT assets and software.</span><span class="pill">discovery_find</span><span class="pill">discovery_taxonomy</span></div>
+        <div class="ducase"><b>Eliminate unsupported technology</b><span class="dq">Surface end-of-life software &amp; OS — a documented resilience gap.</span><span class="pill">discovery_lifecycle_report</span><span class="pill">discovery_os_lifecycle_report</span></div>
+        <div class="ducase"><b>Vulnerability &amp; patch posture</b><span class="dq">Threat-led exposure and timely remediation evidence.</span><span class="pill">discovery_cve_executive_summary</span><span class="pill">discovery_patch_compliance_report</span></div>
+        <div class="ducase"><b>Map critical functions to assets</b><span class="dq">Which ICT assets support each critical/important business function.</span><span class="pill">discovery_topology</span><span class="pill q">mode=service</span></div>
+        <div class="ducase"><b>Concentration &amp; single-point-of-failure</b><span class="dq">Blast-radius and unused/isolated assets that concentrate risk.</span><span class="pill">discovery_topology</span><span class="pill">discovery_find_orphans</span></div>
+        <div class="ducase"><b>Licensing &amp; sourcing exposure</b><span class="dq">Quantify the cost/compliance exposure tied to the estate.</span><span class="pill">discovery_windows_license_report</span><span class="pill">discovery_cost</span></div>
       </div>
     </div>
 
