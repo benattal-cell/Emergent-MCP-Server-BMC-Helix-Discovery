@@ -45,17 +45,18 @@
     position:sticky;top:0;z-index:50;background:rgba(11,23,51,.92);
     backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid rgba(255,255,255,.08);
   }
-  .topbar .wrap{display:flex;align-items:center;gap:18px;height:62px}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:700;color:#fff;white-space:nowrap}
+  .topbar .wrap{display:flex;align-items:center;gap:14px;height:60px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;color:#fff;white-space:nowrap;flex:none}
   .brand .dot{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--bmc-orange),var(--bmc-orange-soft));box-shadow:0 4px 14px rgba(254,80,0,.5)}
   .brand small{display:block;font-weight:500;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--bmc-blue)}
-  nav.links{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
-  nav.links a{color:#c7d4ec;font-size:.82rem;padding:7px 11px;border-radius:8px;font-weight:600}
+  nav.links{display:flex;gap:2px;margin-left:auto;flex-wrap:nowrap;overflow-x:auto;min-width:0;scrollbar-width:none;-ms-overflow-style:none}
+  nav.links::-webkit-scrollbar{display:none}
+  nav.links a{color:#c7d4ec;font-size:.8rem;padding:7px 9px;border-radius:8px;font-weight:600;white-space:nowrap}
   nav.links a:hover{background:rgba(255,255,255,.08);color:#fff;text-decoration:none}
   nav.links a.active{background:var(--bmc-orange);color:#fff}
   .navtoggle{display:none;margin-left:auto;background:none;border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:8px 10px;font-size:1rem;cursor:pointer}
-  @media(max-width:900px){
-    nav.links{display:none;position:absolute;top:62px;left:0;right:0;background:var(--bmc-navy);flex-direction:column;padding:10px 22px;border-bottom:1px solid rgba(255,255,255,.1)}
+  @media(max-width:1024px){
+    nav.links{display:none;position:absolute;top:60px;left:0;right:0;background:var(--bmc-navy);flex-direction:column;padding:10px 22px;border-bottom:1px solid rgba(255,255,255,.1);overflow-x:visible}
     nav.links.open{display:flex}
     .navtoggle{display:block}
   }
@@ -313,13 +314,13 @@
     <button class="navtoggle" aria-label="Menu" onclick="document.getElementById('nav').classList.toggle('open')">☰</button>
     <nav class="links" id="nav">
       <a href="#why">Why</a>
-      <a href="#business">Business cases</a>
-      <a href="#stakes">What's at stake</a>
+      <a href="#business">Business</a>
+      <a href="#stakes">Stakes</a>
       <a href="#architecture">Architecture</a>
-      <a href="#stack">Tech choices</a>
-      <a href="#rendering">Rendering &amp; cost</a>
+      <a href="#stack">Tech</a>
+      <a href="#rendering">Rendering</a>
       <a href="#primitives">MCP I/O</a>
-      <a href="#example">Example output</a>
+      <a href="#example">Example</a>
       <a href="#servicemap">Service map</a>
       <a href="#tools">Tools</a>
       <a href="#workflows">Workflows</a>
