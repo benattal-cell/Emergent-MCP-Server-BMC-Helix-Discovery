@@ -245,6 +245,14 @@
   .svc-tip .o{color:#ff9b9b;margin-top:4px}
   .svc-fallback{display:none;padding:48px 24px;color:#aebfe0;text-align:center;font-size:.92rem}
 
+  /* ---------- "try it yourself" prompts ---------- */
+  .prompts .ph{font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--bmc-orange);margin-bottom:9px;display:flex;align-items:center;gap:7px}
+  .pbubble{display:flex;gap:11px;align-items:flex-start;background:#0e1b33;border:1px solid #22324f;border-radius:12px;padding:12px 14px;margin-bottom:9px}
+  .pbubble .you{flex:none;width:26px;height:26px;border-radius:50%;background:var(--bmc-orange);color:#fff;display:grid;place-items:center;font-size:.66rem;font-weight:800}
+  .pbubble p{margin:0;color:#dbe6fb;font-size:.93rem;line-height:1.5}
+  .pbubble .tw{display:block;margin-top:7px;font-size:.78rem;color:#8b97ad}
+  .pbubble code{background:rgba(255,255,255,.09);color:#9bd6ff;padding:1px 6px;border-radius:5px;font-size:.82em}
+
   /* ---------- matrix table ---------- */
   .matrix{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);font-size:.9rem}
   .matrix th,.matrix td{padding:13px 15px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
@@ -774,6 +782,12 @@
       <div class="foot"><span class="ic">▸</span><div><b>Headline:</b> 1,439 of 1,453 software instances (99%) and 403 of 455 hosts (89%) are already past a support date — the estate is effectively unsupported end-to-end, much of it years beyond even <i>extended</i> support (risk label <code>EOES&nbsp;Exceeded</code>). Worst offenders: Windows Server 2008&nbsp;R2 / 2012&nbsp;R2, Oracle DB&nbsp;11g, Apache Tomcat&nbsp;7, plus legacy Solaris / AIX / HP-UX. Under DORA, this is a documented operational-resilience gap.</div></div>
     </div>
 
+    <div class="prompts reveal" style="margin-top:20px">
+      <div class="ph">💬 Try it yourself — what anyone types</div>
+      <div class="pbubble"><span class="you">You</span><p>“Give me an executive summary of our obsolescence — how much software and how many operating systems are already past end-of-support?”<span class="tw">→ the AI auto-selects <code>discovery_lifecycle_report</code> + <code>discovery_os_lifecycle_report</code> and quotes the headline counts (1,439 / 1,453 software, 403 / 455 hosts).</span></p></div>
+      <div class="pbubble"><span class="you">You</span><p>“Focus on what's already beyond <i>extended</i> support, worst first.”<span class="tw">→ same tools with <code>onlyAtRisk=true</code>; the AI narrates the <code>EOES&nbsp;Exceeded</code> items with their real EOS/EOL dates.</span></p></div>
+    </div>
+
     <div class="grid g3 reveal" style="margin-top:26px">
       <div class="card hov"><div class="ic">🎯</div><h3>From rows to a decision</h3><p>1,453 software rows and 455 hosts become four numbers and a ranked worst-offender list — the reader sees <i>what to remediate first</i>, not a spreadsheet to triage.</p></div>
       <div class="card hov"><div class="ic">🪙</div><h3>Token- and attention-frugal</h3><p>The summary card travels light; the full 1,453-row list stays server-side behind <code>MCP_RESULT_LIMIT</code> + pagination, fetched only when someone drills in.</p></div>
@@ -809,6 +823,12 @@
       </div>
     </div>
     <div class="svc-tip" id="svc-tip"><div class="k"></div><div class="n"></div><div class="o"></div></div>
+    <div class="prompts reveal" style="margin-top:18px">
+      <div class="ph">💬 Try it yourself — what anyone types</div>
+      <div class="pbubble"><span class="you">You</span><p>“Map the <b>Service Management</b> service down to its hosts, and circle every CI that's end-of-life.”<span class="tw">→ the AI runs <code>discovery_dependency_map</code> (Service→Host) and overlays obsolescence from <code>discovery_lifecycle_report</code>.</span></p></div>
+      <div class="pbubble"><span class="you">You</span><p>“Use a hierarchical layout and give me the interactive version I can open in a browser.”<span class="tw">→ <code>layout='hierarchical'</code>; the AI hands back the self-contained interactive HTML artifact.</span></p></div>
+    </div>
+
     <div class="note warn reveal" style="margin-top:20px"><span class="i">🔴</span><div><b>Every CI under this service is obsolete.</b> The Remedy / Atrium stack (BMC, EOL 2021) runs on Windows Server 2008 R2 hosts (EOS Jan 2015) — a fully unsupported critical service, and exactly the blast-radius DORA wants surfaced. <span style="opacity:.85">Software-on-host edges are real (from the lifecycle rows); the Service→software grouping is the ITSM membership. Node names and EOS/EOL dates are live Discovery data.</span></div></div>
   </div>
 </section>
