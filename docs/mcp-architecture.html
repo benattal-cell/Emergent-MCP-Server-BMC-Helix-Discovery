@@ -133,6 +133,11 @@
   .layer.open .chev{transform:rotate(90deg)}
   .layer .lbody{max-height:0;overflow:hidden;transition:max-height .3s ease;border-top:0 solid var(--line)}
   .layer.open .lbody{max-height:600px;border-top:1px solid var(--line)}
+  .layer{scroll-margin-top:84px}
+  .layer:target{border-color:var(--bmc-orange);box-shadow:0 0 0 2px rgba(254,80,0,.25),var(--shadow)}
+  .layer:target .chev{transform:rotate(90deg)}
+  .layer:target .lbody{max-height:600px;border-top:1px solid var(--line)}
+  section[id]{scroll-margin-top:64px}
   .layer .lbody .inner{padding:18px 20px;background:#fbfcfe}
   .layer .lbody ul{margin:0;padding-left:18px;color:var(--muted);font-size:.92rem}
   .layer .lbody ul li{margin:.3em 0}
@@ -175,6 +180,14 @@
   .bval-conn small{font-size:.66rem;color:var(--muted)}
   .bval .bvpills{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
   .bval .bvpills span{font-size:.84rem;font-weight:700;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;padding:6px 12px;border-radius:9px}
+  .blink{text-decoration:none;color:inherit;cursor:pointer;position:relative;transition:transform .15s ease,box-shadow .15s ease,border-color .15s}
+  .blink:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);text-decoration:none}
+  .blink .go{position:absolute;top:9px;right:11px;font-size:.82rem;opacity:.45;transition:opacity .15s}
+  .blink:hover .go{opacity:1}
+  .bcap.blink:hover{border-color:var(--bmc-orange)}
+  .bmcp-head .hlink{text-decoration:none;color:inherit}
+  .bmcp-head .hlink:hover b{color:var(--bmc-orange)}
+  .bconn .ar.back{color:var(--bmc-blue)}
   @media(max-width:880px){
     .b3{flex-direction:column}
     .bconn{flex-direction:row;padding:8px 0}
@@ -556,30 +569,31 @@
       <p class="blead">The whole system on one page: a conversational AI calls the MCP; the MCP combines its own <b>resources</b> and a <b>graphical-modeling engine</b> with live connections to the <b>NVD</b> and <b>BMC Helix Discovery</b> — and turns all of it into decision-ready answers.</p>
       <div class="b3">
         <div class="bcol">
-          <div class="bbox navy">
+          <a href="#layer-client" class="bbox navy blink" title="See the AI-client layer below">
+            <span class="go">↗</span>
             <div class="beye">AI clients</div>
             <div class="bchips"><span>ChatGPT</span><span>Claude</span><span>Mistral</span></div>
             <p class="bsub">Any MCP-compatible host — connects with just a URL via OAuth 2.1.</p>
-          </div>
+          </a>
         </div>
         <div class="bconn"><span class="ar">→</span><small>asks in plain language</small></div>
         <div class="bmcp">
           <div class="bbox mcp">
-            <div class="bmcp-head"><span class="mdot"></span><b>BMC Helix Discovery MCP</b><span class="btag">16 tools</span></div>
+            <div class="bmcp-head"><span class="mdot"></span><a href="#layer-core" class="hlink" title="See the MCP-server-core layer below"><b>BMC Helix Discovery MCP</b></a><span class="btag">16 tools</span></div>
             <div class="bcaps">
-              <div class="bcap"><span class="ci">⚙️</span><b>Tools</b><span>inventory · CVE · lifecycle · compliance · licensing · cost · topology</span></div>
-              <div class="bcap"><span class="ci">📚</span><b>Resources</b><span>DSL cheat-sheet · IT-cost pricing (CSV) · relationships · taxonomy cache</span></div>
-              <div class="bcap"><span class="ci">🎨</span><b>Graphical modeling</b><span>ForceAtlas2 · Cytoscape · D3 · resvg → PNG / SVG / interactive HTML</span></div>
-              <div class="bcap"><span class="ci">🎬</span><b>Prompts</b><span>cve_impact · value_review · eol_audit · dependency_analysis</span></div>
+              <a href="#tools" class="bcap blink" title="Jump to the tool explorer"><span class="go">↗</span><span class="ci">⚙️</span><b>Tools</b><span>inventory · CVE · lifecycle · compliance · licensing · cost · topology</span></a>
+              <a href="#primitives" class="bcap blink" title="Jump to MCP I/O — Resources"><span class="go">↗</span><span class="ci">📚</span><b>Resources</b><span>DSL cheat-sheet · IT-cost pricing (CSV) · relationships · taxonomy cache</span></a>
+              <a href="#rendering" class="bcap blink" title="Jump to Rendering &amp; cost"><span class="go">↗</span><span class="ci">🎨</span><b>Graphical modeling</b><span>ForceAtlas2 · Cytoscape · D3 · resvg → PNG / SVG / interactive HTML</span></a>
+              <a href="#workflows" class="bcap blink" title="Jump to Guided workflows"><span class="go">↗</span><span class="ci">🎬</span><b>Prompts</b><span>cve_impact · value_review · eol_audit · dependency_analysis</span></a>
             </div>
             <div class="bguard">🛡 Guard-rails — build_query → execute_dsl · taxonomy-verified · read-only</div>
           </div>
         </div>
-        <div class="bconn"><span class="ar">⇄</span><small>queries</small></div>
+        <div class="bconn"><span class="ar">→</span><small>queries</small><span class="ar back">←</span><small>data enriches the answer</small></div>
         <div class="bcol">
           <div class="bext">
-            <div class="bbox navy"><div class="beye">🛰 NVD</div><p class="bsub">Resolves a CVE to its CPE targets — no guessed package names.</p></div>
-            <div class="bbox navy"><div class="beye">🗺 BMC Helix Discovery</div><p class="bsub"><code>/api/&lt;ver&gt;/data/search</code> · taxonomy · the discovered estate — hosts, software, services, dependencies.</p></div>
+            <a href="#tools" class="bbox navy blink" title="Jump to the CVE tools"><span class="go">↗</span><div class="beye">🛰 NVD</div><p class="bsub">Resolves a CVE to its CPE targets — no guessed package names.</p></a>
+            <a href="#layer-discovery" class="bbox navy blink" title="See the BMC Helix Discovery layer below"><span class="go">↗</span><div class="beye">🗺 BMC Helix Discovery</div><p class="bsub"><code>/api/&lt;ver&gt;/data/search</code> · taxonomy · the discovered estate — hosts, software, services, dependencies.</p></a>
           </div>
         </div>
       </div>
@@ -600,7 +614,7 @@
     <h3 class="reveal" style="margin-bottom:18px">Layer by layer</h3>
     <div class="arch reveal">
 
-      <div class="layer" onclick="this.classList.toggle('open')">
+      <div class="layer" id="layer-client" onclick="this.classList.toggle('open')">
         <div class="lhead"><div class="lnum">1</div><div><div class="ltitle">AI client</div><div class="lsub">ChatGPT · Claude · Mistral — any MCP-compatible host</div></div><div class="chev">›</div></div>
         <div class="lbody"><div class="inner">
           <span class="tag">natural language</span><span class="tag">tools/list</span><span class="tag">tool calls (JSON-RPC)</span>
@@ -618,7 +632,7 @@
       </div>
       <div class="archconn"></div>
 
-      <div class="layer" onclick="this.classList.toggle('open')">
+      <div class="layer" id="layer-core" onclick="this.classList.toggle('open')">
         <div class="lhead"><div class="lnum">3</div><div><div class="ltitle">MCP server core</div><div class="lsub">@modelcontextprotocol/sdk · McpServer</div></div><div class="chev">›</div></div>
         <div class="lbody"><div class="inner">
           <span class="tag">16 Tools</span><span class="tag">Resources</span><span class="tag">Prompts</span><span class="tag">instructions</span>
@@ -645,7 +659,7 @@
       </div>
       <div class="archconn"></div>
 
-      <div class="layer" onclick="this.classList.toggle('open')">
+      <div class="layer" id="layer-discovery" onclick="this.classList.toggle('open')">
         <div class="lhead"><div class="lnum">6</div><div><div class="ltitle">BMC Helix Discovery</div><div class="lsub">REST API · <code>/api/&lt;version&gt;</code> (default v1.18)</div></div><div class="chev">›</div></div>
         <div class="lbody"><div class="inner">
           <span class="tag">data/search</span><span class="tag">taxonomy</span><span class="tag">about</span>
