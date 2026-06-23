@@ -55,6 +55,9 @@
   nav.links a:hover{background:rgba(255,255,255,.08);color:#fff;text-decoration:none}
   nav.links a.active{background:var(--bmc-orange);color:#fff}
   .navtoggle{display:none;margin-left:auto;background:none;border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:8px 10px;font-size:1rem;cursor:pointer}
+  .langsel{display:flex;flex:none;border:1px solid rgba(255,255,255,.22);border-radius:8px;overflow:hidden;margin-left:8px}
+  .langsel button{background:none;border:0;color:#c7d4ec;font:inherit;font-size:.74rem;font-weight:800;letter-spacing:.03em;padding:6px 9px;cursor:pointer}
+  .langsel button.on{background:var(--bmc-orange);color:#fff}
   @media(max-width:1024px){
     nav.links{display:none;position:absolute;top:60px;left:0;right:0;background:var(--bmc-navy);flex-direction:column;padding:10px 22px;border-bottom:1px solid rgba(255,255,255,.1);overflow-x:visible}
     nav.links.open{display:flex}
@@ -365,21 +368,22 @@
 
 <header class="topbar">
   <div class="wrap">
-    <div class="brand"><span class="dot"></span><div>BMC Helix Discovery&nbsp;MCP<small>Architecture &amp; Design</small></div></div>
+    <div class="brand"><span class="dot"></span><div>BMC Helix Discovery&nbsp;MCP<small data-fr="Architecture &amp; Conception">Architecture &amp; Design</small></div></div>
+    <div class="langsel" aria-label="Language"><button data-lang="en" class="on">EN</button><button data-lang="fr">FR</button></div>
     <button class="navtoggle" aria-label="Menu" onclick="document.getElementById('nav').classList.toggle('open')">☰</button>
     <nav class="links" id="nav">
-      <a href="#why">Why</a>
-      <a href="#business">Business</a>
-      <a href="#stakes">Stakes</a>
-      <a href="#architecture">Architecture</a>
-      <a href="#stack">Tech</a>
-      <a href="#rendering">Rendering</a>
-      <a href="#primitives">MCP I/O</a>
-      <a href="#example">Example</a>
-      <a href="#servicemap">Service map</a>
-      <a href="#tools">Tools</a>
-      <a href="#workflows">Workflows</a>
-      <a href="#security">Security</a>
+      <a href="#why" data-fr="Pourquoi">Why</a>
+      <a href="#business" data-fr="Métier">Business</a>
+      <a href="#stakes" data-fr="Enjeux">Stakes</a>
+      <a href="#architecture" data-fr="Architecture">Architecture</a>
+      <a href="#stack" data-fr="Tech">Tech</a>
+      <a href="#rendering" data-fr="Rendu">Rendering</a>
+      <a href="#primitives" data-fr="E/S MCP">MCP I/O</a>
+      <a href="#example" data-fr="Exemple">Example</a>
+      <a href="#servicemap" data-fr="Carte service">Service map</a>
+      <a href="#tools" data-fr="Outils">Tools</a>
+      <a href="#workflows" data-fr="Workflows">Workflows</a>
+      <a href="#security" data-fr="Sécurité">Security</a>
     </nav>
   </div>
 </header>
@@ -388,17 +392,17 @@
 <section class="hero">
   <div class="wrap">
     <span class="eyebrow">● Model Context Protocol · v0.4.0 · Node.js + TypeScript</span>
-    <h1>Turn your <span>discovered estate</span> into answers anyone can ask for.</h1>
-    <p class="lede">A remote MCP server that lets conversational AI (ChatGPT, Claude, Mistral) query <b>BMC Helix Discovery</b> in plain language — vulnerabilities, obsolescence, compliance, licensing, cloud cost cases and dependency maps — without anyone writing a line of Discovery DSL.</p>
+    <h1 data-fr="Transformez votre <span>parc découvert</span> en réponses accessibles à tous.">Turn your <span>discovered estate</span> into answers anyone can ask for.</h1>
+    <p class="lede" data-fr="Un serveur MCP distant qui permet à une IA conversationnelle (ChatGPT, Claude, Mistral) d'interroger <b>BMC Helix Discovery</b> en langage naturel — vulnérabilités, obsolescence, conformité, licences, cas de coûts cloud et cartes de dépendances — sans que personne n'écrive une ligne de DSL Discovery.">A remote MCP server that lets conversational AI (ChatGPT, Claude, Mistral) query <b>BMC Helix Discovery</b> in plain language — vulnerabilities, obsolescence, compliance, licensing, cloud cost cases and dependency maps — without anyone writing a line of Discovery DSL.</p>
     <div class="cta">
-      <a class="btn primary" href="#business">Start with the business case →</a>
-      <a class="btn ghost" href="#architecture">Jump to architecture</a>
+      <a class="btn primary" href="#business" data-fr="Commencer par le cas métier →">Start with the business case →</a>
+      <a class="btn ghost" href="#architecture" data-fr="Aller à l'architecture">Jump to architecture</a>
     </div>
     <div class="heroStats">
-      <div class="s"><b>16</b><span>MCP tools across 8 domains</span></div>
-      <div class="s"><b>4</b><span>Guided workflow prompts</span></div>
-      <div class="s"><b>3</b><span>MCP primitives wired (Tools · Resources · Prompts)</span></div>
-      <div class="s"><b>0</b><span>Static secrets · OAuth 2.1 only</span></div>
+      <div class="s"><b>16</b><span data-fr="outils MCP · 8 domaines">MCP tools across 8 domains</span></div>
+      <div class="s"><b>4</b><span data-fr="prompts de workflow guidés">Guided workflow prompts</span></div>
+      <div class="s"><b>3</b><span data-fr="primitives MCP câblées (Tools · Resources · Prompts)">MCP primitives wired (Tools · Resources · Prompts)</span></div>
+      <div class="s"><b>0</b><span data-fr="secret statique · OAuth 2.1 uniquement">Static secrets · OAuth 2.1 only</span></div>
     </div>
   </div>
 </section>
@@ -407,16 +411,16 @@
 <section class="band" id="why">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="kicker">The problem</div>
-      <h2>The data already exists. The answers are locked behind expertise.</h2>
-      <p class="lead">BMC Helix Discovery continuously maps every host, software instance, network device, container and business service in the estate — a goldmine for security, audit, finance and architecture teams. But extracting an answer means writing <b>Discovery DSL</b>, knowing the exact node kinds and traversal paths, and reading raw query output. In practice, every question becomes a ticket to a small group of specialists.</p>
+      <div class="kicker" data-fr="Le problème">The problem</div>
+      <h2 data-fr="La donnée existe déjà. Les réponses sont verrouillées derrière l'expertise.">The data already exists. The answers are locked behind expertise.</h2>
+      <p class="lead" data-fr="BMC Helix Discovery cartographie en continu chaque hôte, instance logicielle, équipement réseau, conteneur et service métier du parc — une mine d'or pour les équipes sécurité, audit, finance et architecture. Mais en extraire une réponse suppose d'écrire du <b>DSL Discovery</b>, de connaître les classes de nœuds et les chemins de traversée exacts, et de lire la sortie brute. En pratique, chaque question devient un ticket adressé à un petit groupe de spécialistes.">BMC Helix Discovery continuously maps every host, software instance, network device, container and business service in the estate — a goldmine for security, audit, finance and architecture teams. But extracting an answer means writing <b>Discovery DSL</b>, knowing the exact node kinds and traversal paths, and reading raw query output. In practice, every question becomes a ticket to a small group of specialists.</p>
     </div>
     <div class="grid g3">
-      <div class="card hov reveal"><div class="ic">🔒</div><h3>Knowledge bottleneck</h3><p>Only a handful of people can write the DSL. Business stakeholders wait days for a number that already exists in the database.</p></div>
-      <div class="card hov reveal"><div class="ic">🧩</div><h3>Wrong-tool / hallucination risk</h3><p>Hand an LLM raw database access and it invents node kinds and relationships that don't exist, returning confident but wrong answers.</p></div>
-      <div class="card hov reveal"><div class="ic">⏱️</div><h3>Decisions can't wait</h3><p>A new CVE drops, an audit lands, a cloud-migration business case is due. These need answers <i>now</i>, in natural language, with evidence.</p></div>
+      <div class="card hov reveal"><div class="ic">🔒</div><h3 data-fr="Goulot d'expertise">Knowledge bottleneck</h3><p data-fr="Seule une poignée de personnes sait écrire le DSL. Les métiers attendent des jours pour un chiffre qui existe déjà en base.">Only a handful of people can write the DSL. Business stakeholders wait days for a number that already exists in the database.</p></div>
+      <div class="card hov reveal"><div class="ic">🧩</div><h3 data-fr="Risque de mauvais outil / hallucination">Wrong-tool / hallucination risk</h3><p data-fr="Donnez à un LLM un accès brut à la base et il invente des classes de nœuds et des relations qui n'existent pas — des réponses sûres d'elles mais fausses.">Hand an LLM raw database access and it invents node kinds and relationships that don't exist, returning confident but wrong answers.</p></div>
+      <div class="card hov reveal"><div class="ic">⏱️</div><h3 data-fr="Les décisions n'attendent pas">Decisions can't wait</h3><p data-fr="Un nouveau CVE tombe, un audit arrive, un dossier de migration cloud est attendu. Il faut des réponses <i>maintenant</i>, en langage naturel, avec des preuves.">A new CVE drops, an audit lands, a cloud-migration business case is due. These need answers <i>now</i>, in natural language, with evidence.</p></div>
     </div>
-    <div class="note reveal" style="margin-top:24px"><span class="i">💡</span><div><b>The design bet:</b> wrap Discovery behind the Model Context Protocol with <b>opinionated, guard-railed tools</b> — so any compliant AI client can answer business questions safely, and the AI is steered away from improvising bad queries.</div></div>
+    <div class="note reveal" style="margin-top:24px"><span class="i">💡</span><div data-fr="<b>Le pari de conception :</b> envelopper Discovery derrière le Model Context Protocol avec des <b>outils opinionés et garde-fous</b> — pour que tout client IA conforme réponde aux questions métier en toute sûreté, et que l'IA soit empêchée d'improviser de mauvaises requêtes."><b>The design bet:</b> wrap Discovery behind the Model Context Protocol with <b>opinionated, guard-railed tools</b> — so any compliant AI client can answer business questions safely, and the AI is steered away from improvising bad queries.</div></div>
   </div>
 </section>
 
@@ -424,50 +428,50 @@
 <section class="band alt" id="business">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="kicker">Business cases first</div>
-      <h2>The questions that drove every design decision</h2>
-      <p class="lead">Each tool exists because a real stakeholder asked a real question. These are the conversations the server is built to answer — start here, the architecture follows from them.</p>
+      <div class="kicker" data-fr="Les cas métier d'abord">Business cases first</div>
+      <h2 data-fr="Les questions qui ont guidé chaque choix de conception">The questions that drove every design decision</h2>
+      <p class="lead" data-fr="Chaque outil existe parce qu'une partie prenante réelle a posé une vraie question. Ce sont les conversations que le serveur est conçu pour résoudre — commencez ici, l'architecture en découle.">Each tool exists because a real stakeholder asked a real question. These are the conversations the server is built to answer — start here, the architecture follows from them.</p>
     </div>
     <div class="grid" style="gap:18px">
 
       <div class="bizcase reveal">
-        <div class="q"><div class="who">🛡️ CISO / Security</div><blockquote>"A critical CVE just dropped. Are we exposed, and exactly where?"</blockquote></div>
-        <div class="a"><div class="lab">How the server answers</div><p>An executive exposure briefing — impacted asset count, top business services / hosts / versions — with CPE targets pulled automatically from the NVD, then a full inventory on demand.</p><div class="tools"><code>discovery_cve_executive_summary</code><code>discovery_get_cve_cpes_from_nvd</code></div></div>
+        <div class="q"><div class="who" data-fr="🛡️ RSSI / Sécurité">🛡️ CISO / Security</div><blockquote data-fr="&quot;Un CVE critique vient de tomber. Sommes-nous exposés, et exactement où ?&quot;">"A critical CVE just dropped. Are we exposed, and exactly where?"</blockquote></div>
+        <div class="a"><div class="lab" data-fr="Comment le serveur répond">How the server answers</div><p data-fr="Une fiche d'exposition pour dirigeants — nombre d'actifs impactés, top services métier / hôtes / versions — avec les CPE récupérés automatiquement depuis le NVD, puis l'inventaire complet à la demande.">An executive exposure briefing — impacted asset count, top business services / hosts / versions — with CPE targets pulled automatically from the NVD, then a full inventory on demand.</p><div class="tools"><code>discovery_cve_executive_summary</code><code>discovery_get_cve_cpes_from_nvd</code></div></div>
       </div>
 
       <div class="bizcase reveal">
-        <div class="q"><div class="who">🚨 Security Operations</div><blockquote>"Critical security incidents from unpatched software — and it takes us up to 6 months just to identify which VMs are vulnerable."</blockquote></div>
-        <div class="a"><div class="lab">How the server answers</div><p>The 6-month manual hunt collapses to one query: resolve the CVE to its CPE targets, then list every affected VM / host and the patch-compliance gaps — vulnerable assets pinpointed in seconds, not quarters, so remediation starts the same day.</p><div class="tools"><code>discovery_get_cve_cpes_from_nvd</code><code>discovery_cve_executive_summary</code><code>discovery_patch_compliance_report</code></div></div>
+        <div class="q"><div class="who" data-fr="🚨 Opérations de sécurité">🚨 Security Operations</div><blockquote data-fr="&quot;Des incidents de sécurité critiques dus à des logiciels non patchés — et il nous faut jusqu'à 6 mois rien que pour identifier quelles VM sont vulnérables.&quot;">"Critical security incidents from unpatched software — and it takes us up to 6 months just to identify which VMs are vulnerable."</blockquote></div>
+        <div class="a"><div class="lab" data-fr="Comment le serveur répond">How the server answers</div><p data-fr="La chasse manuelle de 6 mois se réduit à une requête : résoudre le CVE en cibles CPE, puis lister chaque VM / hôte affecté et les écarts de conformité de patch — actifs vulnérables localisés en secondes, pas en trimestres, pour démarrer la remédiation le jour même.">The 6-month manual hunt collapses to one query: resolve the CVE to its CPE targets, then list every affected VM / host and the patch-compliance gaps — vulnerable assets pinpointed in seconds, not quarters, so remediation starts the same day.</p><div class="tools"><code>discovery_get_cve_cpes_from_nvd</code><code>discovery_cve_executive_summary</code><code>discovery_patch_compliance_report</code></div></div>
       </div>
 
       <div class="bizcase reveal">
-        <div class="q"><div class="who">📉 IT Risk / Architecture</div><blockquote>"What software and operating systems are out of support — and what's already past end-of-life?"</blockquote></div>
-        <div class="a"><div class="lab">How the server answers</div><p>A lifecycle report filtered by vendor/product (Microsoft, Oracle…) for software, or OS obsolescence straight from the hosts (EOS/EOSS/EOL dates), focused on at-risk items only.</p><div class="tools"><code>discovery_lifecycle_report</code></div></div>
+        <div class="q"><div class="who" data-fr="📉 Risque IT / Architecture">📉 IT Risk / Architecture</div><blockquote data-fr="&quot;Quels logiciels et systèmes d'exploitation sont hors support — et lesquels sont déjà en fin de vie ?&quot;">"What software and operating systems are out of support — and what's already past end-of-life?"</blockquote></div>
+        <div class="a"><div class="lab" data-fr="Comment le serveur répond">How the server answers</div><p data-fr="Un rapport de cycle de vie filtré par éditeur/produit (Microsoft, Oracle…) pour les logiciels, ou l'obsolescence OS directement depuis les hôtes (dates EOS/EOSS/EOL), focalisé sur les éléments à risque uniquement.">A lifecycle report filtered by vendor/product (Microsoft, Oracle…) for software, or OS obsolescence straight from the hosts (EOS/EOSS/EOL dates), focused on at-risk items only.</p><div class="tools"><code>discovery_lifecycle_report</code></div></div>
       </div>
 
       <div class="bizcase reveal">
-        <div class="q"><div class="who">📋 Audit / Compliance</div><blockquote>"Which Windows servers are missing these critical KB patches?"</blockquote></div>
-        <div class="a"><div class="lab">How the server answers</div><p>KB patch compliance across virtual and bare-metal Windows hosts, with "missing all / any" logic and optional targeting of hosts running a specific software.</p><div class="tools"><code>discovery_patch_compliance_report</code></div></div>
+        <div class="q"><div class="who" data-fr="📋 Audit / Conformité">📋 Audit / Compliance</div><blockquote data-fr="&quot;Quels serveurs Windows n'ont pas ces correctifs KB critiques ?&quot;">"Which Windows servers are missing these critical KB patches?"</blockquote></div>
+        <div class="a"><div class="lab" data-fr="Comment le serveur répond">How the server answers</div><p data-fr="Conformité des correctifs KB sur les hôtes Windows virtuels et physiques, avec une logique « manque tous / au moins un » et un ciblage optionnel des hôtes exécutant un logiciel précis.">KB patch compliance across virtual and bare-metal Windows hosts, with "missing all / any" logic and optional targeting of hosts running a specific software.</p><div class="tools"><code>discovery_patch_compliance_report</code></div></div>
       </div>
 
       <div class="bizcase reveal">
-        <div class="q"><div class="who">💰 FinOps / Sourcing</div><blockquote>"Are we over-licensing Windows Server? And what would moving service 'Apex' to Azure save us?"</blockquote></div>
-        <div class="a"><div class="lab">How the server answers</div><p>Windows licensing modelled per physical host (Standard vs Datacenter) with ranked savings; plus a Value Review that prices a <b>real</b> fleet from Discovery and compares on-prem vs Azure/AWS/GCP.</p><div class="tools"><code>discovery_windows_license_report</code><code>discovery_cost</code></div></div>
+        <div class="q"><div class="who" data-fr="💰 FinOps / Achats">💰 FinOps / Sourcing</div><blockquote data-fr="&quot;Sur-licencie-t-on Windows Server ? Et que ferait-on économiser en migrant le service 'Apex' vers Azure ?&quot;">"Are we over-licensing Windows Server? And what would moving service 'Apex' to Azure save us?"</blockquote></div>
+        <div class="a"><div class="lab" data-fr="Comment le serveur répond">How the server answers</div><p data-fr="Licences Windows modélisées par hôte physique (Standard vs Datacenter) avec économies classées ; plus une Value Review qui chiffre un parc <b>réel</b> depuis Discovery et compare on-prem vs Azure/AWS/GCP.">Windows licensing modelled per physical host (Standard vs Datacenter) with ranked savings; plus a Value Review that prices a <b>real</b> fleet from Discovery and compares on-prem vs Azure/AWS/GCP.</p><div class="tools"><code>discovery_windows_license_report</code><code>discovery_cost</code></div></div>
       </div>
 
       <div class="bizcase reveal">
-        <div class="q"><div class="who">🔧 Change / Operations</div><blockquote>"If this host fails, what breaks? Show me the service's architecture."</blockquote></div>
-        <div class="a"><div class="lab">How the server answers</div><p>Topology around any object — size it first, then draw an interactive dependency graph (hierarchical for architecture, concentric for blast-radius), or walk the business-service tree.</p><div class="tools"><code>discovery_topology</code></div></div>
+        <div class="q"><div class="who" data-fr="🔧 Change / Exploitation">🔧 Change / Operations</div><blockquote data-fr="&quot;Si cet hôte tombe, qu'est-ce qui casse ? Montre-moi l'architecture du service.&quot;">"If this host fails, what breaks? Show me the service's architecture."</blockquote></div>
+        <div class="a"><div class="lab" data-fr="Comment le serveur répond">How the server answers</div><p data-fr="Topologie autour de n'importe quel objet — le dimensionner d'abord, puis dessiner un graphe de dépendances interactif (hiérarchique pour l'architecture, concentrique pour le blast-radius), ou parcourir l'arbre des services métier.">Topology around any object — size it first, then draw an interactive dependency graph (hierarchical for architecture, concentric for blast-radius), or walk the business-service tree.</p><div class="tools"><code>discovery_topology</code></div></div>
       </div>
 
       <div class="bizcase reveal">
-        <div class="q"><div class="who">🧹 Governance / Rationalization</div><blockquote>"Which databases have no application using them? What can we decommission?"</blockquote></div>
-        <div class="a"><div class="lab">How the server answers</div><p>A neutral orphan scan — nodes of a kind with no meaningful inbound relationship — with caller-controlled noise filters and the generated DSL kept for audit.</p><div class="tools"><code>discovery_find_orphans</code></div></div>
+        <div class="q"><div class="who" data-fr="🧹 Gouvernance / Rationalisation">🧹 Governance / Rationalization</div><blockquote data-fr="&quot;Quelles bases n'ont aucune application qui les utilise ? Que peut-on décommissionner ?&quot;">"Which databases have no application using them? What can we decommission?"</blockquote></div>
+        <div class="a"><div class="lab" data-fr="Comment le serveur répond">How the server answers</div><p data-fr="Un scan d'orphelins neutre — des nœuds d'un kind sans relation entrante significative — avec des filtres de bruit pilotés par l'appelant et le DSL généré conservé pour l'audit.">A neutral orphan scan — nodes of a kind with no meaningful inbound relationship — with caller-controlled noise filters and the generated DSL kept for audit.</p><div class="tools"><code>discovery_find_orphans</code></div></div>
       </div>
 
       <div class="bizcase reveal">
-        <div class="q"><div class="who">📊 Anyone</div><blockquote>"How many Linux servers do we have? What's running on SAP-PROD-01?"</blockquote></div>
-        <div class="a"><div class="lab">How the server answers</div><p>A generic search over any node kind with full-text matching and optional relationship scoping — the everyday inventory question, answered in one call.</p><div class="tools"><code>discovery_find</code></div></div>
+        <div class="q"><div class="who" data-fr="📊 N'importe qui">📊 Anyone</div><blockquote data-fr="&quot;Combien de serveurs Linux avons-nous ? Que tourne-t-il sur SAP-PROD-01 ?&quot;">"How many Linux servers do we have? What's running on SAP-PROD-01?"</blockquote></div>
+        <div class="a"><div class="lab" data-fr="Comment le serveur répond">How the server answers</div><p data-fr="Une recherche générique sur n'importe quel kind de nœud, avec correspondance plein-texte et cadrage par relation optionnel — la question d'inventaire du quotidien, répondue en un appel.">A generic search over any node kind with full-text matching and optional relationship scoping — the everyday inventory question, answered in one call.</p><div class="tools"><code>discovery_find</code></div></div>
       </div>
 
     </div>
@@ -478,44 +482,44 @@
 <section class="band" id="stakes">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="kicker">What's at stake</div>
-      <h2>These aren't reports. They're seven- and eight-figure exposures.</h2>
-      <p class="lead">The questions on the previous slide map to real money and real regulatory risk. The common thread: every one of them is decided by how accurately the estate is mapped — and a single mis-presented dependency can swing the number by millions.</p>
+      <div class="kicker" data-fr="Ce qui est en jeu">What's at stake</div>
+      <h2 data-fr="Ce ne sont pas des rapports. Ce sont des expositions à 7 et 8 chiffres.">These aren't reports. They're seven- and eight-figure exposures.</h2>
+      <p class="lead" data-fr="Les questions de la section précédente se traduisent en argent réel et en risque réglementaire réel. Le fil rouge : chacune se joue sur la précision de la cartographie du parc — et une seule dépendance mal présentée peut faire varier le chiffre de plusieurs millions.">The questions on the previous slide map to real money and real regulatory risk. The common thread: every one of them is decided by how accurately the estate is mapped — and a single mis-presented dependency can swing the number by millions.</p>
     </div>
 
     <div class="stakes reveal">
       <div class="stake">
         <div class="fig">€120M</div>
-        <div class="unit">annual license spend · Top-5 vendors €100M</div>
-        <h4>Licensing &amp; compliance spend</h4>
-        <p>A Tier-1 European telecom operator spends ~€120&nbsp;million a year on software licenses — ~€100&nbsp;million on its five largest vendors alone — plus a ~€15&nbsp;million / year Microsoft compliance cost. A targeted rationalization aims at ~€4&nbsp;million / year in savings.</p>
-        <span class="src">Anonymized operator figures · order of magnitude</span>
+        <div class="unit" data-fr="dépense annuelle de licences · Top-5 éditeurs €100M">annual license spend · Top-5 vendors €100M</div>
+        <h4 data-fr="Dépense licences &amp; conformité">Licensing &amp; compliance spend</h4>
+        <p data-fr="Un opérateur télécom européen de premier plan dépense ~€120&nbsp;millions par an en licences logicielles — ~€100&nbsp;millions sur ses cinq plus gros éditeurs à eux seuls — plus un coût de conformité Microsoft de ~€15&nbsp;millions / an. Une rationalisation ciblée vise ~€4&nbsp;millions / an d'économies.">A Tier-1 European telecom operator spends ~€120&nbsp;million a year on software licenses — ~€100&nbsp;million on its five largest vendors alone — plus a ~€15&nbsp;million / year Microsoft compliance cost. A targeted rationalization aims at ~€4&nbsp;million / year in savings.</p>
+        <span class="src" data-fr="Chiffres opérateur anonymisés · ordre de grandeur">Anonymized operator figures · order of magnitude</span>
       </div>
       <div class="stake">
-        <div class="fig">whole farm</div>
-        <div class="unit">licensed from one bad flow</div>
-        <h4>The virtualization licensing trap</h4>
-        <p>Under Oracle's and Microsoft's virtualization rules, a single VM that <i>could</i> migrate across an ESX cluster can make the <b>entire farm</b> licensable. One mis-mapped dependency, one unpinned VM — and you license dozens of hosts you never meant to, or pay twice for the same server.</p>
-        <span class="src">Oracle soft-partitioning / Windows Server per-core on virtual hosts</span>
+        <div class="fig" data-fr="ferme entière">whole farm</div>
+        <div class="unit" data-fr="licenciée à cause d'un seul flux">licensed from one bad flow</div>
+        <h4 data-fr="Le piège des licences de virtualisation">The virtualization licensing trap</h4>
+        <p data-fr="Selon les règles de virtualisation d'Oracle et de Microsoft, une seule VM qui <i>pourrait</i> migrer dans un cluster ESX peut rendre <b>toute la ferme</b> licenciable. Une dépendance mal cartographiée, une VM non épinglée — et vous licenciez des dizaines d'hôtes sans le vouloir, ou payez deux fois le même serveur.">Under Oracle's and Microsoft's virtualization rules, a single VM that <i>could</i> migrate across an ESX cluster can make the <b>entire farm</b> licensable. One mis-mapped dependency, one unpinned VM — and you license dozens of hosts you never meant to, or pay twice for the same server.</p>
+        <span class="src" data-fr="Soft-partitioning Oracle / Windows Server par cœur sur hôtes virtuels">Oracle soft-partitioning / Windows Server per-core on virtual hosts</span>
       </div>
       <div class="stake">
         <div class="fig">up to 2%</div>
-        <div class="unit">of worldwide annual turnover</div>
-        <h4>DORA — now enforced</h4>
-        <p>Under the EU Digital Operational Resilience Act (applicable since Jan&nbsp;2025, <b>active enforcement from 2026</b>), financial entities face fines up to <b>2% of total worldwide turnover</b> — some national transpositions reach <b>10%</b> — plus up to <b>€1M</b> personal liability for executives. Running unsupported software is a resilience finding.</p>
-        <span class="src">Regulation (EU) 2022/2554 · see sources below</span>
+        <div class="unit" data-fr="du chiffre d'affaires annuel mondial">of worldwide annual turnover</div>
+        <h4 data-fr="DORA — désormais appliquée">DORA — now enforced</h4>
+        <p data-fr="Au titre du règlement européen DORA (applicable depuis janv.&nbsp;2025, <b>application active dès 2026</b>), les entités financières encourent des amendes jusqu'à <b>2 % du chiffre d'affaires mondial total</b> — certaines transpositions nationales atteignent <b>10 %</b> — plus jusqu'à <b>€1M</b> de responsabilité personnelle pour les dirigeants. Faire tourner du logiciel non supporté est un constat de résilience.">Under the EU Digital Operational Resilience Act (applicable since Jan&nbsp;2025, <b>active enforcement from 2026</b>), financial entities face fines up to <b>2% of total worldwide turnover</b> — some national transpositions reach <b>10%</b> — plus up to <b>€1M</b> personal liability for executives. Running unsupported software is a resilience finding.</p>
+        <span class="src" data-fr="Règlement (UE) 2022/2554 · voir sources ci-dessous">Regulation (EU) 2022/2554 · see sources below</span>
       </div>
     </div>
 
     <div class="grid g2 reveal" style="margin-top:24px;align-items:start">
       <div class="card">
-        <div class="ic">🎯</div><h3>Why the estate map <i>is</i> the money</h3>
-        <p style="color:var(--muted);font-size:.95rem">License math is downstream of topology. "Which hosts could this Oracle VM run on?" and "is this server licensed once or twice?" are <b>dependency questions</b> — answered by what Discovery observed, not by a spreadsheet. Mis-state the flow and the cost is wrong by an order of magnitude; state it accurately and you defend the smaller, true number.</p>
+        <div class="ic">🎯</div><h3 data-fr="Pourquoi la carte du parc <i>est</i> l'argent">Why the estate map <i>is</i> the money</h3>
+        <p style="color:var(--muted);font-size:.95rem" data-fr="Le calcul des licences découle de la topologie. « Sur quels hôtes cette VM Oracle pourrait-elle tourner ? » et « ce serveur est-il licencié une ou deux fois ? » sont des <b>questions de dépendance</b> — répondues par ce que Discovery a observé, pas par un tableur. Mal énoncez le flux et le coût est faux d'un ordre de grandeur ; énoncez-le précisément et vous défendez le chiffre vrai, plus petit.">License math is downstream of topology. "Which hosts could this Oracle VM run on?" and "is this server licensed once or twice?" are <b>dependency questions</b> — answered by what Discovery observed, not by a spreadsheet. Mis-state the flow and the cost is wrong by an order of magnitude; state it accurately and you defend the smaller, true number.</p>
         <p style="margin-top:12px"><span class="pill">discovery_windows_license_report</span><span class="pill">discovery_topology</span><span class="pill">discovery_find</span></p>
       </div>
       <div class="card">
-        <div class="ic">📅</div><h3>Obsolescence is now a regulator's question</h3>
-        <p style="color:var(--muted);font-size:.95rem">DORA mandates that financial entities <b>know and manage their ICT estate</b>. A fleet running end-of-life OS and software is a documented resilience gap — and 2026 is when supervisors move from dialogue to penalties. An on-demand, evidence-backed end-of-life inventory turns a multi-week audit scramble into a single question.</p>
+        <div class="ic">📅</div><h3 data-fr="L'obsolescence est désormais une question de régulateur">Obsolescence is now a regulator's question</h3>
+        <p style="color:var(--muted);font-size:.95rem" data-fr="DORA impose aux entités financières de <b>connaître et gérer leur parc ICT</b>. Un parc qui fait tourner OS et logiciels en fin de vie est un écart de résilience documenté — et 2026 est l'année où les superviseurs passent du dialogue aux sanctions. Un inventaire de fin de vie à la demande, étayé par des preuves, transforme un sprint d'audit de plusieurs semaines en une seule question.">DORA mandates that financial entities <b>know and manage their ICT estate</b>. A fleet running end-of-life OS and software is a documented resilience gap — and 2026 is when supervisors move from dialogue to penalties. An on-demand, evidence-backed end-of-life inventory turns a multi-week audit scramble into a single question.</p>
         <p style="margin-top:12px"><span class="pill">discovery_lifecycle_report</span><span class="pill">discovery_patch_compliance_report</span></p>
       </div>
     </div>
@@ -523,20 +527,20 @@
     <div class="card reveal" style="margin-top:24px">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
         <div class="ic" style="margin-bottom:0">🇪🇺</div>
-        <h3 style="margin:0">DORA-aligned use cases the server answers on demand</h3>
+        <h3 style="margin:0" data-fr="Cas d'usage alignés DORA que le serveur traite à la demande">DORA-aligned use cases the server answers on demand</h3>
       </div>
-      <p style="color:var(--muted);font-size:.93rem;margin-bottom:14px">DORA's ICT-risk-management pillar rests on <b>knowing and mapping your estate</b>. Each requirement below maps to a question the MCP can answer with evidence — turning a multi-week audit scramble into a single tool call.</p>
+      <p style="color:var(--muted);font-size:.93rem;margin-bottom:14px" data-fr="Le pilier « gestion du risque ICT » de DORA repose sur le fait de <b>connaître et cartographier son parc</b>. Chaque exigence ci-dessous correspond à une question à laquelle le MCP répond avec des preuves — transformant un sprint d'audit de plusieurs semaines en un seul appel d'outil.">DORA's ICT-risk-management pillar rests on <b>knowing and mapping your estate</b>. Each requirement below maps to a question the MCP can answer with evidence — turning a multi-week audit scramble into a single tool call.</p>
       <div class="grid g2" style="gap:12px">
-        <div class="ducase"><b>Know your ICT estate</b><span class="dq">Maintain an up-to-date inventory of ICT assets and software.</span><span class="pill">discovery_find</span><span class="pill">discovery_taxonomy</span></div>
-        <div class="ducase"><b>Eliminate unsupported technology</b><span class="dq">Surface end-of-life software &amp; OS — a documented resilience gap.</span><span class="pill">discovery_lifecycle_report</span><span class="pill">discovery_os_lifecycle_report</span></div>
-        <div class="ducase"><b>Vulnerability &amp; patch posture</b><span class="dq">Threat-led exposure and timely remediation evidence.</span><span class="pill">discovery_cve_executive_summary</span><span class="pill">discovery_patch_compliance_report</span></div>
-        <div class="ducase"><b>Map critical functions to assets</b><span class="dq">Which ICT assets support each critical/important business function.</span><span class="pill">discovery_topology</span><span class="pill q">mode=service</span></div>
-        <div class="ducase"><b>Concentration &amp; single-point-of-failure</b><span class="dq">Blast-radius and unused/isolated assets that concentrate risk.</span><span class="pill">discovery_topology</span><span class="pill">discovery_find_orphans</span></div>
-        <div class="ducase"><b>Licensing &amp; sourcing exposure</b><span class="dq">Quantify the cost/compliance exposure tied to the estate.</span><span class="pill">discovery_windows_license_report</span><span class="pill">discovery_cost</span></div>
+        <div class="ducase"><b data-fr="Connaître son parc ICT">Know your ICT estate</b><span class="dq" data-fr="Maintenir un inventaire à jour des actifs et logiciels ICT.">Maintain an up-to-date inventory of ICT assets and software.</span><span class="pill">discovery_find</span><span class="pill">discovery_taxonomy</span></div>
+        <div class="ducase"><b data-fr="Éliminer la technologie non supportée">Eliminate unsupported technology</b><span class="dq" data-fr="Faire remonter logiciels &amp; OS en fin de vie — un écart de résilience documenté.">Surface end-of-life software &amp; OS — a documented resilience gap.</span><span class="pill">discovery_lifecycle_report</span><span class="pill">discovery_os_lifecycle_report</span></div>
+        <div class="ducase"><b data-fr="Posture vulnérabilités &amp; correctifs">Vulnerability &amp; patch posture</b><span class="dq" data-fr="Exposition pilotée par la menace et preuve de remédiation dans les délais.">Threat-led exposure and timely remediation evidence.</span><span class="pill">discovery_cve_executive_summary</span><span class="pill">discovery_patch_compliance_report</span></div>
+        <div class="ducase"><b data-fr="Relier fonctions critiques ↔ actifs">Map critical functions to assets</b><span class="dq" data-fr="Quels actifs ICT soutiennent chaque fonction métier critique/importante.">Which ICT assets support each critical/important business function.</span><span class="pill">discovery_topology</span><span class="pill q">mode=service</span></div>
+        <div class="ducase"><b data-fr="Concentration &amp; point unique de défaillance">Concentration &amp; single-point-of-failure</b><span class="dq" data-fr="Blast-radius et actifs inutilisés/isolés qui concentrent le risque.">Blast-radius and unused/isolated assets that concentrate risk.</span><span class="pill">discovery_topology</span><span class="pill">discovery_find_orphans</span></div>
+        <div class="ducase"><b data-fr="Exposition licences &amp; achats">Licensing &amp; sourcing exposure</b><span class="dq" data-fr="Chiffrer l'exposition coût/conformité liée au parc.">Quantify the cost/compliance exposure tied to the estate.</span><span class="pill">discovery_windows_license_report</span><span class="pill">discovery_cost</span></div>
       </div>
     </div>
 
-    <div class="note reveal" style="margin-top:22px"><span class="i">📎</span><div><b>Figures are illustrative orders of magnitude</b> for framing the value, not audited claims. DORA penalty mechanics are public: up to 2% of worldwide annual turnover (1% of average daily turnover for certain breaches), up to €1M for individuals, €5M for critical ICT third-party providers — with national transpositions ranging to 10% of turnover. Sources: <a href="https://www.regulation-dora.eu/blog/dora-penalties-fines-enforcement-guide-2025" target="_blank" rel="noopener">regulation-dora.eu</a>, <a href="https://aqmetrics.com/blog/dora-2026-the-end-of-the-grace-period-for-digital-resilience/" target="_blank" rel="noopener">AQMetrics</a>, <a href="https://www.ibm.com/think/topics/digital-operational-resilience-act" target="_blank" rel="noopener">IBM</a>.</div></div>
+    <div class="note reveal" style="margin-top:22px"><span class="i">📎</span><div data-fr="<b>Les chiffres sont des ordres de grandeur illustratifs</b> pour cadrer la valeur, pas des affirmations auditées. Le mécanisme de sanction DORA est public : jusqu'à 2 % du chiffre d'affaires annuel mondial (1 % du CA quotidien moyen pour certains manquements), jusqu'à €1M pour les personnes, €5M pour les prestataires ICT tiers critiques — avec des transpositions nationales allant jusqu'à 10 % du CA. Sources : <a href=&quot;https://www.regulation-dora.eu/blog/dora-penalties-fines-enforcement-guide-2025&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;>regulation-dora.eu</a>, <a href=&quot;https://aqmetrics.com/blog/dora-2026-the-end-of-the-grace-period-for-digital-resilience/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;>AQMetrics</a>, <a href=&quot;https://www.ibm.com/think/topics/digital-operational-resilience-act&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;>IBM</a>."><b>Figures are illustrative orders of magnitude</b> for framing the value, not audited claims. DORA penalty mechanics are public: up to 2% of worldwide annual turnover (1% of average daily turnover for certain breaches), up to €1M for individuals, €5M for critical ICT third-party providers — with national transpositions ranging to 10% of turnover. Sources: <a href="https://www.regulation-dora.eu/blog/dora-penalties-fines-enforcement-guide-2025" target="_blank" rel="noopener">regulation-dora.eu</a>, <a href="https://aqmetrics.com/blog/dora-2026-the-end-of-the-grace-period-for-digital-resilience/" target="_blank" rel="noopener">AQMetrics</a>, <a href="https://www.ibm.com/think/topics/digital-operational-resilience-act" target="_blank" rel="noopener">IBM</a>.</div></div>
   </div>
 </section>
 
@@ -544,20 +548,20 @@
 <section class="band" id="flow">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="kicker">From question to answer</div>
-      <h2>What actually happens when someone asks</h2>
-      <p class="lead">A plain-language question becomes a validated query and a narrated answer — with guardrails at every hop so the AI never improvises a broken query.</p>
+      <div class="kicker" data-fr="De la question à la réponse">From question to answer</div>
+      <h2 data-fr="Ce qui se passe vraiment quand quelqu'un demande">What actually happens when someone asks</h2>
+      <p class="lead" data-fr="Une question en langage naturel devient une requête validée et une réponse narrée — avec des garde-fous à chaque étape pour que l'IA n'improvise jamais une requête cassée.">A plain-language question becomes a validated query and a narrated answer — with guardrails at every hop so the AI never improvises a broken query.</p>
     </div>
     <div class="flow reveal">
-      <div class="step"><div class="n">01 · USER</div><h4>Asks in natural language</h4><p>"Which Microsoft software is end-of-life?" — typed into ChatGPT / Claude / Mistral.</p></div>
+      <div class="step"><div class="n" data-fr="01 · UTILISATEUR">01 · USER</div><h4 data-fr="Demande en langage naturel">Asks in natural language</h4><p data-fr="« Quel logiciel Microsoft est en fin de vie ? » — tapé dans ChatGPT / Claude / Mistral.">"Which Microsoft software is end-of-life?" — typed into ChatGPT / Claude / Mistral.</p></div>
       <div class="arrow">➜</div>
-      <div class="step"><div class="n">02 · GUIDE</div><h4>Routes the request</h4><p>The AI reads <code>discovery_tool_guide</code> first: which tool, the catalog, and the rules to avoid wrong-tool picks.</p></div>
+      <div class="step"><div class="n">02 · GUIDE</div><h4 data-fr="Route la demande">Routes the request</h4><p data-fr="L'IA lit d'abord <code>discovery_tool_guide</code> : quel outil, le catalogue, et les règles pour éviter le mauvais choix d'outil.">The AI reads <code>discovery_tool_guide</code> first: which tool, the catalog, and the rules to avoid wrong-tool picks.</p></div>
       <div class="arrow">➜</div>
-      <div class="step"><div class="n">03 · TOOL</div><h4>Runs the right call</h4><p>A parameterized tool (here <code>lifecycle_report</code>, <code>publisherContains=Microsoft</code>) — no hand-written DSL.</p></div>
+      <div class="step"><div class="n" data-fr="03 · OUTIL">03 · TOOL</div><h4 data-fr="Lance le bon appel">Runs the right call</h4><p data-fr="Un outil paramétré (ici <code>lifecycle_report</code>, <code>publisherContains=Microsoft</code>) — sans DSL écrit à la main.">A parameterized tool (here <code>lifecycle_report</code>, <code>publisherContains=Microsoft</code>) — no hand-written DSL.</p></div>
       <div class="arrow">➜</div>
-      <div class="step"><div class="n">04 · DISCOVERY</div><h4>Validated &amp; executed</h4><p>The server validates against the live taxonomy, queries <code>/data/search</code>, paginates, flattens.</p></div>
+      <div class="step"><div class="n">04 · DISCOVERY</div><h4 data-fr="Validé &amp; exécuté">Validated &amp; executed</h4><p data-fr="Le serveur valide contre la taxonomy live, interroge <code>/data/search</code>, pagine, aplatit.">The server validates against the live taxonomy, queries <code>/data/search</code>, paginates, flattens.</p></div>
       <div class="arrow">➜</div>
-      <div class="step"><div class="n">05 · ANSWER</div><h4>Text + visual</h4><p>A headline summary, structured data, and a rendered PNG/SVG chart — narrated back to the user.</p></div>
+      <div class="step"><div class="n" data-fr="05 · RÉPONSE">05 · ANSWER</div><h4 data-fr="Texte + visuel">Text + visual</h4><p data-fr="Un résumé en titre, des données structurées et un graphique PNG/SVG rendu — narrés à l'utilisateur.">A headline summary, structured data, and a rendered PNG/SVG chart — narrated back to the user.</p></div>
     </div>
   </div>
 </section>
@@ -567,108 +571,108 @@
   <div class="wrap">
     <div class="sec-head reveal">
       <div class="kicker">Architecture</div>
-      <h2>Six layers, one request path</h2>
-      <p class="lead">Click any layer to expand it. The whole stack is a single Node.js process — the React/FastAPI front- and back-ends were deliberately removed to keep one runtime, one deployment, one thing to secure.</p>
+      <h2 data-fr="Six couches, un seul chemin de requête">Six layers, one request path</h2>
+      <p class="lead" data-fr="Cliquez une couche pour la déplier. Toute la pile est un seul processus Node.js — les front/back React/FastAPI ont été retirés volontairement pour garder un seul runtime, un seul déploiement, une seule chose à sécuriser.">Click any layer to expand it. The whole stack is a single Node.js process — the React/FastAPI front- and back-ends were deliberately removed to keep one runtime, one deployment, one thing to secure.</p>
     </div>
     <div class="bigarch reveal">
-      <p class="blead">The whole system on one page: a conversational AI calls the MCP; the MCP combines its own <b>resources</b> and a <b>graphical-modeling engine</b> with live connections to the <b>NVD</b> and <b>BMC Helix Discovery</b> — and turns all of it into decision-ready answers.</p>
+      <p class="blead" data-fr="Tout le système sur une page : une IA conversationnelle appelle le MCP ; le MCP combine ses propres <b>ressources</b> et un <b>moteur de modélisation graphique</b> avec des connexions live au <b>NVD</b> et à <b>BMC Helix Discovery</b> — et transforme tout cela en réponses prêtes à décider.">The whole system on one page: a conversational AI calls the MCP; the MCP combines its own <b>resources</b> and a <b>graphical-modeling engine</b> with live connections to the <b>NVD</b> and <b>BMC Helix Discovery</b> — and turns all of it into decision-ready answers.</p>
       <div class="b3">
         <div class="bcol">
           <a href="#layer-client" class="bbox navy blink" title="See the AI-client layer below">
             <span class="go">↗</span>
-            <div class="beye">AI clients</div>
+            <div class="beye" data-fr="Clients IA">AI clients</div>
             <div class="bchips"><span>ChatGPT</span><span>Claude</span><span>Mistral</span></div>
-            <p class="bsub">Any MCP-compatible host — connects with just a URL via OAuth 2.1.</p>
+            <p class="bsub" data-fr="Tout hôte compatible MCP — se connecte avec une simple URL via OAuth 2.1.">Any MCP-compatible host — connects with just a URL via OAuth 2.1.</p>
           </a>
         </div>
-        <div class="bconn"><span class="ar">→</span><small>asks in plain language</small><span class="ar back">←</span><small>answers + visuals</small></div>
+        <div class="bconn"><span class="ar">→</span><small data-fr="demande en langage naturel">asks in plain language</small><span class="ar back">←</span><small data-fr="réponses + visuels">answers + visuals</small></div>
         <div class="bmcp">
           <div class="bbox mcp">
             <div class="bmcp-head"><span class="mdot"></span><a href="#layer-core" class="hlink" title="See the MCP-server-core layer below"><b>BMC Helix Discovery MCP</b></a><span class="btag">16 tools</span></div>
             <div class="bcaps">
-              <a href="#tools" class="bcap blink" title="Jump to the tool explorer"><span class="go">↗</span><span class="ci">⚙️</span><b>Tools</b><span>inventory · CVE · lifecycle · compliance · licensing · cost · topology</span></a>
-              <a href="#primitives" class="bcap blink" title="Jump to MCP I/O — Resources"><span class="go">↗</span><span class="ci">📚</span><b>Resources</b><span>DSL cheat-sheet · IT-cost pricing (CSV) · relationships · taxonomy cache</span></a>
-              <a href="#rendering" class="bcap blink" title="Jump to Rendering &amp; cost"><span class="go">↗</span><span class="ci">🎨</span><b>Graphical modeling</b><span>ForceAtlas2 · Cytoscape · D3 · resvg → PNG / SVG / interactive HTML</span></a>
+              <a href="#tools" class="bcap blink" title="Jump to the tool explorer"><span class="go">↗</span><span class="ci">⚙️</span><b data-fr="Outils">Tools</b><span data-fr="inventaire · CVE · cycle de vie · conformité · licences · coûts · topologie">inventory · CVE · lifecycle · compliance · licensing · cost · topology</span></a>
+              <a href="#primitives" class="bcap blink" title="Jump to MCP I/O — Resources"><span class="go">↗</span><span class="ci">📚</span><b data-fr="Ressources">Resources</b><span data-fr="aide-mémoire DSL · tarifs IT-cost (CSV) · relations · cache de taxonomy">DSL cheat-sheet · IT-cost pricing (CSV) · relationships · taxonomy cache</span></a>
+              <a href="#rendering" class="bcap blink" title="Jump to Rendering &amp; cost"><span class="go">↗</span><span class="ci">🎨</span><b data-fr="Modélisation graphique">Graphical modeling</b><span data-fr="ForceAtlas2 · Cytoscape · D3 · resvg → PNG / SVG / HTML interactif">ForceAtlas2 · Cytoscape · D3 · resvg → PNG / SVG / interactive HTML</span></a>
               <a href="#workflows" class="bcap blink" title="Jump to Guided workflows"><span class="go">↗</span><span class="ci">🎬</span><b>Prompts</b><span>cve_impact · value_review · eol_audit · dependency_analysis</span></a>
             </div>
-            <div class="bguard">🛡 Guard-rails — build_query → execute_dsl · taxonomy-verified · read-only</div>
+            <div class="bguard" data-fr="🛡 Garde-fous — build_query → execute_dsl · taxonomy vérifiée · lecture seule">🛡 Guard-rails — build_query → execute_dsl · taxonomy-verified · read-only</div>
           </div>
         </div>
-        <div class="bconn"><span class="ar">→</span><small>queries</small><span class="ar back">←</span><small>data enriches the answer</small></div>
+        <div class="bconn"><span class="ar">→</span><small data-fr="interroge">queries</small><span class="ar back">←</span><small data-fr="la donnée enrichit la réponse">data enriches the answer</small></div>
         <div class="bcol">
           <div class="bext">
-            <a href="#tools" class="bbox navy blink" title="Jump to the CVE tools"><span class="go">↗</span><div class="beye">🛰 NVD</div><p class="bsub">Resolves a CVE to its CPE targets — no guessed package names.</p></a>
-            <a href="#layer-discovery" class="bbox navy blink" title="See the BMC Helix Discovery layer below"><span class="go">↗</span><div class="beye">🗺 BMC Helix Discovery</div><p class="bsub"><code>/api/&lt;ver&gt;/data/search</code> · taxonomy · the discovered estate — hosts, software, services, dependencies.</p></a>
+            <a href="#tools" class="bbox navy blink" title="Jump to the CVE tools"><span class="go">↗</span><div class="beye">🛰 NVD</div><p class="bsub" data-fr="Résout un CVE en ses cibles CPE — aucun nom de paquet deviné.">Resolves a CVE to its CPE targets — no guessed package names.</p></a>
+            <a href="#layer-discovery" class="bbox navy blink" title="See the BMC Helix Discovery layer below"><span class="go">↗</span><div class="beye">🗺 BMC Helix Discovery</div><p class="bsub" data-fr="<code>/api/&lt;ver&gt;/data/search</code> · taxonomy · le parc découvert — hôtes, logiciels, services, dépendances."><code>/api/&lt;ver&gt;/data/search</code> · taxonomy · the discovered estate — hosts, software, services, dependencies.</p></a>
           </div>
         </div>
       </div>
-      <div class="bval-conn"><span class="ar">↓</span><small>decision-ready answers + visuals</small></div>
+      <div class="bval-conn"><span class="ar">↓</span><small data-fr="réponses prêtes à décider + visuels">decision-ready answers + visuals</small></div>
       <div class="bbox navy bval">
-        <div class="beye">Value delivered</div>
+        <div class="beye" data-fr="Valeur délivrée">Value delivered</div>
         <div class="bvpills">
-          <span>📉 EOL &amp; DORA audit</span>
-          <span>🛡 CVE exposure</span>
-          <span>💰 License optimization</span>
-          <span>📊 Cloud cost / Value Review</span>
-          <span>🕸 Dependency &amp; blast-radius maps</span>
-          <span>🧹 Rationalization</span>
+          <span data-fr="📉 Audit EOL &amp; DORA">📉 EOL &amp; DORA audit</span>
+          <span data-fr="🛡 Exposition CVE">🛡 CVE exposure</span>
+          <span data-fr="💰 Optimisation de licences">💰 License optimization</span>
+          <span data-fr="📊 Coût cloud / Value Review">📊 Cloud cost / Value Review</span>
+          <span data-fr="🕸 Cartes de dépendances &amp; blast-radius">🕸 Dependency &amp; blast-radius maps</span>
+          <span data-fr="🧹 Rationalisation">🧹 Rationalization</span>
         </div>
       </div>
     </div>
 
-    <h3 class="reveal" style="margin-bottom:18px">Layer by layer</h3>
+    <h3 class="reveal" style="margin-bottom:18px" data-fr="Couche par couche">Layer by layer</h3>
     <div class="arch reveal">
 
       <div class="layer" id="layer-client" onclick="this.classList.toggle('open')">
-        <div class="lhead"><div class="lnum">1</div><div><div class="ltitle">AI client</div><div class="lsub">ChatGPT · Claude · Mistral — any MCP-compatible host</div></div><div class="chev">›</div></div>
+        <div class="lhead"><div class="lnum">1</div><div><div class="ltitle" data-fr="Client IA">AI client</div><div class="lsub" data-fr="ChatGPT · Claude · Mistral — tout hôte compatible MCP">ChatGPT · Claude · Mistral — any MCP-compatible host</div></div><div class="chev">›</div></div>
         <div class="lbody"><div class="inner">
-          <span class="tag">natural language</span><span class="tag">tools/list</span><span class="tag">tool calls (JSON-RPC)</span>
-          <ul><li>Discovers the server from just a URL, registers itself, and runs the OAuth flow automatically.</li><li>Receives the server <b>instructions</b> at handshake and the tool descriptions with <code>tools/list</code> — context is loaded without any user action.</li></ul>
+          <span class="tag" data-fr="langage naturel">natural language</span><span class="tag">tools/list</span><span class="tag">tool calls (JSON-RPC)</span>
+          <ul><li data-fr="Découvre le serveur depuis une simple URL, s'enregistre, et lance le flux OAuth automatiquement.">Discovers the server from just a URL, registers itself, and runs the OAuth flow automatically.</li><li data-fr="Reçoit les <b>instructions</b> du serveur au handshake et les descriptions d'outils via <code>tools/list</code> — le contexte est chargé sans aucune action utilisateur.">Receives the server <b>instructions</b> at handshake and the tool descriptions with <code>tools/list</code> — context is loaded without any user action.</li></ul>
         </div></div>
       </div>
       <div class="archconn"></div>
 
       <div class="layer" onclick="this.classList.toggle('open')">
-        <div class="lhead"><div class="lnum">2</div><div><div class="ltitle">Transport &amp; auth</div><div class="lsub">Streamable HTTP on <code>/mcp</code> · OAuth 2.1 self-hosted</div></div><div class="chev">›</div></div>
+        <div class="lhead"><div class="lnum">2</div><div><div class="ltitle" data-fr="Transport &amp; auth">Transport &amp; auth</div><div class="lsub" data-fr="Streamable HTTP sur <code>/mcp</code> · OAuth 2.1 auto-hébergé">Streamable HTTP on <code>/mcp</code> · OAuth 2.1 self-hosted</div></div><div class="chev">›</div></div>
         <div class="lbody"><div class="inner">
           <span class="tag">Streamable HTTP</span><span class="tag">OAuth 2.1</span><span class="tag">PKCE S256</span><span class="tag">Dynamic Client Registration</span>
-          <ul><li>The server <b>is its own authorization server</b> — no external IdP, no static bearer token.</li><li><code>authorization_code</code> + mandatory PKCE + refresh-token rotation; redirect URIs validated against an allowlist.</li><li>Endpoints duplicated under <code>/api/*</code> for Emergent preview routing; <code>/health</code> for probes.</li></ul>
+          <ul><li data-fr="Le serveur <b>est son propre serveur d'autorisation</b> — pas d'IdP externe, pas de bearer statique.">The server <b>is its own authorization server</b> — no external IdP, no static bearer token.</li><li data-fr="<code>authorization_code</code> + PKCE obligatoire + rotation du refresh-token ; redirect URIs validées contre une allowlist."><code>authorization_code</code> + mandatory PKCE + refresh-token rotation; redirect URIs validated against an allowlist.</li><li data-fr="Endpoints dupliqués sous <code>/api/*</code> pour le routage preview Emergent ; <code>/health</code> pour les sondes.">Endpoints duplicated under <code>/api/*</code> for Emergent preview routing; <code>/health</code> for probes.</li></ul>
         </div></div>
       </div>
       <div class="archconn"></div>
 
       <div class="layer" id="layer-core" onclick="this.classList.toggle('open')">
-        <div class="lhead"><div class="lnum">3</div><div><div class="ltitle">MCP server core</div><div class="lsub">@modelcontextprotocol/sdk · McpServer</div></div><div class="chev">›</div></div>
+        <div class="lhead"><div class="lnum">3</div><div><div class="ltitle" data-fr="Cœur du serveur MCP">MCP server core</div><div class="lsub">@modelcontextprotocol/sdk · McpServer</div></div><div class="chev">›</div></div>
         <div class="lbody"><div class="inner">
           <span class="tag">16 Tools</span><span class="tag">Resources</span><span class="tag">Prompts</span><span class="tag">instructions</span>
-          <ul><li>Registers all three MCP primitives and, at <code>initialize</code>, ships a short orchestration briefing in the <b>instructions</b> field.</li><li>Wraps every tool result into MCP shape: a text summary, <code>structuredContent</code>, and an optional rendered visual.</li><li>Central registration loop applies default annotations (<code>readOnlyHint</code>, <code>openWorldHint</code>) and Zod-derived input schemas.</li></ul>
+          <ul><li data-fr="Enregistre les trois primitives MCP et, à <code>initialize</code>, livre un court briefing d'orchestration dans le champ <b>instructions</b>.">Registers all three MCP primitives and, at <code>initialize</code>, ships a short orchestration briefing in the <b>instructions</b> field.</li><li data-fr="Emballe chaque résultat d'outil au format MCP : un résumé texte, <code>structuredContent</code>, et un visuel rendu optionnel.">Wraps every tool result into MCP shape: a text summary, <code>structuredContent</code>, and an optional rendered visual.</li><li data-fr="La boucle d'enregistrement centrale applique les annotations par défaut (<code>readOnlyHint</code>, <code>openWorldHint</code>) et les schémas d'entrée dérivés de Zod.">Central registration loop applies default annotations (<code>readOnlyHint</code>, <code>openWorldHint</code>) and Zod-derived input schemas.</li></ul>
         </div></div>
       </div>
       <div class="archconn"></div>
 
       <div class="layer" onclick="this.classList.toggle('open')">
-        <div class="lhead"><div class="lnum">4</div><div><div class="ltitle">Tool layer</div><div class="lsub">8 domains · parameterized intent, not raw DSL</div></div><div class="chev">›</div></div>
+        <div class="lhead"><div class="lnum">4</div><div><div class="ltitle" data-fr="Couche d'outils">Tool layer</div><div class="lsub" data-fr="8 domaines · intention paramétrée, pas de DSL brut">8 domains · parameterized intent, not raw DSL</div></div><div class="chev">›</div></div>
         <div class="lbody"><div class="inner">
           <span class="tag">inventory</span><span class="tag">CVE</span><span class="tag">lifecycle</span><span class="tag">compliance</span><span class="tag">cost</span><span class="tag">topology</span><span class="tag">governance</span><span class="tag">DSL helpers</span>
-          <ul><li>Each tool turns a structured intent into a validated Discovery query and a business-ready answer.</li><li>Guardrails: <code>build_query</code> composes &amp; validates, <code>execute_dsl</code> re-validates against taxonomy, <code>common_relationships</code> supplies real traversal paths.</li><li>A startup catalog cache and an IT-cost CSV knowledge base ground the answers.</li></ul>
+          <ul><li data-fr="Chaque outil transforme une intention structurée en requête Discovery validée et en réponse prête pour le métier.">Each tool turns a structured intent into a validated Discovery query and a business-ready answer.</li><li data-fr="Garde-fous : <code>build_query</code> compose &amp; valide, <code>execute_dsl</code> revalide contre la taxonomy, <code>common_relationships</code> fournit de vrais chemins de traversée.">Guardrails: <code>build_query</code> composes &amp; validates, <code>execute_dsl</code> re-validates against taxonomy, <code>common_relationships</code> supplies real traversal paths.</li><li data-fr="Un cache de catalogue au démarrage et une base de connaissances CSV de coûts IT ancrent les réponses.">A startup catalog cache and an IT-cost CSV knowledge base ground the answers.</li></ul>
         </div></div>
       </div>
       <div class="archconn"></div>
 
       <div class="layer" onclick="this.classList.toggle('open')">
-        <div class="lhead"><div class="lnum">5</div><div><div class="ltitle">Discovery client</div><div class="lsub">Typed REST adapter · pagination · sanitization</div></div><div class="chev">›</div></div>
+        <div class="lhead"><div class="lnum">5</div><div><div class="ltitle" data-fr="Client Discovery">Discovery client</div><div class="lsub" data-fr="Adaptateur REST typé · pagination · assainissement">Typed REST adapter · pagination · sanitization</div></div><div class="chev">›</div></div>
         <div class="lbody"><div class="inner">
           <span class="tag">/data/search</span><span class="tag">/taxonomy/*</span><span class="tag">offset pagination</span><span class="tag">30s timeout</span>
-          <ul><li>Single choke-point for every outbound call: bearer injection, 30s abort timeout, status→error-code mapping.</li><li>Flattens Discovery results, applies the server-side result-limit policy, and walks offsets to completion when no cap is set.</li><li>Secrets are redacted from any error detail before it ever leaves the process.</li></ul>
+          <ul><li data-fr="Point de passage unique pour chaque appel sortant : injection du bearer, timeout d'abandon 30s, mapping statut→code d'erreur.">Single choke-point for every outbound call: bearer injection, 30s abort timeout, status→error-code mapping.</li><li data-fr="Aplatit les résultats Discovery, applique la politique de limite côté serveur, et parcourt les offsets jusqu'au bout si aucun cap n'est défini.">Flattens Discovery results, applies the server-side result-limit policy, and walks offsets to completion when no cap is set.</li><li data-fr="Les secrets sont expurgés de tout détail d'erreur avant qu'il ne quitte le processus.">Secrets are redacted from any error detail before it ever leaves the process.</li></ul>
         </div></div>
       </div>
       <div class="archconn"></div>
 
       <div class="layer" id="layer-discovery" onclick="this.classList.toggle('open')">
-        <div class="lhead"><div class="lnum">6</div><div><div class="ltitle">BMC Helix Discovery</div><div class="lsub">REST API · <code>/api/&lt;version&gt;</code> (default v1.18)</div></div><div class="chev">›</div></div>
+        <div class="lhead"><div class="lnum">6</div><div><div class="ltitle">BMC Helix Discovery</div><div class="lsub" data-fr="API REST · <code>/api/&lt;version&gt;</code> (défaut v1.18)">REST API · <code>/api/&lt;version&gt;</code> (default v1.18)</div></div><div class="chev">›</div></div>
         <div class="lbody"><div class="inner">
           <span class="tag">data/search</span><span class="tag">taxonomy</span><span class="tag">about</span>
-          <ul><li><code>discovery_about</code> hits <code>/api/about</code> unauthenticated for health/version; everything else goes through the versioned, token-authenticated API.</li><li>The discovered estate itself: hosts, software instances, network devices, containers, business services and the relationships Discovery maps between them.</li></ul>
+          <ul><li data-fr="<code>discovery_about</code> appelle <code>/api/about</code> sans auth pour la santé/version ; tout le reste passe par l'API versionnée et authentifiée par token."><code>discovery_about</code> hits <code>/api/about</code> unauthenticated for health/version; everything else goes through the versioned, token-authenticated API.</li><li data-fr="Le parc découvert lui-même : hôtes, instances logicielles, équipements réseau, conteneurs, services métier et les relations que Discovery cartographie entre eux.">The discovered estate itself: hosts, software instances, network devices, containers, business services and the relationships Discovery maps between them.</li></ul>
         </div></div>
       </div>
 
@@ -680,50 +684,50 @@
 <section class="band" id="stack">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="kicker">Technology choices &amp; rationale</div>
-      <h2>Every dependency earns its place</h2>
-      <p class="lead">Click each choice to see the trade-off it resolves. The recurring theme: minimize the attack/maintenance surface, maximize how reliably a non-expert AI can drive Discovery.</p>
+      <div class="kicker" data-fr="Choix technologiques &amp; justifications">Technology choices &amp; rationale</div>
+      <h2 data-fr="Chaque dépendance gagne sa place">Every dependency earns its place</h2>
+      <p class="lead" data-fr="Cliquez chaque choix pour voir le compromis qu'il résout. Le fil conducteur : minimiser la surface d'attaque/maintenance, maximiser la fiabilité avec laquelle une IA non-experte pilote Discovery.">Click each choice to see the trade-off it resolves. The recurring theme: minimize the attack/maintenance surface, maximize how reliably a non-expert AI can drive Discovery.</p>
     </div>
     <div class="acc reveal">
 
       <div class="row">
         <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">Model Context Protocol (MCP)</span><span class="badge">@modelcontextprotocol/sdk 1.29</span><span class="plus">+</span></div>
-        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> one open protocol means <i>any</i> compliant client (ChatGPT, Claude, Mistral…) connects from just a URL — no per-client integration. MCP's three primitives map cleanly onto the need: <b>Tools</b> (the AI acts), <b>Resources</b> (the AI reads), <b>Prompts</b> (the user launches a workflow).</p></div></div>
+        <div class="arow"><div class="inner"><p class="why" data-fr="<b>Pourquoi :</b> un protocole ouvert signifie que <i>n'importe quel</i> client conforme (ChatGPT, Claude, Mistral…) se connecte depuis une simple URL — pas d'intégration par client. Les trois primitives MCP collent au besoin : <b>Tools</b> (l'IA agit), <b>Resources</b> (l'IA lit), <b>Prompts</b> (l'utilisateur lance un workflow)."><b>Why:</b> one open protocol means <i>any</i> compliant client (ChatGPT, Claude, Mistral…) connects from just a URL — no per-client integration. MCP's three primitives map cleanly onto the need: <b data-fr="Outils">Tools</b> (the AI acts), <b data-fr="Ressources">Resources</b> (the AI reads), <b>Prompts</b> (the user launches a workflow).</p></div></div>
       </div>
 
       <div class="row">
-        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">Node.js 20 + pure TypeScript</span><span class="badge">FastAPI/React removed</span><span class="plus">+</span></div>
-        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> the project deliberately collapsed an earlier React + FastAPI design into a <b>single TypeScript runtime</b>. One language end-to-end, one process to deploy and secure, and the MCP SDK is first-class in TS. Static typing + compile step catch schema/contract drift before runtime.</p></div></div>
+        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch" data-fr="Node.js 20 + TypeScript pur">Node.js 20 + pure TypeScript</span><span class="badge">FastAPI/React removed</span><span class="plus">+</span></div>
+        <div class="arow"><div class="inner"><p class="why" data-fr="<b>Pourquoi :</b> le projet a volontairement ramené un design React + FastAPI antérieur à un <b>runtime TypeScript unique</b>. Un seul langage de bout en bout, un seul processus à déployer et sécuriser, et le SDK MCP est first-class en TS. Le typage statique + l'étape de compilation attrapent les dérives de schéma/contrat avant l'exécution."><b>Why:</b> the project deliberately collapsed an earlier React + FastAPI design into a <b>single TypeScript runtime</b>. One language end-to-end, one process to deploy and secure, and the MCP SDK is first-class in TS. Static typing + compile step catch schema/contract drift before runtime.</p></div></div>
       </div>
 
       <div class="row">
-        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">Streamable HTTP transport (remote)</span><span class="badge">deployable online</span><span class="plus">+</span></div>
-        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> a <b>remote</b> HTTP server (vs a local stdio one) can be hosted once (Emergent/Railway) and shared by many users and clients, with centralized auth and updates. Endpoints are mirrored under <code>/api/*</code> to satisfy preview-environment routing.</p></div></div>
+        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch" data-fr="Transport Streamable HTTP (distant)">Streamable HTTP transport (remote)</span><span class="badge">deployable online</span><span class="plus">+</span></div>
+        <div class="arow"><div class="inner"><p class="why" data-fr="<b>Pourquoi :</b> un serveur HTTP <b>distant</b> (vs un local en stdio) s'héberge une fois (Emergent/Railway) et se partage entre de nombreux utilisateurs et clients, avec auth et mises à jour centralisées. Les endpoints sont dupliqués sous <code>/api/*</code> pour satisfaire le routage des environnements preview."><b>Why:</b> a <b>remote</b> HTTP server (vs a local stdio one) can be hosted once (Emergent/Railway) and shared by many users and clients, with centralized auth and updates. Endpoints are mirrored under <code>/api/*</code> to satisfy preview-environment routing.</p></div></div>
       </div>
 
       <div class="row">
-        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">OAuth 2.1, self-hosted</span><span class="badge">PKCE · DCR · refresh rotation</span><span class="plus">+</span></div>
-        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> static bearer tokens leak and never rotate. The server acts as its own authorization server so clients onboard with <b>zero manual config</b> (Dynamic Client Registration), use <b>authorization_code + PKCE S256</b>, and rotate refresh tokens. An optional shared-password consent gate adds friction only when you want it.</p></div></div>
+        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch" data-fr="OAuth 2.1, auto-hébergé">OAuth 2.1, self-hosted</span><span class="badge">PKCE · DCR · refresh rotation</span><span class="plus">+</span></div>
+        <div class="arow"><div class="inner"><p class="why" data-fr="<b>Pourquoi :</b> les bearers statiques fuient et ne tournent jamais. Le serveur est son propre serveur d'autorisation : les clients s'intègrent avec <b>zéro config manuelle</b> (Dynamic Client Registration), utilisent <b>authorization_code + PKCE S256</b>, et font tourner les refresh-tokens. Une page de consentement par mot de passe partagé n'ajoute de friction que si vous le voulez."><b>Why:</b> static bearer tokens leak and never rotate. The server acts as its own authorization server so clients onboard with <b>zero manual config</b> (Dynamic Client Registration), use <b>authorization_code + PKCE S256</b>, and rotate refresh tokens. An optional shared-password consent gate adds friction only when you want it.</p></div></div>
       </div>
 
       <div class="row">
-        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">Zod schemas</span><span class="badge">zod 3.25</span><span class="plus">+</span></div>
-        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> every tool input is a Zod schema — it doubles as <b>runtime validation</b> and as the JSON Schema advertised to the AI. The model sees exactly which parameters exist (with closed enums), which is the first line of defense against hallucinated arguments.</p></div></div>
+        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch" data-fr="Schémas Zod">Zod schemas</span><span class="badge">zod 3.25</span><span class="plus">+</span></div>
+        <div class="arow"><div class="inner"><p class="why" data-fr="<b>Pourquoi :</b> chaque entrée d'outil est un schéma Zod — il sert à la fois de <b>validation à l'exécution</b> et de JSON Schema annoncé à l'IA. Le modèle voit exactement quels paramètres existent (avec des enums fermés), première ligne de défense contre les arguments hallucinés."><b>Why:</b> every tool input is a Zod schema — it doubles as <b>runtime validation</b> and as the JSON Schema advertised to the AI. The model sees exactly which parameters exist (with closed enums), which is the first line of defense against hallucinated arguments.</p></div></div>
       </div>
 
       <div class="row">
-        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">Guard-railed DSL pipeline</span><span class="badge">build_query → execute_dsl</span><span class="plus">+</span></div>
-        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> letting an LLM write Discovery DSL freely produces invented kinds and relationships. So raw DSL is fenced: <code>build_query</code> composes from structured intent and validates, <code>execute_dsl</code> re-checks clause ordering <i>and</i> referenced kinds against the live taxonomy before running, and a curated <code>common_relationships</code> referential supplies only real traversal paths. An expert-curated DSL cheat-sheet — hand-written by a Discovery expert, not an auto-generated grammar — is embedded in the tool description and exposed as a resource.</p></div></div>
+        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch" data-fr="Pipeline DSL garde-fou">Guard-railed DSL pipeline</span><span class="badge">build_query → execute_dsl</span><span class="plus">+</span></div>
+        <div class="arow"><div class="inner"><p class="why" data-fr="<b>Pourquoi :</b> laisser un LLM écrire librement du DSL Discovery produit des kinds et relations inventés. Le DSL brut est donc clôturé : <code>build_query</code> compose depuis une intention structurée et valide, <code>execute_dsl</code> revérifie l'ordre des clauses <i>et</i> les kinds référencés contre la taxonomy live avant de lancer, et un référentiel <code>common_relationships</code> curé ne fournit que de vrais chemins de traversée. Un aide-mémoire DSL curé — rédigé à la main par un expert Discovery, pas une grammaire auto-générée — est embarqué dans la description de l'outil et exposé en resource."><b>Why:</b> letting an LLM write Discovery DSL freely produces invented kinds and relationships. So raw DSL is fenced: <code>build_query</code> composes from structured intent and validates, <code>execute_dsl</code> re-checks clause ordering <i>and</i> referenced kinds against the live taxonomy before running, and a curated <code>common_relationships</code> referential supplies only real traversal paths. An expert-curated DSL cheat-sheet — hand-written by a Discovery expert, not an auto-generated grammar — is embedded in the tool description and exposed as a resource.</p></div></div>
       </div>
 
       <div class="row">
-        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">Visual rendering pipeline</span><span class="badge">resvg · graphology · cytoscape · d3</span><span class="plus">+</span></div>
-        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> answers land better as pictures. Tools emit SVG, rasterized to PNG with <code>@resvg/resvg-js</code> (no headless browser). Dependency graphs use <b>ForceAtlas2</b> (graphology) — chosen to replace a Graphviz dependency — plus Cytoscape/d3 for an interactive, self-contained HTML graph. Output is tunable via env vars for token-frugal, text-only deployments.</p></div></div>
+        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch" data-fr="Pipeline de rendu visuel">Visual rendering pipeline</span><span class="badge">resvg · graphology · cytoscape · d3</span><span class="plus">+</span></div>
+        <div class="arow"><div class="inner"><p class="why" data-fr="<b>Pourquoi :</b> les réponses passent mieux en images. Les outils émettent du SVG, rasterisé en PNG avec <code>@resvg/resvg-js</code> (sans navigateur headless). Les graphes de dépendances utilisent <b>ForceAtlas2</b> (graphology) — choisi pour remplacer une dépendance Graphviz — plus Cytoscape/d3 pour un graphe HTML interactif et autonome. La sortie se règle via variables d'env pour des déploiements texte-seul, économes en tokens."><b>Why:</b> answers land better as pictures. Tools emit SVG, rasterized to PNG with <code>@resvg/resvg-js</code> (no headless browser). Dependency graphs use <b>ForceAtlas2</b> (graphology) — chosen to replace a Graphviz dependency — plus Cytoscape/d3 for an interactive, self-contained HTML graph. Output is tunable via env vars for token-frugal, text-only deployments.</p></div></div>
       </div>
 
       <div class="row">
-        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">Server-side limits &amp; CSV knowledge base</span><span class="badge">policy + grounding</span><span class="plus">+</span></div>
-        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> result size is governed <b>server-side</b> (<code>MCP_RESULT_LIMIT</code>) with offset pagination (<code>hasMore</code>/<code>nextOffset</code>) so the AI can't invent per-call limits. IT-cost answers are grounded in a <b>CSV reference catalog</b> loaded at startup — the single source of truth, with no live pricing guesswork.</p></div></div>
+        <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch" data-fr="Limites côté serveur &amp; base CSV">Server-side limits &amp; CSV knowledge base</span><span class="badge">policy + grounding</span><span class="plus">+</span></div>
+        <div class="arow"><div class="inner"><p class="why" data-fr="<b>Pourquoi :</b> la taille des résultats est gouvernée <b>côté serveur</b> (<code>MCP_RESULT_LIMIT</code>) avec pagination par offset (<code>hasMore</code>/<code>nextOffset</code>) pour que l'IA n'invente pas de limite par appel. Les réponses de coûts IT s'ancrent dans un <b>catalogue de référence CSV</b> chargé au démarrage — source unique de vérité, sans devinette de tarif en direct."><b>Why:</b> result size is governed <b>server-side</b> (<code>MCP_RESULT_LIMIT</code>) with offset pagination (<code>hasMore</code>/<code>nextOffset</code>) so the AI can't invent per-call limits. IT-cost answers are grounded in a <b>CSV reference catalog</b> loaded at startup — the single source of truth, with no live pricing guesswork.</p></div></div>
       </div>
 
     </div>
@@ -734,50 +738,50 @@
 <section class="band" id="rendering">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="kicker">Rendering &amp; token cost</div>
-      <h2>Why three graphics libraries — and what each one costs in tokens</h2>
-      <p class="lead">A picture lands better than a table, but every byte a model ingests is billed. Here's the honest breakdown: which library does what, which choices are validated, where a redundancy hides, and what each visual actually costs on Claude Sonnet 4.6.</p>
+      <div class="kicker" data-fr="Rendu &amp; coût en tokens">Rendering &amp; token cost</div>
+      <h2 data-fr="Pourquoi trois bibliothèques graphiques — et ce que chacune coûte en tokens">Why three graphics libraries — and what each one costs in tokens</h2>
+      <p class="lead" data-fr="Une image passe mieux qu'un tableau, mais chaque octet ingéré par un modèle est facturé. Voici l'analyse honnête : quelle lib fait quoi, quels choix sont validés, où se cache une redondance, et ce que coûte vraiment chaque visuel sur Claude Sonnet 4.6.">A picture lands better than a table, but every byte a model ingests is billed. Here's the honest breakdown: which library does what, which choices are validated, where a redundancy hides, and what each visual actually costs on Claude Sonnet 4.6.</p>
     </div>
 
     <div class="grid g4 reveal" style="margin-bottom:26px">
-      <div class="card hov"><div class="ic">🧲</div><h3>ForceAtlas2</h3><span class="verdict keep">✓ validated</span><p style="margin-top:10px">graphology, <b>server-side</b>. Positions nodes for the static PNG/SVG with no browser. Replaced Graphviz → pure-JS, no native binary, deterministic.</p></div>
-      <div class="card hov"><div class="ic">🖼️</div><h3>resvg</h3><span class="verdict keep">✓ validated</span><p style="margin-top:10px">@resvg/resvg-js (Rust). Rasterizes SVG→PNG with <b>no headless Chromium</b> — tiny, fast, container-friendly. Excellent fit.</p></div>
-      <div class="card hov"><div class="ic">🕸️</div><h3>Cytoscape</h3><span class="verdict keep">✓ earns its weight</span><p style="margin-top:10px"><b>Client-side</b> interactive mesh. Pan/zoom, neighbor spotlight, mini-map, search, legend, dark mode — all native. Re-deriving this in raw code would be hundreds of lines.</p></div>
-      <div class="card hov"><div class="ic">🌳</div><h3>D3</h3><span class="verdict watch">△ redundancy</span><p style="margin-top:10px"><b>Client-side</b> service tree (<code>d3.hierarchy</code>/<code>tree</code>). Prettier tree — but Cytoscape's <code>breadthfirst</code> layout already renders hierarchies, so two graph engines ship where one could do.</p></div>
+      <div class="card hov"><div class="ic">🧲</div><h3>ForceAtlas2</h3><span class="verdict keep" data-fr="✓ validé">✓ validated</span><p style="margin-top:10px" data-fr="graphology, <b>côté serveur</b>. Positionne les nœuds pour le PNG/SVG statique sans navigateur. A remplacé Graphviz → pur JS, pas de binaire natif, déterministe.">graphology, <b>server-side</b>. Positions nodes for the static PNG/SVG with no browser. Replaced Graphviz → pure-JS, no native binary, deterministic.</p></div>
+      <div class="card hov"><div class="ic">🖼️</div><h3>resvg</h3><span class="verdict keep" data-fr="✓ validé">✓ validated</span><p style="margin-top:10px" data-fr="@resvg/resvg-js (Rust). Rasterise SVG→PNG <b>sans Chromium headless</b> — minuscule, rapide, idéal en conteneur. Excellent choix.">@resvg/resvg-js (Rust). Rasterizes SVG→PNG with <b>no headless Chromium</b> — tiny, fast, container-friendly. Excellent fit.</p></div>
+      <div class="card hov"><div class="ic">🕸️</div><h3>Cytoscape</h3><span class="verdict keep" data-fr="✓ justifié">✓ earns its weight</span><p style="margin-top:10px" data-fr="<b>Côté client</b>, maillage interactif. Pan/zoom, spotlight des voisins, mini-map, recherche, légende, mode sombre — tout natif. Le réécrire à la main, c'est des centaines de lignes."><b>Client-side</b> interactive mesh. Pan/zoom, neighbor spotlight, mini-map, search, legend, dark mode — all native. Re-deriving this in raw code would be hundreds of lines.</p></div>
+      <div class="card hov"><div class="ic">🌳</div><h3>D3</h3><span class="verdict watch" data-fr="△ redondance">△ redundancy</span><p style="margin-top:10px" data-fr="<b>Côté client</b>, arbre de service (<code>d3.hierarchy</code>/<code>tree</code>). Plus bel arbre — mais le layout <code>breadthfirst</code> de Cytoscape rend déjà les hiérarchies, donc deux moteurs de graphe là où un suffirait."><b>Client-side</b> service tree (<code>d3.hierarchy</code>/<code>tree</code>). Prettier tree — but Cytoscape's <code>breadthfirst</code> layout already renders hierarchies, so two graph engines ship where one could do.</p></div>
     </div>
 
-    <div class="note warn reveal" style="margin-bottom:30px"><span class="i">⚖️</span><div><b>The honest trade-off:</b> the static-layout (ForceAtlas2) and interactive-layout (Cytoscape) split is genuinely justified — the PNG needs server positions, the browser view needs a live layout. <b>D3 is the one true double-employment:</b> it only renders the service-architecture tree, which Cytoscape's <code>breadthfirst</code> layout could already cover. Keeping D3 buys a nicer tree at the cost of inlining a second graph engine (~280&nbsp;KB) on every <code>mode=service</code> response. A defensible call — but worth naming.</div></div>
+    <div class="note warn reveal" style="margin-bottom:30px"><span class="i">⚖️</span><div data-fr="<b>Le compromis honnête :</b> la séparation layout statique (ForceAtlas2) / layout interactif (Cytoscape) est réellement justifiée — le PNG a besoin de positions serveur, la vue navigateur d'un layout vivant. <b>D3 est le seul vrai double emploi :</b> il ne rend que l'arbre d'architecture de service, que le layout <code>breadthfirst</code> de Cytoscape pourrait déjà couvrir. Garder D3 offre un plus bel arbre au prix d'un second moteur de graphe inliné (~280&nbsp;Ko) à chaque réponse <code>mode=service</code>. Un choix défendable — mais qu'il faut nommer."><b>The honest trade-off:</b> the static-layout (ForceAtlas2) and interactive-layout (Cytoscape) split is genuinely justified — the PNG needs server positions, the browser view needs a live layout. <b>D3 is the one true double-employment:</b> it only renders the service-architecture tree, which Cytoscape's <code>breadthfirst</code> layout could already cover. Keeping D3 buys a nicer tree at the cost of inlining a second graph engine (~280&nbsp;KB) on every <code>mode=service</code> response. A defensible call — but worth naming.</div></div>
 
-    <h3 class="reveal">Same answer, four shapes — because LLM clients don't render alike</h3>
-    <p class="reveal" style="color:var(--muted);max-width:74ch">This is exactly why the server emits a PNG <i>and</i> an SVG (and an HTML resource, and always text): no single representation renders everywhere, and the cost profile differs by client.</p>
+    <h3 class="reveal" data-fr="Même réponse, quatre formes — parce que les clients LLM ne rendent pas pareil">Same answer, four shapes — because LLM clients don't render alike</h3>
+    <p class="reveal" style="color:var(--muted);max-width:74ch" data-fr="C'est exactement pourquoi le serveur émet un PNG <i>et</i> un SVG (et une resource HTML, et toujours du texte) : aucune représentation ne se rend partout, et le profil de coût diffère selon le client.">This is exactly why the server emits a PNG <i>and</i> an SVG (and an HTML resource, and always text): no single representation renders everywhere, and the cost profile differs by client.</p>
     <div class="tablewrap reveal" style="margin-top:14px">
       <table class="matrix">
-        <thead><tr><th>Representation</th><th>Renders on…</th><th>Billed as</th><th>Why it exists</th></tr></thead>
+        <thead><tr><th data-fr="Représentation">Representation</th><th data-fr="Rendu sur…">Renders on…</th><th data-fr="Facturé en">Billed as</th><th data-fr="Pourquoi">Why it exists</th></tr></thead>
         <tbody>
-          <tr><td><b>PNG</b> (raster)</td><td>Vision/raster clients — most chat UIs (ChatGPT, Claude). They show images inline but <span class="no">can't</span> render raw SVG markup as a picture.</td><td>Image patches (28×28)</td><td>The universal inline visual. Default width 1200&nbsp;px.</td></tr>
-          <tr><td><b>SVG</b> (vector)</td><td>Clients that render/preview vectors. Crisp, scalable, sharper than PNG for simple charts.</td><td>Text tokens (XML length)</td><td>Cheaper &amp; sharper for simple charts; opt-out via <code>MCP_INCLUDE_SVG</code>.</td></tr>
-          <tr><td><b>HTML</b> (interactive)</td><td>Only <span class="ok">artifact-capable</span> clients (downloadable / openable resources). Full Cytoscape/D3 experience.</td><td>Text tokens (inlined lib)</td><td>The interactive map — meant to be <i>rendered</i>, not read by the model.</td></tr>
-          <tr><td><b>Text summary</b></td><td>Every client, always — including text-only / token-frugal deployments.</td><td>Text tokens (small)</td><td>The headline number is never lost. <code>MCP_DEFAULT_VISUAL=false</code> → text only.</td></tr>
+          <tr><td><b>PNG</b> (raster)</td><td data-fr="Clients vision/raster — la plupart des UI de chat (ChatGPT, Claude). Affichent les images inline mais <span class=&quot;no&quot;>ne peuvent pas</span> rendre du SVG brut comme image.">Vision/raster clients — most chat UIs (ChatGPT, Claude). They show images inline but <span class="no">can't</span> render raw SVG markup as a picture.</td><td data-fr="Patches d'image (28×28)">Image patches (28×28)</td><td data-fr="Le visuel inline universel. Largeur par défaut 1200&nbsp;px.">The universal inline visual. Default width 1200&nbsp;px.</td></tr>
+          <tr><td><b>SVG</b> (vector)</td><td data-fr="Clients qui rendent/prévisualisent le vecteur. Net, scalable, plus fin que le PNG pour les graphiques simples.">Clients that render/preview vectors. Crisp, scalable, sharper than PNG for simple charts.</td><td data-fr="Tokens texte (longueur XML)">Text tokens (XML length)</td><td data-fr="Moins cher &amp; plus net pour les graphiques simples ; désactivable via <code>MCP_INCLUDE_SVG</code>.">Cheaper &amp; sharper for simple charts; opt-out via <code>MCP_INCLUDE_SVG</code>.</td></tr>
+          <tr><td><b>HTML</b> (interactive)</td><td data-fr="Seuls les clients <span class=&quot;ok&quot;>à artefacts</span> (resources téléchargeables / ouvrables). Expérience Cytoscape/D3 complète.">Only <span class="ok">artifact-capable</span> clients (downloadable / openable resources). Full Cytoscape/D3 experience.</td><td data-fr="Tokens texte (lib inline)">Text tokens (inlined lib)</td><td data-fr="La carte interactive — faite pour être <i>rendue</i>, pas lue par le modèle.">The interactive map — meant to be <i>rendered</i>, not read by the model.</td></tr>
+          <tr><td><b>Text summary</b></td><td data-fr="Tout client, toujours — y compris les déploiements texte-seul / économes en tokens.">Every client, always — including text-only / token-frugal deployments.</td><td data-fr="Tokens texte (faible)">Text tokens (small)</td><td data-fr="Le chiffre clé n'est jamais perdu. <code>MCP_DEFAULT_VISUAL=false</code> → texte seul.">The headline number is never lost. <code>MCP_DEFAULT_VISUAL=false</code> → text only.</td></tr>
         </tbody>
       </table>
     </div>
 
-    <h3 class="reveal" style="margin-top:36px">What each visual costs — frontier vs cheap model</h3>
-    <p class="reveal" style="color:var(--muted);max-width:80ch"><b>Claude Sonnet 4.6</b> bills input at <b>$3 / M tokens</b>; mid-tier <b>Mistral Medium 3</b> at <b>$0.40 / M</b>; cheap <b>OpenAI GPT-5 mini</b> at <b>$0.25 / M</b> — same token counts, ~7.5× and ~12× less. Images aren't billed by pixels: Claude uses 28×28 patches (<code>⌈w/28⌉ × ⌈h/28⌉</code>, capped 1568 on Sonnet 4.6); other vendors tile differently, so the PNG rows below are order-of-magnitude. The text rows (SVG, HTML) are exact and directly comparable.</p>
+    <h3 class="reveal" style="margin-top:36px" data-fr="Ce que coûte chaque visuel — modèle frontier vs économique">What each visual costs — frontier vs cheap model</h3>
+    <p class="reveal" style="color:var(--muted);max-width:80ch" data-fr="<b>Claude Sonnet 4.6</b> facture l'entrée à <b>$3 / M tokens</b> ; le milieu de gamme <b>Mistral Medium 3</b> à <b>$0.40 / M</b> ; l'économique <b>OpenAI GPT-5 mini</b> à <b>$0.25 / M</b> — mêmes comptes de tokens, ~7,5× et ~12× moins. Les images ne sont pas facturées au pixel : Claude utilise des patches 28×28 (<code>⌈l/28⌉ × ⌈h/28⌉</code>, plafonné à 1568 sur Sonnet 4.6) ; les autres éditeurs tuilent différemment, donc les lignes PNG ci-dessous sont des ordres de grandeur. Les lignes texte (SVG, HTML) sont exactes et directement comparables."><b>Claude Sonnet 4.6</b> bills input at <b>$3 / M tokens</b>; mid-tier <b>Mistral Medium 3</b> at <b>$0.40 / M</b>; cheap <b>OpenAI GPT-5 mini</b> at <b>$0.25 / M</b> — same token counts, ~7.5× and ~12× less. Images aren't billed by pixels: Claude uses 28×28 patches (<code>⌈w/28⌉ × ⌈h/28⌉</code>, capped 1568 on Sonnet 4.6); other vendors tile differently, so the PNG rows below are order-of-magnitude. The text rows (SVG, HTML) are exact and directly comparable.</p>
     <div class="tablewrap reveal" style="margin-top:14px">
       <table class="matrix">
-        <thead><tr><th>Output</th><th>Size</th><th>Input tokens</th><th>Sonnet 4.6 · $3/M</th><th>Mistral Medium 3 · $0.40/M</th><th>GPT-5 mini · $0.25/M</th></tr></thead>
+        <thead><tr><th data-fr="Sortie">Output</th><th data-fr="Taille">Size</th><th data-fr="Tokens d'entrée">Input tokens</th><th>Sonnet 4.6 · $3/M</th><th>Mistral Medium 3 · $0.40/M</th><th>GPT-5 mini · $0.25/M</th></tr></thead>
         <tbody>
-          <tr><td>PNG — topology graph</td><td>1200×760</td><td>~1,204</td><td class="cost">~$0.0036</td><td class="cost">~$0.0005*</td><td class="cost">~$0.0003*</td></tr>
-          <tr><td>PNG — KPI / status badge</td><td>~1200×400</td><td>~645</td><td class="cost">~$0.0019</td><td class="cost">~$0.0003*</td><td class="cost">~$0.0002*</td></tr>
-          <tr><td>SVG resource (no lib inlined)</td><td>~5–30 KB text</td><td>~1.3k–7.5k</td><td class="cost">~$0.004–0.02</td><td class="cost">~$0.0005–0.003</td><td class="cost">~$0.0003–0.002</td></tr>
-          <tr><td>HTML — D3 service tree <span class="verdict watch">if ingested</span></td><td>~280 KB inlined</td><td>~70,000</td><td class="cost">~$0.21</td><td class="cost">~$0.028</td><td class="cost">~$0.018</td></tr>
-          <tr><td>HTML — Cytoscape map <span class="verdict watch">if ingested</span></td><td>~1 MB inlined</td><td>~250,000</td><td class="cost">~$0.75</td><td class="cost">~$0.10</td><td class="cost">~$0.063</td></tr>
+          <tr><td data-fr="PNG — graphe de topologie">PNG — topology graph</td><td>1200×760</td><td>~1,204</td><td class="cost">~$0.0036</td><td class="cost">~$0.0005*</td><td class="cost">~$0.0003*</td></tr>
+          <tr><td data-fr="PNG — badge KPI / statut">PNG — KPI / status badge</td><td>~1200×400</td><td>~645</td><td class="cost">~$0.0019</td><td class="cost">~$0.0003*</td><td class="cost">~$0.0002*</td></tr>
+          <tr><td data-fr="Resource SVG (aucune lib inline)">SVG resource (no lib inlined)</td><td data-fr="~5–30 Ko texte">~5–30 KB text</td><td>~1.3k–7.5k</td><td class="cost">~$0.004–0.02</td><td class="cost">~$0.0005–0.003</td><td class="cost">~$0.0003–0.002</td></tr>
+          <tr><td data-fr="HTML — arbre service D3 <span class=&quot;verdict watch&quot;>si ingéré</span>">HTML — D3 service tree <span class="verdict watch">if ingested</span></td><td data-fr="~280 Ko inline">~280 KB inlined</td><td>~70,000</td><td class="cost">~$0.21</td><td class="cost">~$0.028</td><td class="cost">~$0.018</td></tr>
+          <tr><td data-fr="HTML — carte Cytoscape <span class=&quot;verdict watch&quot;>si ingéré</span>">HTML — Cytoscape map <span class="verdict watch">if ingested</span></td><td data-fr="~1 Mo inline">~1 MB inlined</td><td>~250,000</td><td class="cost">~$0.75</td><td class="cost">~$0.10</td><td class="cost">~$0.063</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="reveal" style="color:var(--muted);font-size:.82rem;margin-top:8px">* PNG rows are order-of-magnitude — vendors tile images differently from Claude's 28×28 patches. Text rows are exact. Pricing: <a href="https://openai.com/api/pricing/" target="_blank" rel="noopener">OpenAI</a> · <a href="https://mistral.ai/pricing/" target="_blank" rel="noopener">Mistral</a>.</p>
-    <div class="note warn reveal" style="margin-top:18px"><span class="i">🔥</span><div><b>The token-burn signal to manage:</b> the PNG costs a fraction of a cent and works everywhere. The risk is the <b>interactive HTML resource</b> — the graph library is inlined (a deliberate "no-CDN" choice for offline / air-gapped / self-contained portability). If a client feeds that resource into the model as context, a single map call is ~250k tokens — ~$0.75 on Sonnet 4.6, and still ~$0.06 even on a cheap model like GPT-5 mini (so the fix is to not ingest it, not to switch model). The tool description already says <i>"do not summarize the raw HTML — it is meant for rendering"</i>, and the per-deployment env flags (<code>MCP_DEFAULT_VISUAL</code>, <code>MCP_INCLUDE_SVG</code>) tune what's emitted. <span style="opacity:.85">Bundle sizes are published approximations — the figures scale with graph size.</span></div></div>
+    <p class="reveal" style="color:var(--muted);font-size:.82rem;margin-top:8px" data-fr="* Les lignes PNG sont des ordres de grandeur — les éditeurs tuilent les images différemment des patches 28×28 de Claude. Les lignes texte sont exactes. Tarifs : <a href=&quot;https://openai.com/api/pricing/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;>OpenAI</a> · <a href=&quot;https://mistral.ai/pricing/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;>Mistral</a>.">* PNG rows are order-of-magnitude — vendors tile images differently from Claude's 28×28 patches. Text rows are exact. Pricing: <a href="https://openai.com/api/pricing/" target="_blank" rel="noopener">OpenAI</a> · <a href="https://mistral.ai/pricing/" target="_blank" rel="noopener">Mistral</a>.</p>
+    <div class="note warn reveal" style="margin-top:18px"><span class="i">🔥</span><div data-fr="<b>Le signal de token-burn à gérer :</b> le PNG coûte une fraction de centime et marche partout. Le risque, c'est la <b>resource HTML interactive</b> — la lib de graphe est inlinée (un choix volontaire « no-CDN » pour la portabilité hors-ligne / air-gap / autonome). Si un client injecte cette resource comme contexte, un seul appel de carte fait ~250k tokens — ~$0.75 sur Sonnet 4.6, et encore ~$0.06 même sur un modèle économique comme GPT-5 mini (le remède est donc de ne pas l'ingérer, pas de changer de modèle). La description d'outil dit déjà <i>« ne résumez pas le HTML brut — il est fait pour être rendu »</i>, et les variables d'env par déploiement (<code>MCP_DEFAULT_VISUAL</code>, <code>MCP_INCLUDE_SVG</code>) règlent ce qui est émis. <span style=&quot;opacity:.85&quot;>Les tailles de bundle sont des approximations publiées — les chiffres varient avec la taille du graphe.</span>"><b>The token-burn signal to manage:</b> the PNG costs a fraction of a cent and works everywhere. The risk is the <b>interactive HTML resource</b> — the graph library is inlined (a deliberate "no-CDN" choice for offline / air-gapped / self-contained portability). If a client feeds that resource into the model as context, a single map call is ~250k tokens — ~$0.75 on Sonnet 4.6, and still ~$0.06 even on a cheap model like GPT-5 mini (so the fix is to not ingest it, not to switch model). The tool description already says <i>"do not summarize the raw HTML — it is meant for rendering"</i>, and the per-deployment env flags (<code>MCP_DEFAULT_VISUAL</code>, <code>MCP_INCLUDE_SVG</code>) tune what's emitted. <span style="opacity:.85">Bundle sizes are published approximations — the figures scale with graph size.</span></div></div>
   </div>
 </section>
 
@@ -785,39 +789,39 @@
 <section class="band alt" id="primitives">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="kicker">Inputs &amp; outputs</div>
-      <h2>Three MCP primitives — who drives what</h2>
-      <p class="lead">The server speaks the full MCP vocabulary. Understanding which primitive does what explains the entire input/output contract.</p>
+      <div class="kicker" data-fr="Entrées &amp; sorties">Inputs &amp; outputs</div>
+      <h2 data-fr="Trois primitives MCP — qui pilote quoi">Three MCP primitives — who drives what</h2>
+      <p class="lead" data-fr="Le serveur parle tout le vocabulaire MCP. Comprendre quelle primitive fait quoi explique tout le contrat d'entrée/sortie.">The server speaks the full MCP vocabulary. Understanding which primitive does what explains the entire input/output contract.</p>
     </div>
     <div class="prim reveal">
       <div class="card">
-        <div class="ic">⚙️</div><h3>Tools</h3><div class="who">the AI acts</div>
-        <p style="margin-top:10px;color:var(--muted);font-size:.92rem">16 callable tools. <b>In:</b> a Zod-validated JSON object. <b>Out:</b> a text summary + <code>structuredContent</code> + an optional PNG/SVG visual.</p>
-        <ul><li>Always read-only against Discovery</li><li>Every response carries a headline <code>summary</code></li><li>Errors are normalized &amp; secret-redacted</li></ul>
+        <div class="ic">⚙️</div><h3>Tools</h3><div class="who" data-fr="l'IA agit">the AI acts</div>
+        <p style="margin-top:10px;color:var(--muted);font-size:.92rem" data-fr="16 outils appelables. <b>Entrée :</b> un objet JSON validé par Zod. <b>Sortie :</b> un résumé texte + <code>structuredContent</code> + un visuel PNG/SVG optionnel.">16 callable tools. <b>In:</b> a Zod-validated JSON object. <b>Out:</b> a text summary + <code>structuredContent</code> + an optional PNG/SVG visual.</p>
+        <ul><li data-fr="Toujours en lecture seule sur Discovery">Always read-only against Discovery</li><li data-fr="Chaque réponse porte un <code>summary</code> en titre">Every response carries a headline <code>summary</code></li><li data-fr="Les erreurs sont normalisées &amp; expurgées des secrets">Errors are normalized &amp; secret-redacted</li></ul>
       </div>
       <div class="card">
-        <div class="ic">📚</div><h3>Resources</h3><div class="who">the AI reads</div>
-        <p style="margin-top:10px;color:var(--muted);font-size:.92rem">Pull-on-demand reference content the model can fetch.</p>
-        <ul><li><code>mcp://discovery/dsl-cookbook</code> — an expert-curated DSL reference (a Discovery expert's hand-written summary + examples, not a formal grammar)</li><li>A Cytoscape UI resource backs the interactive graph view</li><li>Same single source that's embedded in tool descriptions</li></ul>
+        <div class="ic">📚</div><h3>Resources</h3><div class="who" data-fr="l'IA lit">the AI reads</div>
+        <p style="margin-top:10px;color:var(--muted);font-size:.92rem" data-fr="Contenu de référence en pull-on-demand que le modèle peut récupérer.">Pull-on-demand reference content the model can fetch.</p>
+        <ul><li data-fr="<code>mcp://discovery/dsl-cookbook</code> — une référence DSL curée par un expert (résumé + exemples rédigés à la main par un expert Discovery, pas une grammaire formelle)"><code>mcp://discovery/dsl-cookbook</code> — an expert-curated DSL reference (a Discovery expert's hand-written summary + examples, not a formal grammar)</li><li data-fr="Une resource UI Cytoscape alimente la vue graphe interactive">A Cytoscape UI resource backs the interactive graph view</li><li data-fr="Même source unique, embarquée dans les descriptions d'outils">Same single source that's embedded in tool descriptions</li></ul>
       </div>
       <div class="card">
-        <div class="ic">🎬</div><h3>Prompts</h3><div class="who">the user launches</div>
-        <p style="margin-top:10px;color:var(--muted);font-size:.92rem">User-triggered workflows (e.g. client slash-commands) that pre-wire the correct tool sequence.</p>
-        <ul><li><code>cve_impact</code> · <code>value_review</code></li><li><code>eol_audit</code> · <code>dependency_analysis</code></li><li>Keep the AI on the documented path instead of improvising</li></ul>
+        <div class="ic">🎬</div><h3>Prompts</h3><div class="who" data-fr="l'utilisateur lance">the user launches</div>
+        <p style="margin-top:10px;color:var(--muted);font-size:.92rem" data-fr="Des workflows déclenchés par l'utilisateur (ex. slash-commands du client) qui pré-câblent la bonne séquence d'outils.">User-triggered workflows (e.g. client slash-commands) that pre-wire the correct tool sequence.</p>
+        <ul><li><code>cve_impact</code> · <code>value_review</code></li><li><code>eol_audit</code> · <code>dependency_analysis</code></li><li data-fr="Gardent l'IA sur le chemin documenté au lieu d'improviser">Keep the AI on the documented path instead of improvising</li></ul>
       </div>
     </div>
 
-    <h3 class="reveal" style="margin-top:48px">A single tool call, end to end</h3>
+    <h3 class="reveal" style="margin-top:48px" data-fr="Un appel d'outil, de bout en bout">A single tool call, end to end</h3>
     <div class="grid g2" style="margin-top:14px;align-items:start">
       <div class="seq reveal">
-        <div class="s"><div class="n">1</div><div><h4>Validate input</h4><p>The raw JSON is parsed by the tool's Zod schema — unknown or malformed args are rejected before anything runs.</p></div></div>
-        <div class="s"><div class="n">2</div><div><h4>Compose &amp; verify</h4><p>The handler builds a Discovery query and verifies referenced kinds/relationships against the live taxonomy.</p></div></div>
-        <div class="s"><div class="n">3</div><div><h4>Call Discovery</h4><p>Through the one client: <code>POST /api/&lt;ver&gt;/data/search</code>, bearer-authenticated, 30s timeout, offset pagination.</p></div></div>
-        <div class="s"><div class="n">4</div><div><h4>Shape the result</h4><p>Flatten rows, compute a headline <code>summary</code>, render an SVG→PNG visual when relevant.</p></div></div>
-        <div class="s"><div class="n">5</div><div><h4>Return MCP payload</h4><p><code>content[]</code> (text + image) and <code>structuredContent</code> the client can render or chain.</p></div></div>
+        <div class="s"><div class="n">1</div><div><h4 data-fr="Valider l'entrée">Validate input</h4><p data-fr="Le JSON brut est analysé par le schéma Zod de l'outil — les arguments inconnus ou malformés sont rejetés avant tout traitement.">The raw JSON is parsed by the tool's Zod schema — unknown or malformed args are rejected before anything runs.</p></div></div>
+        <div class="s"><div class="n">2</div><div><h4 data-fr="Composer &amp; vérifier">Compose &amp; verify</h4><p data-fr="Le handler construit une requête Discovery et vérifie les kinds/relations référencés contre la taxonomy live.">The handler builds a Discovery query and verifies referenced kinds/relationships against the live taxonomy.</p></div></div>
+        <div class="s"><div class="n">3</div><div><h4 data-fr="Appeler Discovery">Call Discovery</h4><p data-fr="Via le client unique : <code>POST /api/&lt;ver&gt;/data/search</code>, authentifié par bearer, timeout 30s, pagination par offset.">Through the one client: <code>POST /api/&lt;ver&gt;/data/search</code>, bearer-authenticated, 30s timeout, offset pagination.</p></div></div>
+        <div class="s"><div class="n">4</div><div><h4 data-fr="Former le résultat">Shape the result</h4><p data-fr="Aplatir les lignes, calculer un <code>summary</code> en titre, rendre un visuel SVG→PNG si pertinent.">Flatten rows, compute a headline <code>summary</code>, render an SVG→PNG visual when relevant.</p></div></div>
+        <div class="s"><div class="n">5</div><div><h4 data-fr="Renvoyer le payload MCP">Return MCP payload</h4><p data-fr="<code>content[]</code> (texte + image) et <code>structuredContent</code> que le client peut rendre ou chaîner."><code>content[]</code> (text + image) and <code>structuredContent</code> the client can render or chain.</p></div></div>
       </div>
       <div class="reveal">
-        <p style="color:var(--muted);font-size:.9rem;margin-bottom:8px"><b>Example — a CVE exposure briefing</b></p>
+        <p style="color:var(--muted);font-size:.9rem;margin-bottom:8px" data-fr="<b>Exemple — une fiche d'exposition CVE</b>"><b>Example — a CVE exposure briefing</b></p>
 <pre class="code"><span class="c">// 1 · the AI calls a tool</span>
 {
   <span class="k">"name"</span>: <span class="s">"discovery_cve_executive_summary"</span>,
@@ -837,7 +841,7 @@
     <span class="k">"topHosts"</span>: [ … ]
   }
 }</pre>
-        <div class="note" style="margin-top:14px"><span class="i">📡</span><div><b>Loaded automatically:</b> the handshake <code>instructions</code> field and the <code>tools/list</code> descriptions are injected into the model at connection time — including the expert-curated DSL cheat-sheet — so the AI is oriented before the user types anything.</div></div>
+        <div class="note" style="margin-top:14px"><span class="i">📡</span><div data-fr="<b>Chargé automatiquement :</b> le champ <code>instructions</code> du handshake et les descriptions <code>tools/list</code> sont injectés dans le modèle dès la connexion — y compris l'aide-mémoire DSL curé — pour que l'IA soit orientée avant même que l'utilisateur tape quoi que ce soit."><b>Loaded automatically:</b> the handshake <code>instructions</code> field and the <code>tools/list</code> descriptions are injected into the model at connection time — including the expert-curated DSL cheat-sheet — so the AI is oriented before the user types anything.</div></div>
       </div>
     </div>
   </div>
@@ -847,31 +851,31 @@
 <section class="band" id="example">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="kicker">Example output</div>
-      <h2>What an executive summary actually delivers</h2>
-      <p class="lead">A raw lifecycle query returns 1,453 software rows and 455 hosts no executive will read. The lifecycle tools collapse that into a decision-ready briefing — headline exposure and a prioritized worst-offender list. Below is a <b>real</b> run against a BMC Helix Discovery instance, rendered as a dashboard.</p>
+      <div class="kicker" data-fr="Sortie d'exemple">Example output</div>
+      <h2 data-fr="Ce qu'un exec summary délivre vraiment">What an executive summary actually delivers</h2>
+      <p class="lead" data-fr="Une requête de cycle de vie brute renvoie 1 453 lignes de logiciels et 455 hôtes qu'aucun dirigeant ne lira. Les outils de cycle de vie condensent tout en une fiche prête à décider — exposition en titre et liste priorisée des pires offenseurs. Ci-dessous, un run <b>réel</b> sur une instance BMC Helix Discovery, rendu en dashboard.">A raw lifecycle query returns 1,453 software rows and 455 hosts no executive will read. The lifecycle tools collapse that into a decision-ready briefing — headline exposure and a prioritized worst-offender list. Below is a <b>real</b> run against a BMC Helix Discovery instance, rendered as a dashboard.</p>
     </div>
 
     <div class="dash reveal">
       <div class="dhead">
-        <div class="t">📉 Obsolescence exec summary — software &amp; OS end-of-support</div>
-        <span class="illustr" style="background:#7fe0b0;color:#0c1838">● Live Discovery data</span>
+        <div class="t" data-fr="📉 Exec summary obsolescence — fin de support logiciels &amp; OS">📉 Obsolescence exec summary — software &amp; OS end-of-support</div>
+        <span class="illustr" style="background:#7fe0b0;color:#0c1838" data-fr="● Données Discovery live">● Live Discovery data</span>
       </div>
       <div class="kgrid">
-        <div class="kpi"><div class="v">1,453</div><div class="l">Software instances tracked</div></div>
-        <div class="kpi"><div class="v red">1,439</div><div class="l">Software at risk · 99%</div></div>
-        <div class="kpi"><div class="v">455</div><div class="l">Hosts assessed</div></div>
-        <div class="kpi"><div class="v red">403</div><div class="l">Hosts past End-of-Support · 89%</div></div>
+        <div class="kpi"><div class="v">1,453</div><div class="l" data-fr="Instances logicielles suivies">Software instances tracked</div></div>
+        <div class="kpi"><div class="v red">1,439</div><div class="l" data-fr="Logiciels à risque · 99 %">Software at risk · 99%</div></div>
+        <div class="kpi"><div class="v">455</div><div class="l" data-fr="Hôtes évalués">Hosts assessed</div></div>
+        <div class="kpi"><div class="v red">403</div><div class="l" data-fr="Hôtes hors support · 89 %">Hosts past End-of-Support · 89%</div></div>
       </div>
       <div class="cols">
         <div class="col">
-          <h5>OS fleet status · 455 hosts</h5>
-          <div class="bar"><div class="br"><span>Past End-of-Support</span><b>403</b></div><div class="track"><i style="width:100%"></i></div></div>
-          <div class="bar"><div class="br"><span>EOS within 182 days</span><b>52</b></div><div class="track"><i style="width:13%;background:linear-gradient(90deg,#d98a00,#ffce6b)"></i></div></div>
-          <div class="bar"><div class="br"><span>Still in support</span><b>0</b></div><div class="track"><i style="width:1.5%;background:#3a4a66"></i></div></div>
+          <h5 data-fr="État du parc OS · 455 hôtes">OS fleet status · 455 hosts</h5>
+          <div class="bar"><div class="br"><span data-fr="Hors support (EOS dépassée)">Past End-of-Support</span><b>403</b></div><div class="track"><i style="width:100%"></i></div></div>
+          <div class="bar"><div class="br"><span data-fr="EOS sous 182 jours">EOS within 182 days</span><b>52</b></div><div class="track"><i style="width:13%;background:linear-gradient(90deg,#d98a00,#ffce6b)"></i></div></div>
+          <div class="bar"><div class="br"><span data-fr="Encore supporté">Still in support</span><b>0</b></div><div class="track"><i style="width:1.5%;background:#3a4a66"></i></div></div>
         </div>
         <div class="col">
-          <h5>Most-exposed OS · real EOS dates</h5>
+          <h5 data-fr="OS les plus exposés · dates EOS réelles">Most-exposed OS · real EOS dates</h5>
           <div class="bar"><div class="br"><span>Windows Server 2008 R2</span><b>EOS 2015</b></div></div>
           <div class="bar"><div class="br"><span>Windows Server 2012 / R2</span><b>EOS 2018</b></div></div>
           <div class="bar"><div class="br"><span>RHEL 5 / 6</span><b>2017 / 2020</b></div></div>
@@ -879,7 +883,7 @@
           <div class="bar"><div class="br"><span>IBM AIX 6.1 · HP-UX 11.11</span><b>2017 / 2022</b></div></div>
         </div>
         <div class="col">
-          <h5>Most-exposed software · real EOS dates</h5>
+          <h5 data-fr="Logiciels les plus exposés · dates EOS réelles">Most-exposed software · real EOS dates</h5>
           <div class="bar"><div class="br"><span>Oracle Database 11g R2</span><b>EOS 2015</b></div></div>
           <div class="bar"><div class="br"><span>Apache Tomcat 7.0</span><b>EOS 2021</b></div></div>
           <div class="bar"><div class="br"><span>Microsoft Exchange 2013</span><b>EOS 2018</b></div></div>
@@ -887,22 +891,22 @@
           <div class="bar"><div class="br"><span>VMware vCenter 6.7</span><b>EOS 2022</b></div></div>
         </div>
       </div>
-      <div class="foot"><span class="ic">▸</span><div><b>Headline:</b> 1,439 of 1,453 software instances (99%) and 403 of 455 hosts (89%) are already past a support date — the estate is effectively unsupported end-to-end, much of it years beyond even <i>extended</i> support (risk label <code>EOES&nbsp;Exceeded</code>). Worst offenders: Windows Server 2008&nbsp;R2 / 2012&nbsp;R2, Oracle DB&nbsp;11g, Apache Tomcat&nbsp;7, plus legacy Solaris / AIX / HP-UX. Under DORA, this is a documented operational-resilience gap.</div></div>
+      <div class="foot"><span class="ic">▸</span><div data-fr="<b>À retenir :</b> 1 439 des 1 453 instances logicielles (99 %) et 403 des 455 hôtes (89 %) sont déjà au-delà d'une date de support — le parc est de fait non supporté de bout en bout, en grande partie des années au-delà même du support <i>étendu</i> (label de risque <code>EOES&nbsp;Exceeded</code>). Pires offenseurs : Windows Server 2008&nbsp;R2 / 2012&nbsp;R2, Oracle DB&nbsp;11g, Apache Tomcat&nbsp;7, plus du legacy Solaris / AIX / HP-UX. Au titre de DORA, c'est un écart de résilience opérationnelle documenté."><b>Headline:</b> 1,439 of 1,453 software instances (99%) and 403 of 455 hosts (89%) are already past a support date — the estate is effectively unsupported end-to-end, much of it years beyond even <i>extended</i> support (risk label <code>EOES&nbsp;Exceeded</code>). Worst offenders: Windows Server 2008&nbsp;R2 / 2012&nbsp;R2, Oracle DB&nbsp;11g, Apache Tomcat&nbsp;7, plus legacy Solaris / AIX / HP-UX. Under DORA, this is a documented operational-resilience gap.</div></div>
     </div>
 
     <div class="prompts reveal" style="margin-top:20px">
-      <div class="ph">💬 Try it yourself — what anyone types</div>
-      <div class="pbubble"><span class="you">You</span><p>“Give me an executive summary of our obsolescence — how much software and how many operating systems are already past end-of-support?”<span class="tw">→ the AI auto-selects <code>discovery_lifecycle_report</code> + <code>discovery_os_lifecycle_report</code> and quotes the headline counts (1,439 / 1,453 software, 403 / 455 hosts).</span></p></div>
-      <div class="pbubble"><span class="you">You</span><p>“Focus on what's already beyond <i>extended</i> support, worst first.”<span class="tw">→ same tools with <code>onlyAtRisk=true</code>; the AI narrates the <code>EOES&nbsp;Exceeded</code> items with their real EOS/EOL dates.</span></p></div>
+      <div class="ph" data-fr="💬 À vous d'essayer — ce que n'importe qui tape">💬 Try it yourself — what anyone types</div>
+      <div class="pbubble"><span class="you" data-fr="Vous">You</span><p data-fr="« Donne-moi un exec summary de notre obsolescence — combien de logiciels et combien de systèmes d'exploitation sont déjà hors support ? »<span class=&quot;tw&quot;>→ l'IA sélectionne automatiquement <code>discovery_lifecycle_report</code> + <code>discovery_os_lifecycle_report</code> et cite les chiffres clés (1 439 / 1 453 logiciels, 403 / 455 hôtes).</span>">“Give me an executive summary of our obsolescence — how much software and how many operating systems are already past end-of-support?”<span class="tw">→ the AI auto-selects <code>discovery_lifecycle_report</code> + <code>discovery_os_lifecycle_report</code> and quotes the headline counts (1,439 / 1,453 software, 403 / 455 hosts).</span></p></div>
+      <div class="pbubble"><span class="you" data-fr="Vous">You</span><p data-fr="« Concentre-toi sur ce qui est déjà au-delà du support <i>étendu</i>, le pire d'abord. »<span class=&quot;tw&quot;>→ mêmes outils avec <code>onlyAtRisk=true</code> ; l'IA narre les éléments <code>EOES&nbsp;Exceeded</code> avec leurs vraies dates EOS/EOL.</span>">“Focus on what's already beyond <i>extended</i> support, worst first.”<span class="tw">→ same tools with <code>onlyAtRisk=true</code>; the AI narrates the <code>EOES&nbsp;Exceeded</code> items with their real EOS/EOL dates.</span></p></div>
     </div>
 
     <div class="grid g3 reveal" style="margin-top:26px">
-      <div class="card hov"><div class="ic">🎯</div><h3>From rows to a decision</h3><p>1,453 software rows and 455 hosts become four numbers and a ranked worst-offender list — the reader sees <i>what to remediate first</i>, not a spreadsheet to triage.</p></div>
-      <div class="card hov"><div class="ic">🪙</div><h3>Token- and attention-frugal</h3><p>The summary card travels light; the full 1,453-row list stays server-side behind <code>MCP_RESULT_LIMIT</code> + pagination, fetched only when someone drills in.</p></div>
-      <div class="card hov"><div class="ic">🔗</div><h3>Evidence, not vibes</h3><p>Every number traces to observed Discovery data — real EOS/EOL dates from each node's SupportDetail. No guessed versions, no hand-written DSL.</p></div>
+      <div class="card hov"><div class="ic">🎯</div><h3 data-fr="Des lignes à une décision">From rows to a decision</h3><p data-fr="1 453 lignes de logiciels et 455 hôtes deviennent quatre chiffres et une liste classée des pires offenseurs — le lecteur voit <i>quoi remédier en premier</i>, pas un tableur à trier.">1,453 software rows and 455 hosts become four numbers and a ranked worst-offender list — the reader sees <i>what to remediate first</i>, not a spreadsheet to triage.</p></div>
+      <div class="card hov"><div class="ic">🪙</div><h3 data-fr="Économe en tokens et en attention">Token- and attention-frugal</h3><p data-fr="La fiche de synthèse voyage léger ; la liste complète de 1 453 lignes reste côté serveur derrière <code>MCP_RESULT_LIMIT</code> + pagination, récupérée seulement si quelqu'un creuse.">The summary card travels light; the full 1,453-row list stays server-side behind <code>MCP_RESULT_LIMIT</code> + pagination, fetched only when someone drills in.</p></div>
+      <div class="card hov"><div class="ic">🔗</div><h3 data-fr="Des preuves, pas du ressenti">Evidence, not vibes</h3><p data-fr="Chaque chiffre remonte à des données Discovery observées — vraies dates EOS/EOL issues du SupportDetail de chaque nœud. Aucune version devinée, aucun DSL écrit à la main.">Every number traces to observed Discovery data — real EOS/EOL dates from each node's SupportDetail. No guessed versions, no hand-written DSL.</p></div>
     </div>
 
-    <div class="note reveal" style="margin-top:22px"><span class="i">✅</span><div><b>This is live data</b> from a BMC Helix Discovery instance, produced by <code>discovery_lifecycle_report</code> and <code>discovery_os_lifecycle_report</code> (June 2026) and rendered by Claude from the tool output. The totals, at-risk counts and fleet split are exact; the worst-offender lists cite real End-of-Support dates from the returned rows.</div></div>
+    <div class="note reveal" style="margin-top:22px"><span class="i">✅</span><div data-fr="<b>Ce sont des données live</b> d'une instance BMC Helix Discovery, produites par <code>discovery_lifecycle_report</code> et <code>discovery_os_lifecycle_report</code> (juin 2026) et rendues par Claude depuis la sortie des outils. Les totaux, comptes à risque et répartition du parc sont exacts ; les listes des pires offenseurs citent de vraies dates de fin de support issues des lignes renvoyées."><b>This is live data</b> from a BMC Helix Discovery instance, produced by <code>discovery_lifecycle_report</code> and <code>discovery_os_lifecycle_report</code> (June 2026) and rendered by Claude from the tool output. The totals, at-risk counts and fleet split are exact; the worst-offender lists cite real End-of-Support dates from the returned rows.</div></div>
   </div>
 </section>
 
@@ -910,34 +914,34 @@
 <section class="band alt" id="servicemap">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="kicker">Example output · interactive</div>
-      <h2>Service → Host map, obsolete CIs ringed in red</h2>
-      <p class="lead">Same live instance, now visualized: the <b>Service Management</b> business service, the BMC Remedy / Atrium software that delivers it, and the Windows hosts underneath. Every CI past End-of-Support is <span style="color:#c01616;font-weight:700">circled in red</span>. <b>Drag</b> to pan, <b>scroll</b> to zoom, <b>click</b> a node to spotlight its neighbours, <b>hover</b> for the EOS/EOL date. This is the kind of artifact <code>discovery_dependency_map</code> returns — here re-rendered with an obsolescence overlay.</p>
+      <div class="kicker" data-fr="Sortie d'exemple · interactif">Example output · interactive</div>
+      <h2 data-fr="Carte Service → Host, CI obsolètes entourés en rouge">Service → Host map, obsolete CIs ringed in red</h2>
+      <p class="lead" data-fr="Même instance live, désormais visualisée : le service métier <b>Service Management</b>, les logiciels BMC Remedy / Atrium qui le délivrent, et les hôtes Windows en-dessous. Chaque CI hors support est <span style=&quot;color:#c01616;font-weight:700&quot;>entouré en rouge</span>. <b>Glissez</b> pour déplacer, <b>scrollez</b> pour zoomer, <b>cliquez</b> un nœud pour mettre en avant ses voisins, <b>survolez</b> pour la date EOS/EOL. C'est le type d'artefact que renvoie <code>discovery_dependency_map</code> — ici re-rendu avec une couche d'obsolescence.">Same live instance, now visualized: the <b>Service Management</b> business service, the BMC Remedy / Atrium software that delivers it, and the Windows hosts underneath. Every CI past End-of-Support is <span style="color:#c01616;font-weight:700">circled in red</span>. <b>Drag</b> to pan, <b>scroll</b> to zoom, <b>click</b> a node to spotlight its neighbours, <b>hover</b> for the EOS/EOL date. This is the kind of artifact <code>discovery_dependency_map</code> returns — here re-rendered with an obsolescence overlay.</p>
     </div>
     <div class="svcmap-wrap reveal">
       <div class="svc-toolbar">
-        <button id="svc-fit">⤢ Fit</button>
-        <button id="svc-obs" class="on">🔴 Highlight obsolete</button>
-        <button id="svc-layout">⇄ Layout: hierarchical</button>
+        <button id="svc-fit" data-fr="⤢ Ajuster">⤢ Fit</button>
+        <button id="svc-obs" class="on" data-fr="🔴 Surligner obsolètes">🔴 Highlight obsolete</button>
+        <button id="svc-layout" data-fr="⇄ Layout : hiérarchique">⇄ Layout: hierarchical</button>
       </div>
       <div id="svcmap"></div>
-      <div class="svc-fallback" id="svc-fallback">This interactive graph loads the Cytoscape library from a CDN. You appear to be offline — reopen the file with an internet connection to explore it. <br><span style="opacity:.7">(In production the MCP server inlines the library so its graphs work fully offline / air-gapped.)</span></div>
+      <div class="svc-fallback" id="svc-fallback" data-fr="Ce graphe interactif charge la bibliothèque Cytoscape depuis un CDN. Vous semblez hors-ligne — rouvrez le fichier avec une connexion internet pour l'explorer. <br><span style=&quot;opacity:.7&quot;>(En production, le serveur MCP inline la bibliothèque pour que ses graphes fonctionnent totalement hors-ligne / air-gap.)</span>">This interactive graph loads the Cytoscape library from a CDN. You appear to be offline — reopen the file with an internet connection to explore it. <br><span style="opacity:.7">(In production the MCP server inlines the library so its graphs work fully offline / air-gapped.)</span></div>
       <div class="svc-legend">
-        <h5>Legend</h5>
+        <h5 data-fr="Légende">Legend</h5>
         <div class="lr"><span class="sw" style="background:#00a3e0"></span>BusinessService</div>
         <div class="lr"><span class="sw" style="background:#6b4bd6"></span>SoftwareInstance</div>
         <div class="lr"><span class="sw" style="background:#0a6f96"></span>Host</div>
-        <div class="lr"><span class="ring"></span>Past End-of-Support</div>
+        <div class="lr" data-fr="<span class=&quot;ring&quot;></span>Hors support"><span class="ring"></span>Past End-of-Support</div>
       </div>
     </div>
     <div class="svc-tip" id="svc-tip"><div class="k"></div><div class="n"></div><div class="o"></div></div>
     <div class="prompts reveal" style="margin-top:18px">
-      <div class="ph">💬 Try it yourself — what anyone types</div>
-      <div class="pbubble"><span class="you">You</span><p>“Map the <b>Service Management</b> service down to its hosts, and circle every CI that's end-of-life.”<span class="tw">→ the AI runs <code>discovery_dependency_map</code> (Service→Host) and overlays obsolescence from <code>discovery_lifecycle_report</code>.</span></p></div>
-      <div class="pbubble"><span class="you">You</span><p>“Use a hierarchical layout and give me the interactive version I can open in a browser.”<span class="tw">→ <code>layout='hierarchical'</code>; the AI hands back the self-contained interactive HTML artifact.</span></p></div>
+      <div class="ph" data-fr="💬 À vous d'essayer — ce que n'importe qui tape">💬 Try it yourself — what anyone types</div>
+      <div class="pbubble"><span class="you" data-fr="Vous">You</span><p data-fr="« Cartographie le service <b>Service Management</b> jusqu'à ses hôtes, et entoure chaque CI en fin de vie. »<span class=&quot;tw&quot;>→ l'IA lance <code>discovery_dependency_map</code> (Service→Host) et superpose l'obsolescence depuis <code>discovery_lifecycle_report</code>.</span>">“Map the <b>Service Management</b> service down to its hosts, and circle every CI that's end-of-life.”<span class="tw">→ the AI runs <code>discovery_dependency_map</code> (Service→Host) and overlays obsolescence from <code>discovery_lifecycle_report</code>.</span></p></div>
+      <div class="pbubble"><span class="you" data-fr="Vous">You</span><p data-fr="« Utilise un layout hiérarchique et donne-moi la version interactive que je peux ouvrir dans un navigateur. »<span class=&quot;tw&quot;>→ <code>layout='hierarchical'</code> ; l'IA renvoie l'artefact HTML interactif autonome.</span>">“Use a hierarchical layout and give me the interactive version I can open in a browser.”<span class="tw">→ <code>layout='hierarchical'</code>; the AI hands back the self-contained interactive HTML artifact.</span></p></div>
     </div>
 
-    <div class="note warn reveal" style="margin-top:20px"><span class="i">🔴</span><div><b>Every CI under this service is obsolete.</b> The Remedy / Atrium stack (BMC, EOL 2021) runs on Windows Server 2008 R2 hosts (EOS Jan 2015) — a fully unsupported critical service, and exactly the blast-radius DORA wants surfaced. <span style="opacity:.85">Software-on-host edges are real (from the lifecycle rows); the Service→software grouping is the ITSM membership. Node names and EOS/EOL dates are live Discovery data.</span></div></div>
+    <div class="note warn reveal" style="margin-top:20px"><span class="i">🔴</span><div data-fr="<b>Chaque CI sous ce service est obsolète.</b> La stack Remedy / Atrium (BMC, EOL 2021) tourne sur des hôtes Windows Server 2008 R2 (EOS janv. 2015) — un service critique entièrement non supporté, et exactement le blast-radius que DORA veut voir remonter. <span style=&quot;opacity:.85&quot;>Les arêtes logiciel-sur-hôte sont réelles (issues des lignes de cycle de vie) ; le regroupement Service→logiciel est l'appartenance ITSM. Noms de nœuds et dates EOS/EOL sont des données Discovery live.</span>"><b>Every CI under this service is obsolete.</b> The Remedy / Atrium stack (BMC, EOL 2021) runs on Windows Server 2008 R2 hosts (EOS Jan 2015) — a fully unsupported critical service, and exactly the blast-radius DORA wants surfaced. <span style="opacity:.85">Software-on-host edges are real (from the lifecycle rows); the Service→software grouping is the ITSM membership. Node names and EOS/EOL dates are live Discovery data.</span></div></div>
   </div>
 </section>
 
@@ -1019,7 +1023,7 @@
   const layBtn = document.getElementById('svc-layout');
   layBtn.onclick = () => {
     hier=!hier;
-    layBtn.textContent = '⇄ Layout: ' + (hier?'hierarchical':'force');
+    layBtn.textContent = (window.__lang==='fr'?'⇄ Layout : ':'⇄ Layout: ') + (window.__lang==='fr'?(hier?'hiérarchique':'force'):(hier?'hierarchical':'force'));
     cy.layout(hier ? { name:'breadthfirst', directed:true, padding:34, spacingFactor:1.35, roots:'#svc', animate:true, animationDuration:300 }
                    : { name:'cose', padding:34, animate:true, animationDuration:400, nodeRepulsion:9000, idealEdgeLength:95 }).run();
   };
@@ -1030,16 +1034,16 @@
 <section class="band" id="tools">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="kicker">The 16 tools</div>
-      <h2>Tool explorer</h2>
-      <p class="lead">Filter by domain or search by name. Click a tool to see its inputs, outputs and the use case it answers.</p>
+      <div class="kicker" data-fr="Les 16 outils">The 16 tools</div>
+      <h2 data-fr="Explorateur d'outils">Tool explorer</h2>
+      <p class="lead" data-fr="Filtrez par domaine ou cherchez par nom. Cliquez un outil pour voir ses entrées, sorties et le cas d'usage qu'il traite.">Filter by domain or search by name. Click a tool to see its inputs, outputs and the use case it answers.</p>
     </div>
     <div class="toolbar reveal">
-      <input type="search" id="toolSearch" placeholder="🔎 Search tools — e.g. cost, CVE, license, topology…" />
+      <input type="search" id="toolSearch" data-fr-ph="🔎 Chercher un outil — ex. coût, CVE, licence, topologie…" placeholder="🔎 Search tools — e.g. cost, CVE, license, topology…" />
     </div>
     <div class="toolbar reveal" id="chips" style="margin-top:-8px"></div>
     <div class="toolgrid" id="toolgrid"></div>
-    <p id="noresult" style="display:none;color:var(--muted);text-align:center;padding:30px">No tool matches that filter.</p>
+    <p id="noresult" style="display:none;color:var(--muted);text-align:center;padding:30px" data-fr="Aucun outil ne correspond à ce filtre.">No tool matches that filter.</p>
   </div>
 </section>
 
@@ -1047,15 +1051,15 @@
 <section class="band alt" id="workflows">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="kicker">Guided workflows</div>
-      <h2>Prompts that pre-wire the right sequence</h2>
-      <p class="lead">For multi-step questions, a single user-launched prompt orchestrates the correct chain of tools — and bakes in the rules (quote the summary, don't hand-write DSL, size before you draw).</p>
+      <div class="kicker" data-fr="Workflows guidés">Guided workflows</div>
+      <h2 data-fr="Des prompts qui pré-câblent la bonne séquence">Prompts that pre-wire the right sequence</h2>
+      <p class="lead" data-fr="Pour les questions multi-étapes, un seul prompt lancé par l'utilisateur orchestre la bonne chaîne d'outils — et intègre les règles (citer le résumé, ne pas écrire de DSL à la main, dimensionner avant de dessiner).">For multi-step questions, a single user-launched prompt orchestrates the correct chain of tools — and bakes in the rules (quote the summary, don't hand-write DSL, size before you draw).</p>
     </div>
     <div class="grid g2 reveal">
-      <div class="card hov"><div class="ic">🛡️</div><h3>cve_impact</h3><p style="margin-bottom:10px"><span class="pill q">arg: cve_id</span></p><p>Exposure briefing for a CVE: executive summary first (count + top services/hosts/versions), then the full inventory on demand. CPEs come from the NVD — never guessed.</p></div>
-      <div class="card hov"><div class="ic">💰</div><h3>value_review</h3><p style="margin-bottom:10px"><span class="pill q">arg: workload</span><span class="pill q">arg: current_solution</span></p><p>Costing &amp; alternatives from the reference catalog: frame categories → search → estimate → compare. For a real scope, prices the fleet straight from Discovery (on-prem vs cloud).</p></div>
-      <div class="card hov"><div class="ic">📉</div><h3>eol_audit</h3><p style="margin-bottom:10px"><span class="pill q">arg: scope</span><span class="pill q">arg: vendor</span><span class="pill q">arg: product</span></p><p>End-of-support audit for software or OS, filtered by vendor/product, with <code>onlyAtRisk=true</code> to surface what's already out of support — in a single direct call.</p></div>
-      <div class="card hov"><div class="ic">🕸️</div><h3>dependency_analysis</h3><p style="margin-bottom:10px"><span class="pill q">arg: target</span><span class="pill q">arg: target_kind</span></p><p>Dependency mapping for any object: size the topology first, then draw — hierarchical for architecture, concentric for blast-radius — or walk the business-service tree.</p></div>
+      <div class="card hov"><div class="ic">🛡️</div><h3>cve_impact</h3><p style="margin-bottom:10px"><span class="pill q">arg: cve_id</span></p><p data-fr="Fiche d'exposition pour un CVE : exec summary d'abord (nombre + top services/hôtes/versions), puis l'inventaire complet à la demande. Les CPE viennent du NVD — jamais devinés.">Exposure briefing for a CVE: executive summary first (count + top services/hosts/versions), then the full inventory on demand. CPEs come from the NVD — never guessed.</p></div>
+      <div class="card hov"><div class="ic">💰</div><h3>value_review</h3><p style="margin-bottom:10px"><span class="pill q">arg: workload</span><span class="pill q">arg: current_solution</span></p><p data-fr="Chiffrage &amp; alternatives depuis le catalogue de référence : cadrer les catégories → chercher → estimer → comparer. Pour un périmètre réel, chiffre le parc directement depuis Discovery (on-prem vs cloud).">Costing &amp; alternatives from the reference catalog: frame categories → search → estimate → compare. For a real scope, prices the fleet straight from Discovery (on-prem vs cloud).</p></div>
+      <div class="card hov"><div class="ic">📉</div><h3>eol_audit</h3><p style="margin-bottom:10px"><span class="pill q">arg: scope</span><span class="pill q">arg: vendor</span><span class="pill q">arg: product</span></p><p data-fr="Audit de fin de support pour logiciels ou OS, filtré par éditeur/produit, avec <code>onlyAtRisk=true</code> pour faire remonter ce qui est déjà hors support — en un seul appel direct.">End-of-support audit for software or OS, filtered by vendor/product, with <code>onlyAtRisk=true</code> to surface what's already out of support — in a single direct call.</p></div>
+      <div class="card hov"><div class="ic">🕸️</div><h3>dependency_analysis</h3><p style="margin-bottom:10px"><span class="pill q">arg: target</span><span class="pill q">arg: target_kind</span></p><p data-fr="Cartographie de dépendances pour tout objet : dimensionner la topologie d'abord, puis dessiner — hiérarchique pour l'architecture, concentrique pour le blast-radius — ou parcourir l'arbre des services métier.">Dependency mapping for any object: size the topology first, then draw — hierarchical for architecture, concentric for blast-radius — or walk the business-service tree.</p></div>
     </div>
   </div>
 </section>
@@ -1064,20 +1068,20 @@
 <section class="band" id="security">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="kicker">Security &amp; deployment</div>
-      <h2>Safe by construction, deployable anywhere</h2>
+      <div class="kicker" data-fr="Sécurité &amp; déploiement">Security &amp; deployment</div>
+      <h2 data-fr="Sûr par construction, déployable partout">Safe by construction, deployable anywhere</h2>
     </div>
     <div class="grid g3 reveal">
-      <div class="card hov"><div class="ic">🔑</div><h3>No static secrets</h3><p>Nothing sensitive is committed. Configuration comes entirely from environment variables; OAuth replaces any static bearer to <code>/mcp</code>.</p></div>
-      <div class="card hov"><div class="ic">🧽</div><h3>Secret redaction</h3><p>Keys like <code>token</code>, <code>password</code>, <code>authorization</code>, <code>api_key</code> are scrubbed from every error and log. The Discovery <code>Authorization</code> header is never echoed back.</p></div>
-      <div class="card hov"><div class="ic">👁️</div><h3>Read-only by default</h3><p>Tools are annotated <code>readOnlyHint</code> / <code>openWorldHint</code>. The server queries Discovery; it never writes back to the estate.</p></div>
-      <div class="card hov"><div class="ic">🚦</div><h3>Bounded &amp; timed</h3><p>1&nbsp;MB request-body cap, 30s outbound timeout, server-side result limits with pagination — the AI can't run away with the query.</p></div>
-      <div class="card hov"><div class="ic">🌐</div><h3>Remote &amp; portable</h3><p>A single <code>node dist/index.js</code> listening on <code>$PORT</code>, mirrored <code>/api/*</code> routes, and a <code>/health</code> probe — runs on Emergent, Railway, or any container host.</p></div>
-      <div class="card hov"><div class="ic">🎛️</div><h3>Tunable output</h3><p><code>MCP_DEFAULT_VISUAL</code> and <code>MCP_INCLUDE_SVG</code> trade richness for token cost — full visuals, PNG-only, or text-only for frugal LLM deployments.</p></div>
+      <div class="card hov"><div class="ic">🔑</div><h3 data-fr="Aucun secret statique">No static secrets</h3><p data-fr="Rien de sensible n'est commité. La configuration vient entièrement des variables d'environnement ; OAuth remplace tout bearer statique sur <code>/mcp</code>.">Nothing sensitive is committed. Configuration comes entirely from environment variables; OAuth replaces any static bearer to <code>/mcp</code>.</p></div>
+      <div class="card hov"><div class="ic">🧽</div><h3 data-fr="Expurgation des secrets">Secret redaction</h3><p data-fr="Des clés comme <code>token</code>, <code>password</code>, <code>authorization</code>, <code>api_key</code> sont nettoyées de chaque erreur et log. L'en-tête <code>Authorization</code> vers Discovery n'est jamais renvoyé.">Keys like <code>token</code>, <code>password</code>, <code>authorization</code>, <code>api_key</code> are scrubbed from every error and log. The Discovery <code>Authorization</code> header is never echoed back.</p></div>
+      <div class="card hov"><div class="ic">👁️</div><h3 data-fr="Lecture seule par défaut">Read-only by default</h3><p data-fr="Les outils sont annotés <code>readOnlyHint</code> / <code>openWorldHint</code>. Le serveur interroge Discovery ; il n'écrit jamais dans le parc.">Tools are annotated <code>readOnlyHint</code> / <code>openWorldHint</code>. The server queries Discovery; it never writes back to the estate.</p></div>
+      <div class="card hov"><div class="ic">🚦</div><h3 data-fr="Borné &amp; temporisé">Bounded &amp; timed</h3><p data-fr="Corps de requête plafonné à 1&nbsp;Mo, timeout sortant de 30s, limites de résultats côté serveur avec pagination — l'IA ne peut pas s'emballer sur la requête.">1&nbsp;MB request-body cap, 30s outbound timeout, server-side result limits with pagination — the AI can't run away with the query.</p></div>
+      <div class="card hov"><div class="ic">🌐</div><h3 data-fr="Distant &amp; portable">Remote &amp; portable</h3><p data-fr="Un seul <code>node dist/index.js</code> à l'écoute sur <code>$PORT</code>, des routes <code>/api/*</code> dupliquées, et une sonde <code>/health</code> — tourne sur Emergent, Railway, ou tout hôte de conteneur.">A single <code>node dist/index.js</code> listening on <code>$PORT</code>, mirrored <code>/api/*</code> routes, and a <code>/health</code> probe — runs on Emergent, Railway, or any container host.</p></div>
+      <div class="card hov"><div class="ic">🎛️</div><h3 data-fr="Sortie réglable">Tunable output</h3><p data-fr="<code>MCP_DEFAULT_VISUAL</code> et <code>MCP_INCLUDE_SVG</code> arbitrent richesse contre coût en tokens — visuels complets, PNG seul, ou texte seul pour des déploiements LLM économes."><code>MCP_DEFAULT_VISUAL</code> and <code>MCP_INCLUDE_SVG</code> trade richness for token cost — full visuals, PNG-only, or text-only for frugal LLM deployments.</p></div>
     </div>
 
-    <h3 class="reveal" style="margin-top:46px">Connecting a client</h3>
-    <p class="reveal" style="color:var(--muted)">With OAuth, a compatible MCP client needs only the URL — it discovers the authorization server, registers itself, and runs the flow automatically.</p>
+    <h3 class="reveal" style="margin-top:46px" data-fr="Connecter un client">Connecting a client</h3>
+    <p class="reveal" style="color:var(--muted)" data-fr="Avec OAuth, un client MCP compatible n'a besoin que de l'URL — il découvre le serveur d'autorisation, s'enregistre, et lance le flux automatiquement.">With OAuth, a compatible MCP client needs only the URL — it discovers the authorization server, registers itself, and runs the flow automatically.</p>
 <pre class="code reveal">{
   <span class="k">"mcpServers"</span>: {
     <span class="k">"bmc-helix-discovery"</span>: {
@@ -1091,7 +1095,7 @@
 <footer>
   <div class="wrap">
     <div><b>BMC Helix Discovery MCP Server</b> · v0.4.0 · Node.js 20 + TypeScript · MIT</div>
-    <div>Tools <b>discovery_*</b> · Resource <b>dsl-cookbook</b> · Prompts <b>cve_impact · value_review · eol_audit · dependency_analysis</b></div>
+    <div data-fr="Outils <b>discovery_*</b> · Resource <b>dsl-cookbook</b> · Prompts <b>cve_impact · value_review · eol_audit · dependency_analysis</b>">Tools <b>discovery_*</b> · Resource <b>dsl-cookbook</b> · Prompts <b>cve_impact · value_review · eol_audit · dependency_analysis</b></div>
   </div>
 </footer>
 
@@ -1100,17 +1104,20 @@
 <script>
 /* ---------------- Tool data ---------------- */
 const DOMAINS = {
-  orch:  {label:'Orchestration', cls:'d-orch'},
-  inv:   {label:'Inventory',     cls:'d-inv'},
-  dsl:   {label:'DSL / Model',   cls:'d-dsl'},
-  life:  {label:'Lifecycle',     cls:'d-life'},
-  comp:  {label:'Compliance',    cls:'d-comp'},
-  cve:   {label:'CVE',           cls:'d-cve'},
-  cost:  {label:'Cost',          cls:'d-cost'},
-  dep:   {label:'Dependencies',  cls:'d-dep'},
-  gov:   {label:'Governance',    cls:'d-gov'},
-  health:{label:'Health',        cls:'d-health'}
+  orch:  {label:'Orchestration', fr:'Orchestration', cls:'d-orch'},
+  inv:   {label:'Inventory',     fr:'Inventaire',    cls:'d-inv'},
+  dsl:   {label:'DSL / Model',   fr:'DSL / Modèle',  cls:'d-dsl'},
+  life:  {label:'Lifecycle',     fr:'Cycle de vie',  cls:'d-life'},
+  comp:  {label:'Compliance',    fr:'Conformité',    cls:'d-comp'},
+  cve:   {label:'CVE',           fr:'CVE',           cls:'d-cve'},
+  cost:  {label:'Cost',          fr:'Coûts',         cls:'d-cost'},
+  dep:   {label:'Dependencies',  fr:'Dépendances',   cls:'d-dep'},
+  gov:   {label:'Governance',    fr:'Gouvernance',   cls:'d-gov'},
+  health:{label:'Health',        fr:'Santé',         cls:'d-health'}
 };
+const L=(t,k)=>(window.__lang==='fr'&&typeof TOOLS_FR!=='undefined'&&TOOLS_FR[t.name]&&TOOLS_FR[t.name][k])?TOOLS_FR[t.name][k]:t[k];
+const DL=d=>(window.__lang==='fr'&&DOMAINS[d].fr)?DOMAINS[d].fr:DOMAINS[d].label;
+const T_=k=>({inputs:window.__lang==='fr'?'▸ Entrées':'▸ Inputs',outputs:window.__lang==='fr'?'▸ Sorties':'▸ Outputs',uc:window.__lang==='fr'?'Cas d’usage · ':'Use case · '}[k]);
 
 const TOOLS = [
   { name:'discovery_tool_guide', dom:'orch',
@@ -1210,6 +1217,25 @@ const TOOLS = [
     uc:'Fallback for an unknown kind/attribute/relationship absent from the curated referential.' }
 ];
 
+const TOOLS_FR = {
+  "discovery_tool_guide": {desc:"À lire en premier, toujours. Route toute requête Discovery vers le(s) bon(s) outil(s), renvoie le catalogue connu, des exemples de cas d'usage, et les règles globales qui évitent le mauvais choix d'outil et l'improvisation de DSL.", uc:"L'IA l'appelle avec la question brute de l'utilisateur avant toute action, puis suit l'outil et les règles suggérés."},
+  "discovery_about": {desc:"Métadonnées de l'instance Discovery (version, capacités). Avec check=true, lance un health-check : joignabilité + version d'API configurée supportée (warning en cas d'écart).", uc:"Diagnostiquer la connectivité après un déploiement, ou avant une série d'analyses. Appelle /api/about sans token."},
+  "discovery_find": {desc:"Recherche générique sur n'importe quel kind de nœud, avec correspondance plein-texte sur tous les attributs et cadrage par relation optionnel.", uc:"« Combien de serveurs Linux ? » → kind=Host, contains=Linux. « Que tourne-t-il sur SAP-PROD-01 ? » → kind=SoftwareInstance, relatedToKind=Host, relatedToName=SAP-PROD-01."},
+  "discovery_lifecycle_report": {desc:"Lance directement un rapport de fin de support. scope=software filtre SoftwareInstance par éditeur/produit/hôte/type ; scope=os dérive l'obsolescence OS directement des hôtes (dates EOS/EOSS/EOL).", uc:"« Quel logiciel Microsoft est en fin de vie ? » → publisherContains=Microsoft. « Windows Server obsolètes ? » → scope=os, onlyAtRisk=true."},
+  "discovery_patch_compliance_report": {desc:"Vérifie la conformité des correctifs KB des hôtes Windows, virtuels et physiques, avec filtres OS et logiciel hébergé optionnels.", uc:"« Quels serveurs n'ont pas KB4018271 ? » → kbList + complianceMode. Cibler les hôtes exécutant un logiciel donné via hostingFilter."},
+  "discovery_windows_license_report": {desc:"Modélise les licences Windows Server par hôte physique, chiffre Standard vs Datacenter et précalcule les opportunités d'optimisation.", uc:"Audit de licences Windows/Datacenter/Hyper-V/VMware — narrer les opportunités d'économie par valeur décroissante."},
+  "discovery_cost": {desc:"Coûts IT / Value Review en 4 modes. categories : familles du catalogue. search : composants par texte. estimate : min/médian/max pour un composant × quantité sur un horizon. compare : alternatives annualisées + économies vs solution actuelle.", uc:"« Migrer le service Apex vers le cloud ? » → mode=compare, scope={type:service,name:Apex} → on-prem vs Azure/AWS/GCP, quantité dérivée de Discovery."},
+  "discovery_cve_executive_summary": {desc:"Produit un résumé CVE style briefing — risque + top impacts métier/hôte/version — puis propose l'inventaire complet à la demande.", uc:"« Sommes-nous exposés au CVE-2026-X ? » → résumé d'abord pour le titre, drill-down vers le complet seulement si demandé."},
+  "discovery_get_cve_cpes_from_nvd": {desc:"Récupère les CPE associés à un CVE depuis le NVD, pour résoudre automatiquement les cibles techniques.", uc:"Obtenir les cibles techniques d'un CVE sans saisie manuelle — alimente l'analyse d'exposition."},
+  "discovery_topology": {desc:"Topologie / dépendances autour de tout objet, en 4 modes. scope : dimensionner d'abord (compteurs, sans dessiner). summary : synthèse d'inventaire. map : graphe interactif (PNG+SVG+HTML). service : arbre BusinessService.", uc:"Lancer mode=scope d'abord pour dimensionner, puis mode=map. layout=hierarchical pour l'architecture, concentric pour le blast-radius."},
+  "discovery_find_orphans": {desc:"Scan de gouvernance neutre : trouve les nœuds d'un kind sans relation entrante significative. Aucun preset de bruit caché — les filtres sont pilotés par l'appelant.", uc:"« Bases sans client applicatif », « hôtes sans logiciel hébergé », « pools de load-balancer sans backend »."},
+  "discovery_build_query": {desc:"Compose une requête DSL à partir d'une intention structurée (le LLM n'écrit pas le DSL). Valide syntaxe + taxonomy, refuse les chemins de traversée inconnus, et N'EXÉCUTE PAS.", uc:"Tout besoin non couvert par un outil paramétré, ex. « hôtes ESX avec >10 VM Windows » → NODECOUNT sur une traversée VirtualMachine."},
+  "discovery_execute_dsl": {desc:"Exécution DSL garde-fou. Valide l'ordre des clauses localement, vérifie les kinds référencés contre la taxonomy live, puis exécute. Sa description embarque un aide-mémoire DSL curé (résumé manuscrit d'un expert Discovery, pas une grammaire formelle).", uc:"Exécuter la requête validée de build_query après accord de l'utilisateur — toujours garder generated_dsl_query dans le résultat."},
+  "discovery_common_relationships": {desc:"Renvoie de vrais chemins TRAVERSE curés du référentiel, pour que les appelants utilisent de vraies specs de traversée au lieu d'inventer des relations.", uc:"Fournir un vrai traverseSpec à build_query au lieu de deviner une relation qui peut ne pas exister."},
+  "discovery_resolve_kind": {desc:"Mappe un alias FR/EN (« serveur », « machine »…) vers la vraie classe de nœud Discovery, pour que l'IA ne devine jamais un kind.", uc:"Normaliser la formulation de l'utilisateur vers une vraie classe avant toute recherche ou requête."},
+  "discovery_taxonomy": {desc:"Introspecte le modèle live (kinds de nœuds, champs, field lists, relations) via le paramètre resource — le fallback quand le référentiel ne suffit pas.", uc:"Fallback pour un kind/attribut/relation inconnu, absent du référentiel curé."},
+};
+
 /* ---------------- Render explorer ---------------- */
 const grid = document.getElementById('toolgrid');
 const chipsBox = document.getElementById('chips');
@@ -1225,10 +1251,10 @@ function chip(id,label){
 }
 function renderChips(){
   chipsBox.innerHTML='';
-  chipsBox.appendChild(chip('all','All ('+TOOLS.length+')'));
+  chipsBox.appendChild(chip('all',(window.__lang==='fr'?'Tous':'All')+' ('+TOOLS.length+')'));
   Object.keys(DOMAINS).forEach(d=>{
     const n=TOOLS.filter(t=>t.dom===d).length;
-    if(n) chipsBox.appendChild(chip(d,DOMAINS[d].label+' ('+n+')'));
+    if(n) chipsBox.appendChild(chip(d,DL(d)+' ('+n+')'));
   });
 }
 function toolCard(t){
@@ -1237,17 +1263,17 @@ function toolCard(t){
   el.className='tool';
   el.innerHTML=`
     <div class="th">
-      <span class="dm ${d.cls}">${d.label}</span>
+      <span class="dm ${d.cls}">${DL(t.dom)}</span>
       <code>${t.name}</code>
       <span class="x">+</span>
     </div>
     <div class="body"><div class="inner">
-      <p class="desc">${t.desc}</p>
+      <p class="desc">${L(t,'desc')}</p>
       <div class="io">
-        <div class="box in"><div class="h">▸ Inputs</div>${t.in.map(i=>`<code>${i}</code>`).join('')}</div>
-        <div class="box out"><div class="h">▸ Outputs</div>${t.out.map(o=>`<code>${o}</code>`).join('')}</div>
+        <div class="box in"><div class="h">${T_('inputs')}</div>${t.in.map(i=>`<code>${i}</code>`).join('')}</div>
+        <div class="box out"><div class="h">${T_('outputs')}</div>${t.out.map(o=>`<code>${o}</code>`).join('')}</div>
       </div>
-      <div class="uc"><b>Use case · </b>${t.uc}</div>
+      <div class="uc"><b>${T_('uc')}</b>${L(t,'uc')}</div>
     </div></div>`;
   el.querySelector('.th').onclick=()=>el.classList.toggle('open');
   return el;
@@ -1256,7 +1282,7 @@ function render(){
   grid.innerHTML='';
   const list=TOOLS.filter(t=>{
     const okDom=activeDom==='all'||t.dom===activeDom;
-    const hay=(t.name+' '+t.desc+' '+t.uc+' '+DOMAINS[t.dom].label).toLowerCase();
+    const hay=(t.name+' '+L(t,'desc')+' '+L(t,'uc')+' '+DL(t.dom)).toLowerCase();
     const okQ=!q||hay.includes(q);
     return okDom&&okQ;
   });
@@ -1264,6 +1290,7 @@ function render(){
   list.forEach(t=>grid.appendChild(toolCard(t)));
 }
 document.getElementById('toolSearch').addEventListener('input',e=>{q=e.target.value.trim().toLowerCase();render();});
+window.renderTools=function(){renderChips();render();};
 renderChips();render();
 
 /* ---------------- Scroll spy ---------------- */
@@ -1292,6 +1319,29 @@ addEventListener('scroll',()=>toTop.classList.toggle('show',scrollY>600));
 
 /* open first architecture layer by default */
 document.querySelector('.layer')?.classList.add('open');
+</script>
+<script>
+(function(){
+  const sel=document.querySelector('.langsel');
+  function apply(lang){
+    document.documentElement.lang=lang; window.__lang=lang;
+    document.querySelectorAll('[data-fr]').forEach(el=>{
+      if(el.__en===undefined) el.__en=el.innerHTML;
+      el.innerHTML = (lang==='fr') ? el.getAttribute('data-fr') : el.__en;
+    });
+    document.querySelectorAll('[data-fr-ph]').forEach(el=>{
+      if(el.__enph===undefined) el.__enph=el.getAttribute('placeholder')||'';
+      el.setAttribute('placeholder',(lang==='fr')?el.getAttribute('data-fr-ph'):el.__enph);
+    });
+    if(sel) sel.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.lang===lang));
+    if(window.renderTools) window.renderTools();
+    try{localStorage.setItem('mcpdoc_lang',lang);}catch(e){}
+  }
+  window.applyLang=apply;
+  if(sel) sel.querySelectorAll('button').forEach(b=>b.onclick=()=>apply(b.dataset.lang));
+  let saved='en'; try{saved=localStorage.getItem('mcpdoc_lang')||'en';}catch(e){}
+  apply(saved);
+})();
 </script>
 </body>
 </html>
