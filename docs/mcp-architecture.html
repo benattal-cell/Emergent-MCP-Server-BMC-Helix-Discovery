@@ -558,7 +558,7 @@
 
       <div class="row">
         <div class="qrow" onclick="this.parentElement.classList.toggle('open')"><span class="tch">Guard-railed DSL pipeline</span><span class="badge">build_query → execute_dsl</span><span class="plus">+</span></div>
-        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> letting an LLM write Discovery DSL freely produces invented kinds and relationships. So raw DSL is fenced: <code>build_query</code> composes from structured intent and validates, <code>execute_dsl</code> re-checks clause ordering <i>and</i> referenced kinds against the live taxonomy before running, and a curated <code>common_relationships</code> referential supplies only real traversal paths. The full DSL cookbook is embedded in the tool description and exposed as a resource.</p></div></div>
+        <div class="arow"><div class="inner"><p class="why"><b>Why:</b> letting an LLM write Discovery DSL freely produces invented kinds and relationships. So raw DSL is fenced: <code>build_query</code> composes from structured intent and validates, <code>execute_dsl</code> re-checks clause ordering <i>and</i> referenced kinds against the live taxonomy before running, and a curated <code>common_relationships</code> referential supplies only real traversal paths. An expert-curated DSL cheat-sheet — hand-written by a Discovery expert, not an auto-generated grammar — is embedded in the tool description and exposed as a resource.</p></div></div>
       </div>
 
       <div class="row">
@@ -607,21 +607,22 @@
       </table>
     </div>
 
-    <h3 class="reveal" style="margin-top:36px">What each visual costs — Claude Sonnet 4.6</h3>
-    <p class="reveal" style="color:var(--muted);max-width:74ch">Sonnet 4.6 is <b>$3 / M input tokens</b>. Images aren't billed by pixels but by 28×28 patches: <code>⌈w/28⌉ × ⌈h/28⌉</code> tokens, capped at 1568 on Sonnet 4.6. The PNG is trivially cheap; the thing to watch is an inlined-library HTML resource if a client ingests it as context.</p>
+    <h3 class="reveal" style="margin-top:36px">What each visual costs — frontier vs cheap model</h3>
+    <p class="reveal" style="color:var(--muted);max-width:78ch"><b>Claude Sonnet 4.6</b> bills input at <b>$3 / M tokens</b>; a cheap model like <b>OpenAI GPT-5 mini</b> bills <b>$0.25 / M</b> — ~12× less, same token counts. Images aren't billed by pixels: Claude uses 28×28 patches (<code>⌈w/28⌉ × ⌈h/28⌉</code>, capped 1568 on Sonnet 4.6); OpenAI tiles differently, so the PNG rows below are order-of-magnitude. The text rows (SVG, HTML) are exact and directly comparable.</p>
     <div class="tablewrap reveal" style="margin-top:14px">
       <table class="matrix">
-        <thead><tr><th>Output</th><th>Size</th><th>Input tokens</th><th>Cost / call (Sonnet 4.6)</th></tr></thead>
+        <thead><tr><th>Output</th><th>Size</th><th>Input tokens</th><th>Sonnet 4.6 · $3/M</th><th>GPT-5 mini · $0.25/M</th></tr></thead>
         <tbody>
-          <tr><td>PNG — topology graph</td><td>1200×760</td><td>~1,204</td><td class="cost">~$0.0036</td></tr>
-          <tr><td>PNG — KPI / status badge</td><td>~1200×400</td><td>~645</td><td class="cost">~$0.0019</td></tr>
-          <tr><td>SVG resource (no lib inlined)</td><td>~5–30 KB text</td><td>~1.3k–7.5k</td><td class="cost">~$0.004–0.02</td></tr>
-          <tr><td>HTML — D3 service tree <span class="verdict watch">if ingested</span></td><td>~280 KB inlined</td><td>~70,000</td><td class="cost">~$0.21</td></tr>
-          <tr><td>HTML — Cytoscape map <span class="verdict watch">if ingested</span></td><td>~1 MB inlined</td><td>~250,000</td><td class="cost">~$0.75</td></tr>
+          <tr><td>PNG — topology graph</td><td>1200×760</td><td>~1,204</td><td class="cost">~$0.0036</td><td class="cost">~$0.0003*</td></tr>
+          <tr><td>PNG — KPI / status badge</td><td>~1200×400</td><td>~645</td><td class="cost">~$0.0019</td><td class="cost">~$0.0002*</td></tr>
+          <tr><td>SVG resource (no lib inlined)</td><td>~5–30 KB text</td><td>~1.3k–7.5k</td><td class="cost">~$0.004–0.02</td><td class="cost">~$0.0003–0.002</td></tr>
+          <tr><td>HTML — D3 service tree <span class="verdict watch">if ingested</span></td><td>~280 KB inlined</td><td>~70,000</td><td class="cost">~$0.21</td><td class="cost">~$0.018</td></tr>
+          <tr><td>HTML — Cytoscape map <span class="verdict watch">if ingested</span></td><td>~1 MB inlined</td><td>~250,000</td><td class="cost">~$0.75</td><td class="cost">~$0.063</td></tr>
         </tbody>
       </table>
     </div>
-    <div class="note warn reveal" style="margin-top:18px"><span class="i">🔥</span><div><b>The token-burn signal to manage:</b> the PNG costs a fraction of a cent and works everywhere. The risk is the <b>interactive HTML resource</b> — the graph library is inlined (a deliberate "no-CDN" choice for offline / air-gapped / self-contained portability). If a client feeds that resource into the model as context, a single map call is ~250k tokens (~$0.75 on Sonnet 4.6). The tool description already says <i>"do not summarize the raw HTML — it is meant for rendering"</i>, and the per-deployment env flags (<code>MCP_DEFAULT_VISUAL</code>, <code>MCP_INCLUDE_SVG</code>) tune what's emitted. <span style="opacity:.85">Bundle sizes are published approximations — the figures scale with graph size.</span></div></div>
+    <p class="reveal" style="color:var(--muted);font-size:.82rem;margin-top:8px">* PNG rows are order-of-magnitude — OpenAI tiles images differently from Claude's 28×28 patches. Text rows are exact. GPT-5 mini pricing: <a href="https://openai.com/api/pricing/" target="_blank" rel="noopener">openai.com/api/pricing</a>.</p>
+    <div class="note warn reveal" style="margin-top:18px"><span class="i">🔥</span><div><b>The token-burn signal to manage:</b> the PNG costs a fraction of a cent and works everywhere. The risk is the <b>interactive HTML resource</b> — the graph library is inlined (a deliberate "no-CDN" choice for offline / air-gapped / self-contained portability). If a client feeds that resource into the model as context, a single map call is ~250k tokens — ~$0.75 on Sonnet 4.6, and still ~$0.06 even on a cheap model like GPT-5 mini (so the fix is to not ingest it, not to switch model). The tool description already says <i>"do not summarize the raw HTML — it is meant for rendering"</i>, and the per-deployment env flags (<code>MCP_DEFAULT_VISUAL</code>, <code>MCP_INCLUDE_SVG</code>) tune what's emitted. <span style="opacity:.85">Bundle sizes are published approximations — the figures scale with graph size.</span></div></div>
   </div>
 </section>
 
@@ -642,7 +643,7 @@
       <div class="card">
         <div class="ic">📚</div><h3>Resources</h3><div class="who">the AI reads</div>
         <p style="margin-top:10px;color:var(--muted);font-size:.92rem">Pull-on-demand reference content the model can fetch.</p>
-        <ul><li><code>mcp://discovery/dsl-cookbook</code> — the full DSL grammar + curated examples</li><li>A Cytoscape UI resource backs the interactive graph view</li><li>Same single source that's embedded in tool descriptions</li></ul>
+        <ul><li><code>mcp://discovery/dsl-cookbook</code> — an expert-curated DSL reference (a Discovery expert's hand-written summary + examples, not a formal grammar)</li><li>A Cytoscape UI resource backs the interactive graph view</li><li>Same single source that's embedded in tool descriptions</li></ul>
       </div>
       <div class="card">
         <div class="ic">🎬</div><h3>Prompts</h3><div class="who">the user launches</div>
@@ -681,7 +682,7 @@
     <span class="k">"topHosts"</span>: [ … ]
   }
 }</pre>
-        <div class="note" style="margin-top:14px"><span class="i">📡</span><div><b>Loaded automatically:</b> the handshake <code>instructions</code> field and the <code>tools/list</code> descriptions are injected into the model at connection time — including the full DSL cookbook — so the AI is oriented before the user types anything.</div></div>
+        <div class="note" style="margin-top:14px"><span class="i">📡</span><div><b>Loaded automatically:</b> the handshake <code>instructions</code> field and the <code>tools/list</code> descriptions are injected into the model at connection time — including the expert-curated DSL cheat-sheet — so the AI is oriented before the user types anything.</div></div>
       </div>
     </div>
   </div>
@@ -903,7 +904,7 @@ const TOOLS = [
     uc:'Any need no parameterized tool covers, e.g. "ESX hosts with >10 Windows VMs" → NODECOUNT over a VirtualMachine traversal.' },
 
   { name:'discovery_execute_dsl', dom:'dsl',
-    desc:'Guarded DSL execution. Validates clause ordering locally, verifies referenced kinds against the live taxonomy, then runs. Its description embeds the full DSL cookbook.',
+    desc:'Guarded DSL execution. Validates clause ordering locally, verifies referenced kinds against the live taxonomy, then runs. Its description embeds an expert-curated DSL cheat-sheet (a Discovery expert\'s hand-written summary, not a formal grammar).',
     in:['dslQuery: string (validated)'],
     out:['query results','generated_dsl_query (echoed for audit)','stage / errors / hints + relationship hints on failure'],
     uc:'Execute the validated query from build_query after the user approves it — always keep generated_dsl_query in the result.' },
