@@ -15,7 +15,7 @@ export const findSchema = z.object({
   relatedToKind: z.string().regex(kindPattern).optional(),
   relatedToName: z.string().min(1).optional(),
   fields: z.array(z.string().regex(/^[A-Za-z0-9_]+$/)).min(1).optional(),
-  offset: z.number().int().min(0).default(0)
+  offset: z.number().int().min(0).default(0).describe("Pagination : index de départ (0 = début). L'API cape chaque appel ; si la réponse précédente a hasMore=true, rappeler avec offset=nextOffset.")
 }).strict();
 
 function esc(value: string): string {

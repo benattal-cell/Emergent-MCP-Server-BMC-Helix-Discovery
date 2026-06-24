@@ -1,7 +1,7 @@
 import { AppConfig } from "./config.js";
 import { ApiError } from "./utils/errors.js";
 import { sanitizeObject } from "./utils/sanitize.js";
-import { flattenDiscoveryQueryResult, type FlatQueryResult } from "./utils/flatten.js";
+import { flattenDiscoveryQueryResult, paginationSuffix, type FlatQueryResult } from "./utils/flatten.js";
 
 const REQUEST_TIMEOUT_MS = 30000;
 
@@ -123,7 +123,8 @@ export class DiscoveryClient {
     });
     const hasMore = flat.returnedCount > 0 && offset + flat.returnedCount < flat.totalCount;
     const nextOffset = hasMore ? offset + flat.returnedCount : undefined;
-    return { ...flat, offset, hasMore, ...(nextOffset !== undefined ? { nextOffset } : {}) };
+    const summary = flat.summary + paginationSuffix({ hasMore, nextOffset, offset });
+    return { ...flat, summary, offset, hasMore, ...(nextOffset !== undefined ? { nextOffset } : {}) };
   }
 
   async getTaxonomySections(): Promise<unknown> {

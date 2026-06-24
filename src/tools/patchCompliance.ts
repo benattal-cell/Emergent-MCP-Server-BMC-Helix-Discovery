@@ -4,6 +4,7 @@ import { kpiDashboard } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { flatRowsOutputSchema } from "./outputSchemas.js";
 import { rowsToMarkdownTable } from "./shared/markdownTable.js";
+import { paginationSuffix } from "../utils/flatten.js";
 
 export const patchComplianceSchema = z.object({
   kbList: z.array(z.string().min(1)).min(1).max(100),
@@ -12,7 +13,7 @@ export const patchComplianceSchema = z.object({
   hostsSoftwareMatching: z.string().optional().transform((value) => (value && value.trim() !== "" ? value : undefined)),
 
   hostingFilter: z.enum(["with", "without", "any"]).default("any"),
-  offset: z.number().int().min(0).default(0)
+  offset: z.number().int().min(0).default(0).describe("Pagination : index de départ (0 = début). Si la réponse précédente a hasMore=true, rappeler avec offset=nextOffset.")
 }).strict();
 
 type PatchComplianceInput = z.infer<typeof patchComplianceSchema>;
@@ -125,9 +126,12 @@ export function patchComplianceTools(client: DiscoveryClient) {
         const compliantCount = Math.max(totalHosts - nonCompliantCount, 0);
         const compliancePct = totalHosts > 0 ? Math.round((compliantCount / totalHosts) * 100) : 0;
         const result = {
-          summary: `${nonCompliantCount} hôte(s) non conforme(s) sur ${totalHosts} hôte(s) Windows ciblé(s).`,
+          summary: `${nonCompliantCount} hôte(s) non conforme(s) sur ${totalHosts} hôte(s) Windows ciblé(s).${paginationSuffix(nonCompliant)}`,
           totalCount: nonCompliantCount,
           returnedCount: rows.length,
+          offset: nonCompliant.offset,
+          hasMore: nonCompliant.hasMore,
+          nextOffset: nonCompliant.nextOffset,
           rows,
           compliance: { totalHosts, compliantCount, nonCompliantCount, compliancePct },
           generated_dsl_queries: queries,
