@@ -10,6 +10,7 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     oauthRedirectAllowlist: ["http://localhost", "http://127.0.0.1"],
     defaultVisual: true,
     includeSvgResource: true,
+    resultLimit: null,
     ...overrides
   };
 }

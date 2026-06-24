@@ -16,8 +16,9 @@ Renseignez ces variables uniquement dans votre plateforme de déploiement (Emerg
 - `OAUTH_LOGIN_PASSWORD` (optionnel) — si défini, `/oauth/authorize` affiche une page de consentement protégée par ce mot de passe
 - `MCP_DEFAULT_VISUAL` (défaut `true`) — voir « Sortie visuelle & optimisation »
 - `MCP_INCLUDE_SVG` (défaut `true`) — voir « Sortie visuelle & optimisation »
+- `MCP_RESULT_LIMIT` (optionnel, défaut: **aucun cap**) — cap par appel du nombre de lignes des **outils de liste**, pour tenir un **budget de tokens**. `0`/`none`/`off`/vide = aucun cap ; un entier positif borne chaque page. N'affecte pas les requêtes internes (catalogue, resolver) ni les compteurs (count-only). Voir « Limites & pagination ».
 
-> **Limites & pagination** : aucune limite artificielle. Chaque recherche = **un seul appel** à l'API Discovery, qui renvoie le **maximum de lignes qu'elle autorise** (cap naturel de l'instance). Le résultat expose `totalCount` / `returnedCount` / `hasMore` / `nextOffset`. Pour aller au-delà du cap, **rappeler le même outil avec `offset = nextOffset`** (paramètre `offset` sur les outils de liste : `discovery_find`, `discovery_lifecycle_report`, `discovery_patch_compliance_report`, `discovery_find_orphans`, `discovery_execute_dsl`) ; le résumé texte indique l'offset suivant. Une limite configurable par budget de tokens viendra ensuite.
+> **Limites & pagination** : par défaut, aucun cap artificiel — chaque recherche = **un seul appel** à l'API Discovery, qui renvoie le **maximum de lignes qu'elle autorise** (cap naturel de l'instance). Le résultat expose `totalCount` / `returnedCount` / `hasMore` / `nextOffset`. Pour aller au-delà, **rappeler le même outil avec `offset = nextOffset`** (paramètre `offset` sur `discovery_find`, `discovery_lifecycle_report`, `discovery_patch_compliance_report`, `discovery_find_orphans`, `discovery_execute_dsl`) ; le résumé texte indique l'offset suivant. Pour un **budget de tokens serré**, définir **`MCP_RESULT_LIMIT`** (entier positif) : chaque page est bornée à ce nombre de lignes, et l'on pagine via `offset = nextOffset`.
 
 ## Installation
 

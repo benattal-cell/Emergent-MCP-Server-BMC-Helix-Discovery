@@ -101,7 +101,12 @@ export class DiscoveryClient {
 
 
   async queryJson(query: string, limit?: number, options: { entityLabel?: string; appliedFilters?: Record<string, unknown>; offset?: number } = {}): Promise<FlatQueryResult> {
-    return this.searchData(query, { ...(limit === undefined ? {} : { limit }), format: "object", ...options });
+    // Apply the configured token-budget cap (MCP_RESULT_LIMIT) on the user-facing paginated
+    // path. An explicit `limit` wins (incl. 0 for count-only); otherwise the config cap, if any,
+    // bounds each page and callers paginate with offset = nextOffset. Internal searchData callers
+    // (catalog, resolver, …) are not capped.
+    const effective = limit ?? this.config.resultLimit ?? undefined;
+    return this.searchData(query, { ...(typeof effective === "number" ? { limit: effective } : {}), format: "object", ...options });
   }
 
   async searchData(query: string, options: SearchOptions = {}): Promise<FlatQueryResult> {

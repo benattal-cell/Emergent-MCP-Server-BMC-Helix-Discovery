@@ -140,6 +140,7 @@ describe("http server security", () => {
     const instructions: string = payload.result.instructions;
     expect(instructions).toContain("discovery_tool_guide");
     expect(instructions).toContain("SoftwareContainer");
+    expect(instructions).toContain("MCP_RESULT_LIMIT");
     expect(instructions).toContain("mcp://discovery/dsl-cookbook");
   });
 
