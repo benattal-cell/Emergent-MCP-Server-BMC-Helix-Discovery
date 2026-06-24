@@ -6,10 +6,9 @@ import { flattenDiscoveryQueryResult, type FlatQueryResult } from "./utils/flatt
 const REQUEST_TIMEOUT_MS = 30000;
 
 interface SearchOptions {
+  /** Explicit row limit. Send `0` for a count-only query (totalCount, no rows). Omit for the API's natural cap. */
   limit?: number;
   offset?: number;
-  maxRows?: number;
-  pageSize?: number;
   format?: "object" | "tree";
   omitOffset?: boolean;
   entityLabel?: string;
@@ -107,96 +106,24 @@ export class DiscoveryClient {
 
   async searchData(query: string, options: SearchOptions = {}): Promise<FlatQueryResult> {
     const format = options.format === "tree" ? "tree" : "object";
-    const fetchPage = async (offset: number, limit?: number): Promise<FlatQueryResult> => {
-      const params = new URLSearchParams({ format });
-      if (!options.omitOffset) params.set("offset", String(offset));
-      if (limit !== undefined) params.set("limit", String(limit));
-      const path = `${this.versionedPath("/data/search")}?${params.toString()}`;
-      const data = await this.request("POST", path, { query }, true);
-      return flattenDiscoveryQueryResult(data, {
-        entityLabel: options.entityLabel,
-        appliedFilters: options.appliedFilters,
-        format
-      });
-    };
-
-    // Internal single-page aggregate calls (omitOffset) keep their explicit limit.
-    if (options.omitOffset) return fetchPage(0, options.limit);
-
-    // Normal single-page search: the server-side result-limit policy governs (null = no limit),
-    // with offset-based pagination so callers can request the next page.
-    if (options.maxRows === undefined) {
-      const policy = this.config.resultLimit ?? null;
-      // policy null -> honor an explicit per-call limit (incl. 0 for count-only); otherwise no limit.
-      const effectiveLimit = policy === null
-        ? options.limit
-        : (options.limit !== undefined ? Math.min(options.limit, policy) : policy);
-
-      // No cap at all (no MCP_RESULT_LIMIT and no explicit per-call limit): honor the
-      // documented "tout est renvoyé" contract by paginating to completion. Discovery's
-      // /data/search returns only its default page (~100) when no limit is sent, so we
-      // walk the offset until the whole result set is collected (still no limit param).
-      if (effectiveLimit === undefined) {
-        const all: Array<Record<string, unknown>> = [];
-        let first: FlatQueryResult | undefined;
-        let totalCount = 0;
-        let offset = options.offset ?? 0;
-        for (;;) {
-          const page = await fetchPage(offset, undefined);
-          if (!first) first = page;
-          totalCount = page.totalCount;
-          all.push(...page.rows);
-          if (page.returnedCount === 0 || all.length >= totalCount) break;
-          offset += page.returnedCount;
-        }
-        const base = first ?? await fetchPage(0, 0);
-        const label = options.entityLabel ?? base.kind ?? "objet";
-        return { ...base, summary: `${totalCount} ${label} correspondants en base.`, totalCount, returnedCount: all.length, rows: all, offset: 0, hasMore: false };
-      }
-
-      const offset = options.offset ?? 0;
-      const page = await fetchPage(offset, effectiveLimit);
-      const hasMore = page.returnedCount > 0 && offset + page.returnedCount < page.totalCount;
-      const nextOffset = hasMore ? offset + page.returnedCount : undefined;
-      const summary = hasMore
-        ? `${page.summary} (${page.returnedCount} affichés depuis l'offset ${offset} ; rappeler avec offset=${nextOffset} pour la suite)`
-        : page.summary;
-      return { ...page, offset, hasMore, ...(nextOffset !== undefined ? { nextOffset } : {}), summary };
-    }
-
-    const pageSize = options.pageSize ?? options.limit ?? 500;
-    const maxRows = Math.max(0, options.maxRows);
-    const rows: Array<Record<string, unknown>> = [];
-    let totalCount = 0;
-    let first: FlatQueryResult | undefined;
-
-    for (let offset = 0; rows.length < maxRows; offset += pageSize) {
-      const page = await fetchPage(offset, Math.min(pageSize, maxRows - rows.length));
-      if (!first) first = page;
-      totalCount = page.totalCount;
-      rows.push(...page.rows);
-      if (page.returnedCount === 0 || rows.length >= page.totalCount) break;
-    }
-
-    const base = first ?? await fetchPage(0, 0);
-    const returnedCount = rows.length;
-    const label = options.entityLabel ?? base.kind ?? "objet";
-    const filtersDesc = options.appliedFilters && Object.keys(options.appliedFilters).length > 0
-      ? ` (filtres: ${Object.entries(options.appliedFilters).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(", ")})`
-      : "";
-    const formatNote = format === "tree" ? " [format=tree, résultats hiérarchiques]" : "";
-    const truncated = returnedCount < totalCount;
-    const summary = truncated
-      ? `${totalCount} ${label} correspondants en base${filtersDesc}, ${returnedCount} retournés (résultats tronqués)${formatNote}.`
-      : `${totalCount} ${label} correspondants en base${filtersDesc}${formatNote}.`;
-
-    return {
-      ...base,
-      summary,
-      totalCount,
-      returnedCount,
-      rows
-    };
+    const offset = options.offset ?? 0;
+    const params = new URLSearchParams({ format });
+    if (!options.omitOffset) params.set("offset", String(offset));
+    // No artificial cap. A `limit` is sent ONLY when the caller asks for one — notably `limit=0`
+    // for a count-only query (totalCount without rows). Otherwise the API's natural page size
+    // governs. One request, no pagination loop; totalCount/hasMore/nextOffset are exposed so a
+    // future offset system can build on them.
+    if (options.limit !== undefined) params.set("limit", String(options.limit));
+    const path = `${this.versionedPath("/data/search")}?${params.toString()}`;
+    const data = await this.request("POST", path, { query }, true);
+    const flat = flattenDiscoveryQueryResult(data, {
+      entityLabel: options.entityLabel,
+      appliedFilters: options.appliedFilters,
+      format
+    });
+    const hasMore = flat.returnedCount > 0 && offset + flat.returnedCount < flat.totalCount;
+    const nextOffset = hasMore ? offset + flat.returnedCount : undefined;
+    return { ...flat, offset, hasMore, ...(nextOffset !== undefined ? { nextOffset } : {}) };
   }
 
   async getTaxonomySections(): Promise<unknown> {

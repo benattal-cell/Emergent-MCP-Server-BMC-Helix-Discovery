@@ -87,7 +87,7 @@ describe("CVE CPE matching", () => {
       discoveryRows: []
     });
 
-    expect(client.searchData).toHaveBeenCalledWith(expect.stringContaining("cpe_string_23 matches"), expect.objectContaining({ entityLabel: "actifs impactés", maxRows: expect.any(Number) }));
+    expect(client.searchData).toHaveBeenCalledWith(expect.stringContaining("cpe_string_23 matches"), expect.objectContaining({ entityLabel: "actifs impactés" }));
     expect(result.cveSummary.impactedRowsCount).toBe(3);
     expect(JSON.stringify(result)).not.toContain("nextExecutionTool");
     expect(JSON.stringify(result)).not.toContain("discovery_execute_dsl");

@@ -6,8 +6,6 @@ import { structuredOutputSchema } from "./outputSchemas.js";
 const languageSchema = z.enum(["fr", "en"]).optional();
 
 const cveIdSchema = z.string().regex(/^CVE-\d{4}-\d{4,}$/i, "Invalid CVE format");
-const CVE_SEARCH_MAX_ROWS = 20_000;
-const CVE_SEARCH_PAGE_SIZE = 500;
 
 function esc(value: string): string {
   return value.replace(/'/g, "\\'");
@@ -140,17 +138,15 @@ async function rowsForExecutiveSummary(client: DiscoveryClient, dsl: string, inp
   if (inputRows.length > 0) return { rows: annotateMatchPrecision(inputRows, cpes), source: "provided_rows" };
   const result = await client.searchData(dsl, {
     entityLabel: "actifs impactés",
-    appliedFilters: { cveId, cpeCount: cpes.length },
-    maxRows: CVE_SEARCH_MAX_ROWS,
-    pageSize: CVE_SEARCH_PAGE_SIZE
+    appliedFilters: { cveId, cpeCount: cpes.length }
   });
   return { rows: annotateMatchPrecision(result.rows as Array<Record<string, unknown>>, cpes), source: "executed_query" };
 }
 
-export function cveTools(client: DiscoveryClient, config: Pick<AppConfig, "nvdApiKey" | "resultLimit">) {
+export function cveTools(client: DiscoveryClient, config: Pick<AppConfig, "nvdApiKey">) {
   return {
     discovery_cve_executive_summary: {
-      description: "Produce an EXECUTIVE-style summary for a CVE: number of impacted assets, top business services / hosts / versions, and a follow-up prompt. Use this FIRST when the user asks 'are we exposed to CVE-XXXX-YYYY?' or 'what's the impact of CVE-XXXX-YYYY?'. Requires the CVE ID. The tool fetches NVD CPEs, builds the Discovery impact query and executes it internally (or uses discoveryRows if provided). Set detail='full' to return the COMPLETE impacted inventory (every host, version, service, owner) up to `limit` rows instead of the summary.",
+      description: "Produce an EXECUTIVE-style summary for a CVE: number of impacted assets, top business services / hosts / versions, and a follow-up prompt. Use this FIRST when the user asks 'are we exposed to CVE-XXXX-YYYY?' or 'what's the impact of CVE-XXXX-YYYY?'. Requires the CVE ID. The tool fetches NVD CPEs, builds the Discovery impact query and executes it internally (or uses discoveryRows if provided). Set detail='full' to return the COMPLETE impacted inventory (every host, version, service, owner) instead of the summary.",
       schema: z.object({
         cveId: cveIdSchema,
         detail: z.enum(["summary", "full"]).default("summary"),
@@ -169,8 +165,7 @@ export function cveTools(client: DiscoveryClient, config: Pick<AppConfig, "nvdAp
         const { rows, source } = await rowsForExecutiveSummary(client, dsl, input.discoveryRows, cpes, cveId);
 
         if (input.detail === "full") {
-          const cap = config.resultLimit ?? null;
-          const limitedRows = cap === null ? rows : rows.slice(0, cap);
+          const limitedRows = rows;
           return {
             cveHeader: { cveId, riskTitle: t.riskTitle },
             cveSummary: { cpeCount: cpes.length, impactedRowsCount: rows.length },

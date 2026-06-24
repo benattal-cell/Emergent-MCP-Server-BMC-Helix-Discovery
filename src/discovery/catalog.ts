@@ -24,8 +24,6 @@ type NominalKind = CatalogNameEntry["kind"];
 
 const NOMINAL_KINDS: NominalKind[] = ["BusinessService", "BusinessApplicationInstance", "Host"];
 const DEFAULT_NOMINAL_DIGEST_LIMIT = 300;
-const CATALOG_MAX_ROWS = 20_000;
-const CATALOG_PAGE_SIZE = 500;
 const SOFTWARE_TYPES_QUERY = "search SoftwareInstance show type processwith unique()";
 
 let nameRegistry = new Map<string, CatalogNameEntry[]>();
@@ -73,9 +71,7 @@ function rows(result: FlatQueryResult): Array<Record<string, unknown>> {
 async function loadNominalKind(client: DiscoveryClient, kind: NominalKind): Promise<CatalogNameEntry[]> {
   const result = await client.searchData(`SEARCH ${kind} SHOW name, kind, #id`, {
     entityLabel: `catalog:${kind}`,
-    appliedFilters: { catalog: "nominal", kind },
-    maxRows: CATALOG_MAX_ROWS,
-    pageSize: CATALOG_PAGE_SIZE
+    appliedFilters: { catalog: "nominal", kind }
   });
   const seenNames = new Set<string>();
   const entries: CatalogNameEntry[] = [];
@@ -109,7 +105,6 @@ async function loadSoftwareTypes(client: DiscoveryClient): Promise<{ registry: M
   const result = await client.searchData(SOFTWARE_TYPES_QUERY, {
     entityLabel: "catalog:SoftwareInstanceTypes",
     appliedFilters: { catalog: "softwareTypes", mode: "single-page-unique" },
-    limit: CATALOG_MAX_ROWS,
     omitOffset: true
   });
   return {

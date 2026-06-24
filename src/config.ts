@@ -18,8 +18,6 @@ export interface AppConfig {
   defaultVisual: boolean;
   /** Also emit the raw SVG as a resource block. On by default; set MCP_INCLUDE_SVG=false to slim payloads for PNG-only clients. */
   includeSvgResource: boolean;
-  /** Server-side cap on search result rows. null = no limit (default). Set MCP_RESULT_LIMIT to a positive integer to cap. */
-  resultLimit: number | null;
 }
 
 // Known OAuth callback prefixes for the LLM clients we support, plus localhost for desktop apps.
@@ -44,13 +42,6 @@ function parseAllowlist(raw: string | undefined): string[] {
 }
 
 // null = no limit (default). A positive integer caps search result rows server-side.
-function parseResultLimit(raw: string | undefined): number | null {
-  const value = (raw ?? "").trim().toLowerCase();
-  if (value === "" || value === "0" || value === "none" || value === "off" || value === "false") return null;
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-}
-
 export function loadConfig(): AppConfig {
   const baseUrl = process.env.BMC_DISCOVERY_BASE_URL?.trim();
 
@@ -74,7 +65,6 @@ export function loadConfig(): AppConfig {
     oauthLoginPassword: process.env.OAUTH_LOGIN_PASSWORD?.trim() || undefined,
     nvdApiKey: process.env.NVD_API_KEY?.trim(),
     defaultVisual: (process.env.MCP_DEFAULT_VISUAL?.trim().toLowerCase() ?? "true") !== "false",
-    includeSvgResource: (process.env.MCP_INCLUDE_SVG?.trim().toLowerCase() ?? "true") !== "false",
-    resultLimit: parseResultLimit(process.env.MCP_RESULT_LIMIT)
+    includeSvgResource: (process.env.MCP_INCLUDE_SVG?.trim().toLowerCase() ?? "true") !== "false"
   };
 }
