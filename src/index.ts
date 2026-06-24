@@ -480,7 +480,7 @@ export async function createHttpServer(config: AppConfig): Promise<http.Server> 
 
 async function main(): Promise<void> {
   const requiredVars = ["BMC_DISCOVERY_BASE_URL"] as const;
-  const optionalVars = ["BMC_DISCOVERY_API_VERSION", "BMC_DISCOVERY_TOKEN", "PORT", "PUBLIC_BASE_URL", "OAUTH_REDIRECT_ALLOWLIST", "OAUTH_LOGIN_PASSWORD", "NVD_API_KEY", "MCP_DEFAULT_VISUAL", "MCP_INCLUDE_SVG"] as const;
+  const optionalVars = ["BMC_DISCOVERY_API_VERSION", "BMC_DISCOVERY_TOKEN", "PORT", "PUBLIC_BASE_URL", "OAUTH_REDIRECT_ALLOWLIST", "OAUTH_LOGIN_PASSWORD", "NVD_API_KEY", "MCP_DEFAULT_VISUAL", "MCP_INCLUDE_SVG", "MCP_RESULT_LIMIT"] as const;
   const presence = {
     required: Object.fromEntries(requiredVars.map((k) => [k, Boolean(process.env[k]?.trim())])),
     optional: Object.fromEntries(optionalVars.map((k) => [k, Boolean(process.env[k]?.trim())]))

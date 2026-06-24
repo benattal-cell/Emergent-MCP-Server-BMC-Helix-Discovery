@@ -77,4 +77,16 @@ describe("DiscoveryClient", () => {
     expect(result.nextOffset).toBe(10);
     expect(result.summary).toContain("offset=10"); // actionable next-page hint
   });
+
+  it("caps the paginated path (queryJson) with MCP_RESULT_LIMIT but lets count-only through", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ items: [{ count: 0, headings: ["name"], results: [] }] }) }));
+    const client = new DiscoveryClient({ ...config, resultLimit: 200 } as never);
+
+    await client.queryJson("SEARCH Host SHOW name");
+    await client.queryJson("SEARCH Host SHOW name", 0);
+
+    const calls = (fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    expect(String(calls[0][0])).toContain("limit=200"); // configured cap applied
+    expect(String(calls[1][0])).toContain("limit=0"); // explicit count-only wins over the cap
+  });
 });
