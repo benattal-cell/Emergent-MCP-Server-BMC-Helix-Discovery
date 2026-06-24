@@ -9,7 +9,8 @@ const executeDslSchema = z
   .object({
     request: z.string().min(1),
     query: z.string().min(1),
-    // deprecated: ignoré, conservé pour compat appelants
+    confirm: z.boolean().default(false).describe("Double validation. false (défaut) = PRÉVISUALISATION : valide la requête et estime le nombre de lignes SANS exécuter. true = exécute — à ne mettre qu'APRÈS validation explicite de l'utilisateur (le coût en tokens peut être conséquent)."),
+    // deprecated alias for `confirm`, kept for back-compat
     userConfirmed: z.boolean().optional(),
     // deprecated: ignoré, conservé pour compat appelants
     provenance: z.enum(["curated", "exploratory"]).optional(),
@@ -95,7 +96,7 @@ export function executeDslTools(client: DiscoveryClient) {
   return {
     discovery_execute_dsl: {
       description: [
-        "Primary DSL query executor / run query / submit query / direct query runner / execute query and return rows. Execute a raw BMC Discovery DSL query and return rows. This is THE tool to run any validated dslQuery — typically one produced by discovery_build_query, but any well-formed DSL works. Two safety gates run before execution: (1) local syntax validation (clause ordering, LOOKUP+WHERE, count(traverse), ASC keyword), (2) taxonomy check on referenced node kinds. On gate failure, returns actionable errors plus curated TRAVERSE paths from common_relationships to fix and retry. No user confirmation required — it is a pure executor.",
+        "Primary DSL query executor / run query / submit query / direct query runner / execute query and return rows. Execute a raw BMC Discovery DSL query and return rows. This is THE tool to run any validated dslQuery — typically one produced by discovery_build_query, but any well-formed DSL works. Two safety gates run before execution: (1) local syntax validation (clause ordering, LOOKUP+WHERE, count(traverse), ASC keyword), (2) taxonomy check on referenced node kinds. On gate failure, returns actionable errors plus curated TRAVERSE paths from common_relationships to fix and retry. TWO-STEP CONFIRMATION (token cost): the FIRST call (confirm=false, default) validates the query and ESTIMATES the matching row count WITHOUT executing (stage='confirmation_required'); show that estimate to the user and only re-call with confirm=true once they approve. Never set confirm=true on your own.",
         "",
         "Exécute une requête DSL BMC Discovery brute et renvoie les lignes. C'est L'outil pour exécuter toute dslQuery validée — typiquement issue de discovery_build_query, mais tout DSL bien formé fonctionne.",
         "",
@@ -175,6 +176,35 @@ export function executeDslTools(client: DiscoveryClient) {
               "Taxonomy could not be verified (cache/API unavailable) — execution allowed, but verify kinds manually if results are empty."
             )
           );
+        }
+
+        // --- Gate 3 : double validation (coût en tokens) ---
+        const confirmed = input.confirm || input.userConfirmed === true;
+        if (!confirmed) {
+          let estimatedRows: number | null = null;
+          try {
+            const countOnly = await client.queryJson(input.query, 0, {
+              entityLabel: msg(lang, "estimation execute DSL", "execute DSL estimate"),
+              appliedFilters: {}
+            });
+            estimatedRows = countOnly.totalCount;
+          } catch {
+            // count-only peut échouer sur du DSL exotique : on demande confirmation quand même.
+          }
+          return {
+            stage: "confirmation_required",
+            executed: false,
+            valid: true,
+            taxonomyChecked,
+            warnings,
+            query: input.query,
+            estimatedRows,
+            message: msg(
+              lang,
+              `Validation requise avant exécution. Requête VALIDE${estimatedRows !== null ? `, ~${estimatedRows} ligne(s) correspondante(s)` : ""}. L'exécuter peut renvoyer un volume important — coût en tokens potentiellement conséquent. PRÉSENTE ce résumé (requête + nombre de lignes) à l'utilisateur et ne relance avec confirm=true QUE s'il valide.`,
+              `Confirmation required before execution. Query VALID${estimatedRows !== null ? `, ~${estimatedRows} matching row(s)` : ""}. Executing it may return a large volume — token cost can be significant. SHOW this summary (query + row count) to the user and only re-call with confirm=true if they approve.`
+            )
+          };
         }
 
         // --- Exécution ---
