@@ -51,11 +51,6 @@
   <!-- TITLE -->
   <text x="50" y="58" fill="#FFFFFF" font-size="32" font-weight="700">Architecture de la solution Observabilité &amp; AIOps</text>
   <text x="50" y="88" fill="#9FB6D4" font-size="16">BMC Helix — Discovery · Operations Management with AIOps · ITSM · SIGNL4</text>
-  <g transform="translate(1454,34)" filter="url(#softshadow)">
-    <rect width="64" height="54" rx="10" fill="url(#orange)"/>
-    <text x="32" y="38" fill="#FFFFFF" font-size="26" font-weight="800" text-anchor="middle">bmc</text>
-    <text x="78" y="50" fill="#FFFFFF" font-size="27" font-weight="800">Helix</text>
-  </g>
 
   <!-- ZONE HEADERS -->
   <text x="50" y="150" fill="#FF8A3D" font-size="17" font-weight="700" letter-spacing="2">1 · SOURCES</text>
