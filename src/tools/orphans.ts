@@ -193,7 +193,7 @@ Use discovery_execute_dsl if you want to inspect or run raw Discovery DSL. Limit
         const warnings: string[] = [];
         if (input.noise_filters.exclude_same_host) warnings.push("exclude_same_host is not implemented in DSL in this version; total_inbound still includes same-host relationships.");
         if (input.include_inbound_detail) warnings.push("include_inbound_detail requested, but this version returns count-based categorization only; use generated_dsl_query with discovery_execute_dsl for raw DSL debugging.");
-        if (result.returnedCount < result.totalCount) warnings.push("Result set is truncated by the server result limit (MCP_RESULT_LIMIT); refine target_filter or raise MCP_RESULT_LIMIT.");
+        if (result.returnedCount < result.totalCount) warnings.push("Result set truncated by the Discovery API's natural per-call cap; narrow target_filter to scan the full population (offset pagination is planned).");
         const payload = {
           summary: {
             total_candidates: allRows.length,

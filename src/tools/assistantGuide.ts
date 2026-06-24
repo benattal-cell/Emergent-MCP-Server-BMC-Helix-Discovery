@@ -253,7 +253,7 @@ export function buildServerInstructions(): string {
     "À LA CONNEXION : pour toute demande sur des données Discovery, appelle d'abord `discovery_tool_guide` avec la question brute de l'utilisateur — il renvoie les bons outils, le catalogue connu et les règles complètes (FR/EN).",
     "",
     "Classes de nœud RÉELLES : Host, SoftwareInstance, NetworkDevice, SoftwareContainer, BusinessService, BusinessApplicationInstance, Cluster, StorageSystem… Mappe les alias FR/EN vers la vraie classe avec `discovery_resolve_kind` ; ne devine jamais un kind.",
-    "Limites : gérées UNIQUEMENT côté serveur (MCP_RESULT_LIMIT) avec pagination via `nextOffset`. N'invente aucun paramètre de limite par appel.",
+    "Limites : aucune limite artificielle pour l'instant — un appel ramène le maximum de lignes (l'API Discovery cape naturellement). N'invente aucun paramètre de limite.",
     "DSL : n'écris jamais de DSL à la main → `discovery_build_query` compose+valide, puis `discovery_execute_dsl` exécute. Le cookbook DSL complet (grammaire + exemples) est embarqué dans la description de `discovery_execute_dsl` (chargé à la connexion) ; il est aussi exposé en resource `mcp://discovery/dsl-cookbook`.",
     "Prompts MCP disponibles (workflows guidés) : cve_impact, value_review, eol_audit, dependency_analysis.",
     "",

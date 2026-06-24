@@ -5,9 +5,6 @@ import { renderVisual } from "../svg/renderer.js";
 import { loadItCostRows, type ItCostRow } from "./itCosts/dataLoader.js";
 import { structuredOutputSchema } from "./outputSchemas.js";
 
-const WINDOWS_LICENSE_MAX_ROWS = 20_000;
-const WINDOWS_LICENSE_PAGE_SIZE = 500;
-
 const windowsLicenseSchema = z.object({
   minCoresPerHost: z.number().int().min(1).default(16),
   minCoresPerProc: z.number().int().min(1).default(8),
@@ -17,8 +14,7 @@ const windowsLicenseSchema = z.object({
   priceProfile: z.enum(["license_microsoft", "virtualized_infra"]).default("license_microsoft"),
   underloadedVmThreshold: z.number().int().min(0).default(4),
   currentDatacenterHostIds: z.array(z.string().min(1)).default([]),
-  currentStandardHostIds: z.array(z.string().min(1)).default([]),
-  maxRows: z.number().int().min(1).max(50_000).default(WINDOWS_LICENSE_MAX_ROWS)
+  currentStandardHostIds: z.array(z.string().min(1)).default([])
 }).strict();
 
 export type WindowsLicenseInput = z.infer<typeof windowsLicenseSchema>;
@@ -961,22 +957,18 @@ export async function buildWindowsLicenseReportFromHosts(hostsInput: PhysicalHos
   };
 }
 
-async function inventoryRows(client: DiscoveryClient, query: string, role: PhysicalHostInventoryRow["role"], maxRows: number): Promise<PhysicalHostInventoryRow[]> {
+async function inventoryRows(client: DiscoveryClient, query: string, role: PhysicalHostInventoryRow["role"]): Promise<PhysicalHostInventoryRow[]> {
   const result = await client.searchData(query, {
     entityLabel: `hôtes physiques Windows licensing:${role}`,
-    appliedFilters: { windowsLicense: true, role },
-    maxRows,
-    pageSize: WINDOWS_LICENSE_PAGE_SIZE
+    appliedFilters: { windowsLicense: true, role }
   });
   return (result.rows as Array<Record<string, unknown>>).map((row) => normalizeInventoryRow(row, role)).filter((row): row is PhysicalHostInventoryRow => row !== null);
 }
 
-async function esxGuestVersionMap(client: DiscoveryClient, query: string, maxRows: number): Promise<Map<string, string[]>> {
+async function esxGuestVersionMap(client: DiscoveryClient, query: string): Promise<Map<string, string[]>> {
   const result = await client.searchData(query, {
     entityLabel: "versions Windows invitées par ESX",
-    appliedFilters: { windowsLicense: true, role: "esxGuestVersions" },
-    maxRows,
-    pageSize: WINDOWS_LICENSE_PAGE_SIZE
+    appliedFilters: { windowsLicense: true, role: "esxGuestVersions" }
   });
   const versionsByEsx = new Map<string, string[]>();
   for (const row of result.rows as Array<Record<string, unknown>>) {
@@ -1000,10 +992,10 @@ export function windowsLicenseTools(client: DiscoveryClient) {
       handler: async (input: WindowsLicenseInput) => {
         const queries = buildWindowsLicenseQueries();
         const [esx, baremetal, hyperv, esxGuestVersions] = await Promise.all([
-          inventoryRows(client, queries.esx, "esx", input.maxRows),
-          inventoryRows(client, queries.baremetal, "baremetal", input.maxRows),
-          inventoryRows(client, queries.hyperv, "hyperv", input.maxRows),
-          esxGuestVersionMap(client, queries.esxGuestVersions, input.maxRows)
+          inventoryRows(client, queries.esx, "esx"),
+          inventoryRows(client, queries.baremetal, "baremetal"),
+          inventoryRows(client, queries.hyperv, "hyperv"),
+          esxGuestVersionMap(client, queries.esxGuestVersions)
         ]);
         const esxWithGuestVersions = esx.map((host) => ({
           ...host,

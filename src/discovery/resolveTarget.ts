@@ -63,9 +63,7 @@ async function liveLookup(client: DiscoveryClient, target: string, targetKind?: 
     try {
       const result = await client.searchData(query, {
         entityLabel: `resolver:${kind}`,
-        appliedFilters: { target, kind },
-        maxRows: 1000,
-        pageSize: 250
+        appliedFilters: { target, kind }
       });
       for (const row of result.rows as Array<Record<string, unknown>>) {
         const id = rowString(row, ["#id", "id", "key", "node_id"]);

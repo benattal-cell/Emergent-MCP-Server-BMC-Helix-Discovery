@@ -91,14 +91,14 @@ describe("discovery_service_architecture", () => {
 
     expect(client.searchData).toHaveBeenCalledWith(
       'SEARCH BusinessService WHERE name HAS SUBWORD "Apex-Watches.com" SHOW name, kind, #id',
-      { entityLabel: "resolver:BusinessService", appliedFilters: { target: "Apex-Watches.com", kind: "BusinessService" }, maxRows: 1000, pageSize: 250 }
+      { entityLabel: "resolver:BusinessService", appliedFilters: { target: "Apex-Watches.com", kind: "BusinessService" } }
     );
     expect(client.searchData).toHaveBeenCalledWith(
       `SEARCH BusinessService WHERE #id = "r"
   EXPAND Dependant:Dependency:DependedUpon:BusinessService
   SHOW name, #id AS id,
        #Dependant:Dependency:DependedUpon:BusinessService.name AS depends_on`,
-      { entityLabel: "service_arch:closure", appliedFilters: { rootId: "r" }, maxRows: 1000, pageSize: 250 }
+      { entityLabel: "service_arch:closure", appliedFilters: { rootId: "r" } }
     );
     expect(client.getNodeGraph).not.toHaveBeenCalled();
     expect(result.structuredContent).toMatchObject({ count: 1, summary: '1 service(s) résolu(s) pour "Apex-Watches.com".' });

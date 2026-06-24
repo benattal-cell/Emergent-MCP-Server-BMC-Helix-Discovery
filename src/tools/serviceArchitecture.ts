@@ -116,9 +116,7 @@ async function collectArchitectureGraph(
        #Dependant:Dependency:DependedUpon:BusinessService.name AS depends_on`;
   const result = await client.searchData(query, {
     entityLabel: "service_arch:closure",
-    appliedFilters: { rootId },
-    maxRows: 1000,
-    pageSize: 250
+    appliedFilters: { rootId }
   });
 
   const nodes = new Map<string, ServiceNode>();

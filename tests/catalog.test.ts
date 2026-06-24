@@ -24,7 +24,6 @@ describe("Discovery catalog cache", () => {
     await loadCatalog({ searchData } as never);
 
     expect(searchData).toHaveBeenCalledWith("search SoftwareInstance show type processwith unique()", expect.objectContaining({
-      limit: 20000,
       omitOffset: true
     }));
     expect(lookupByName("jira")).toEqual([{ name: "Jira", kind: "BusinessService", id: "bs-1" }, { name: "Jira Production", kind: "BusinessApplicationInstance", id: "app-1" }]);
