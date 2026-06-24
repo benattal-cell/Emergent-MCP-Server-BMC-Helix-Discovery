@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { flattenDiscoveryQueryResult } from "../src/utils/flatten.js";
+import { flattenDiscoveryQueryResult, paginationSuffix } from "../src/utils/flatten.js";
 
 describe("flattenDiscoveryQueryResult", () => {
   it("parses array-root object format (real BMC response)", () => {
@@ -39,5 +39,11 @@ describe("flattenDiscoveryQueryResult", () => {
     expect(flattenDiscoveryQueryResult([]).totalCount).toBe(0);
     expect(flattenDiscoveryQueryResult({}).totalCount).toBe(0);
     expect(flattenDiscoveryQueryResult([]).summary).toContain("vide ou format inattendu");
+  });
+
+  it("paginationSuffix gives an actionable next-page hint only when more rows exist", () => {
+    expect(paginationSuffix({ hasMore: true, nextOffset: 500, offset: 0 })).toContain("offset=500");
+    expect(paginationSuffix({ hasMore: false })).toBe("");
+    expect(paginationSuffix({ hasMore: true })).toBe(""); // no nextOffset -> nothing to suggest
   });
 });

@@ -23,7 +23,7 @@ const lifecycleSchema = z.object({
 
 const lifecycleReportSchema = z.object({
   scope: z.enum(["software", "os"]).default("software"),
-  offset: z.number().int().min(0).default(0),
+  offset: z.number().int().min(0).default(0).describe("Pagination : index de départ (0 = début). Si la réponse précédente a hasMore=true, rappeler avec offset=nextOffset."),
   riskWindowDays: z.number().int().min(1).max(3650).default(riskWindowDaysDefault),
   onlyAtRisk: z.boolean().default(false),
   osContains: z.string().min(1).optional(),

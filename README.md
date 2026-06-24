@@ -17,7 +17,7 @@ Renseignez ces variables uniquement dans votre plateforme de déploiement (Emerg
 - `MCP_DEFAULT_VISUAL` (défaut `true`) — voir « Sortie visuelle & optimisation »
 - `MCP_INCLUDE_SVG` (défaut `true`) — voir « Sortie visuelle & optimisation »
 
-> **Limites de résultats** : aucune limite artificielle. Chaque recherche = **un seul appel** à l'API Discovery, qui renvoie le **maximum de lignes qu'elle autorise** (cap naturel de l'instance). Le résultat expose `totalCount` / `returnedCount` / `hasMore` / `nextOffset` — un système d'offset (et une limite configurable par budget de tokens) viendra ensuite.
+> **Limites & pagination** : aucune limite artificielle. Chaque recherche = **un seul appel** à l'API Discovery, qui renvoie le **maximum de lignes qu'elle autorise** (cap naturel de l'instance). Le résultat expose `totalCount` / `returnedCount` / `hasMore` / `nextOffset`. Pour aller au-delà du cap, **rappeler le même outil avec `offset = nextOffset`** (paramètre `offset` sur les outils de liste : `discovery_find`, `discovery_lifecycle_report`, `discovery_patch_compliance_report`, `discovery_find_orphans`, `discovery_execute_dsl`) ; le résumé texte indique l'offset suivant. Une limite configurable par budget de tokens viendra ensuite.
 
 ## Installation
 

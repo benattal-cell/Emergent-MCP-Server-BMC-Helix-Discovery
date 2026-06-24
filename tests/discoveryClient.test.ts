@@ -75,5 +75,6 @@ describe("DiscoveryClient", () => {
     expect(result.totalCount).toBe(30);
     expect(result.hasMore).toBe(true);
     expect(result.nextOffset).toBe(10);
+    expect(result.summary).toContain("offset=10"); // actionable next-page hint
   });
 });

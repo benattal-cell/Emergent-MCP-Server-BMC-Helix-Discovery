@@ -3,6 +3,7 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { kpiDashboard, countBy } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { appendRowsMarkdownSummary } from "./shared/markdownTable.js";
+import { paginationSuffix } from "../utils/flatten.js";
 import { DAY_IN_NANOS } from "./shared/time.js";
 
 
@@ -12,7 +13,7 @@ const osLifecycleSchema = z.object({
   osContains: z.string().min(1).optional(),
   onlyAtRisk: z.boolean().default(false),
   riskWindowDays: z.number().int().min(1).max(3650).default(riskWindowDaysDefault),
-  offset: z.number().int().min(0).default(0)
+  offset: z.number().int().min(0).default(0).describe("Pagination : index de départ (0 = début). Si la réponse précédente a hasMore=true, rappeler avec offset=nextOffset.")
 }).strict();
 
 type OsLifecycleInput = z.infer<typeof osLifecycleSchema>;
@@ -118,9 +119,12 @@ export async function runOsLifecycleReport(client: DiscoveryClient, input: OsLif
   ]);
   const rows = Array.isArray(hosts.rows) ? hosts.rows : [];
   const result = {
-    summary: `${atRisk.totalCount ?? 0} hôte(s) OS à risque sur ${hosts.totalCount ?? rows.length} hôte(s) ciblé(s).`,
+    summary: `${atRisk.totalCount ?? 0} hôte(s) OS à risque sur ${hosts.totalCount ?? rows.length} hôte(s) ciblé(s).${paginationSuffix(hosts)}`,
     totalCount: hosts.totalCount,
     returnedCount: rows.length,
+    offset: hosts.offset,
+    hasMore: hosts.hasMore,
+    nextOffset: hosts.nextOffset,
     rows,
     risk: {
       hosts: hosts.totalCount ?? rows.length,

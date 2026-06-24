@@ -3,6 +3,7 @@ import { DiscoveryClient } from "../discoveryClient.js";
 import { kpiDashboard, type BarDatum } from "../svg/kpi.js";
 import { renderVisual } from "../svg/renderer.js";
 import { appendRowsMarkdownSummary } from "./shared/markdownTable.js";
+import { paginationSuffix } from "../utils/flatten.js";
 import { orphanOutputSchema } from "./outputSchemas.js";
 
 type GroupBy = "host" | "publisher" | "product" | "type";
@@ -38,7 +39,7 @@ export const findOrphansSchema = z.object({
   include_active: z.boolean().default(false),
   include_inbound_detail: z.boolean().default(false),
   group_by: z.enum(["host", "publisher", "product", "type"]).nullable().default(null),
-  offset: z.number().int().min(0).default(0)
+  offset: z.number().int().min(0).default(0).describe("Pagination : index de départ (0 = début). Si la réponse précédente a hasMore=true, rappeler avec offset=nextOffset.")
 }).strict();
 
 export type FindOrphansInput = z.infer<typeof findOrphansSchema>;
@@ -193,7 +194,7 @@ Use discovery_execute_dsl if you want to inspect or run raw Discovery DSL. Limit
         const warnings: string[] = [];
         if (input.noise_filters.exclude_same_host) warnings.push("exclude_same_host is not implemented in DSL in this version; total_inbound still includes same-host relationships.");
         if (input.include_inbound_detail) warnings.push("include_inbound_detail requested, but this version returns count-based categorization only; use generated_dsl_query with discovery_execute_dsl for raw DSL debugging.");
-        if (result.returnedCount < result.totalCount) warnings.push("Result set truncated by the Discovery API's natural per-call cap; narrow target_filter to scan the full population (offset pagination is planned).");
+        if (result.hasMore && result.nextOffset !== undefined) warnings.push(`Page partielle (cap naturel de l'API) : ${result.returnedCount} sur ${result.totalCount}. Rappeler avec offset=${result.nextOffset} pour la suite, ou affiner target_filter.`);
         const payload = {
           summary: {
             total_candidates: allRows.length,
@@ -205,6 +206,7 @@ Use discovery_execute_dsl if you want to inspect or run raw Discovery DSL. Limit
             generated_dsl_query,
             warnings
           },
+          pagination: { offset: result.offset, hasMore: result.hasMore, nextOffset: result.nextOffset },
           rows,
           generated_dsl_query
         };
@@ -226,7 +228,7 @@ Use discovery_execute_dsl if you want to inspect or run raw Discovery DSL. Limit
         );
         return renderVisual(svg, {
           name: `orphans_${input.target_kind.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase()}`,
-          textSummary: appendRowsMarkdownSummary(`${rows.length} orphan candidates retained from ${allRows.length} analyzed ${input.target_kind} rows.`, rows),
+          textSummary: appendRowsMarkdownSummary(`${rows.length} orphan candidates retained from ${allRows.length} analyzed ${input.target_kind} rows.${paginationSuffix(result)}`, rows),
           structuredContent: payload
         });
       },

@@ -13,7 +13,7 @@ const executeDslSchema = z
     userConfirmed: z.boolean().optional(),
     // deprecated: ignoré, conservé pour compat appelants
     provenance: z.enum(["curated", "exploratory"]).optional(),
-    offset: z.number().int().min(0).default(0),
+    offset: z.number().int().min(0).default(0).describe("Pagination : index de départ (0 = début). Si la réponse précédente a hasMore=true, rappeler avec offset=nextOffset."),
     language: z.enum(["fr", "en"]).optional()
   })
   .strict();

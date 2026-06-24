@@ -15,6 +15,16 @@ export interface FlatQueryResult {
   rows: Array<Record<string, unknown>>;
 }
 
+/**
+ * Actionable next-page hint appended to a summary when more rows exist, or "" otherwise.
+ * The API caps each call, so callers paginate by re-invoking with offset = nextOffset.
+ */
+export function paginationSuffix(result: Pick<FlatQueryResult, "hasMore" | "nextOffset" | "offset">): string {
+  return result.hasMore && result.nextOffset !== undefined
+    ? ` Rappeler le même outil avec offset=${result.nextOffset} pour la page suivante (page courante depuis l'offset ${result.offset ?? 0}).`
+    : "";
+}
+
 interface DiscoverySearchResultBlock {
   kind?: string;
   count?: number;
