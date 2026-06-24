@@ -1,0 +1,307 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1660" height="1080" viewBox="0 0 1660 1080" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif">
+  <defs>
+    <!-- Background -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0C1626"/>
+      <stop offset="0.55" stop-color="#10213B"/>
+      <stop offset="1" stop-color="#0A1422"/>
+    </linearGradient>
+    <!-- BMC orange -->
+    <linearGradient id="orange" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF7A33"/>
+      <stop offset="1" stop-color="#FE5000"/>
+    </linearGradient>
+    <linearGradient id="orangeH" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FE5000"/>
+      <stop offset="1" stop-color="#FF8A3D"/>
+    </linearGradient>
+    <!-- Center brain panel -->
+    <linearGradient id="brain" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1B3357"/>
+      <stop offset="1" stop-color="#14253F"/>
+    </linearGradient>
+    <linearGradient id="teal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1FC4CE"/>
+      <stop offset="1" stop-color="#0E8C97"/>
+    </linearGradient>
+    <!-- Soft shadow -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+    <filter id="softshadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L10,5 L0,10 L3,5 Z" fill="#FF8A3D"/>
+    </marker>
+    <marker id="arrowT" markerWidth="12" markerHeight="12" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L10,5 L0,10 L3,5 Z" fill="#28C9D2"/>
+    </marker>
+  </defs>
+
+  <rect width="1660" height="1080" fill="url(#bg)"/>
+  <!-- subtle grid glow -->
+  <circle cx="820" cy="540" r="560" fill="#1A3A66" opacity="0.18"/>
+
+  <!-- ===== TITLE ===== -->
+  <text x="60" y="62" fill="#FFFFFF" font-size="34" font-weight="700">Architecture de la solution Observabilité &amp; AIOps</text>
+  <text x="60" y="94" fill="#9FB6D4" font-size="17" font-weight="400">BMC Helix — Discovery · Operations Management with AIOps · ITSM · SIGNL4</text>
+  <!-- BMC logo top-right -->
+  <g transform="translate(1500,38)" filter="url(#softshadow)">
+    <rect width="100" height="56" rx="10" fill="url(#orange)"/>
+    <text x="50" y="40" fill="#FFFFFF" font-size="30" font-weight="800" text-anchor="middle" letter-spacing="1">bmc</text>
+  </g>
+
+  <!-- ===== ZONE HEADERS ===== -->
+  <text x="60" y="158" fill="#FF8A3D" font-size="18" font-weight="700" letter-spacing="2">1 · SOURCES DE DONNÉES</text>
+  <text x="470" y="158" fill="#FF8A3D" font-size="18" font-weight="700" letter-spacing="2">2 · DATA LAKE INTELLIGENT &amp; AIOps</text>
+  <text x="1245" y="158" fill="#FF8A3D" font-size="18" font-weight="700" letter-spacing="2">3 · RÉPONSE &amp; ENGAGEMENT</text>
+
+  <!-- =================================================================== -->
+  <!-- ZONE 1 : SOURCES -->
+  <!-- =================================================================== -->
+
+  <!-- Card: BMC Helix Discovery -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="185" width="345" height="195" rx="16" fill="#FFFFFF"/>
+    <rect x="60" y="185" width="8" height="195" rx="4" fill="url(#orange)"/>
+  </g>
+  <g transform="translate(348,202)">
+    <rect width="44" height="30" rx="6" fill="url(#orange)"/>
+    <text x="22" y="22" fill="#FFFFFF" font-size="17" font-weight="800" text-anchor="middle">bmc</text>
+  </g>
+  <text x="88" y="222" fill="#0C1626" font-size="20" font-weight="700">BMC Helix Discovery</text>
+  <text x="88" y="246" fill="#5A6B82" font-size="13" font-weight="600">Découverte &amp; cartographie automatique</text>
+  <g fill="#33465E" font-size="14">
+    <text x="88" y="280">• Topologie &amp; dépendances applicatives</text>
+    <text x="88" y="306">• Modélisation des services métier</text>
+    <text x="88" y="332">• CMDB / Configuration Items (CI)</text>
+    <text x="88" y="358">• Contexte d'impact &amp; relations</text>
+  </g>
+
+  <!-- Card: Monitoring sources -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="405" width="345" height="335" rx="16" fill="#FFFFFF"/>
+    <rect x="60" y="405" width="8" height="335" rx="4" fill="url(#orange)"/>
+  </g>
+  <text x="88" y="442" fill="#0C1626" font-size="20" font-weight="700">Sources de Monitoring</text>
+  <text x="88" y="466" fill="#5A6B82" font-size="13" font-weight="600">Observabilité full-stack · ingestion temps réel</text>
+
+  <!-- 4 telemetry chips -->
+  <g font-size="16" font-weight="700" text-anchor="middle">
+    <g transform="translate(88,490)">
+      <rect width="145" height="78" rx="12" fill="#FFF1E8" stroke="#FFD0B0"/>
+      <circle cx="26" cy="30" r="11" fill="url(#orange)"/>
+      <text x="80" y="35" fill="#C2410C" font-size="17">Events</text>
+      <text x="72" y="58" fill="#94704F" font-size="11" font-weight="500">Alertes / signaux</text>
+    </g>
+    <g transform="translate(248,490)">
+      <rect width="145" height="78" rx="12" fill="#FFF1E8" stroke="#FFD0B0"/>
+      <circle cx="26" cy="30" r="11" fill="url(#orange)"/>
+      <text x="82" y="35" fill="#C2410C" font-size="17">Metrics</text>
+      <text x="80" y="58" fill="#94704F" font-size="11" font-weight="500">KPIs / séries temp.</text>
+    </g>
+    <g transform="translate(88,582)">
+      <rect width="145" height="78" rx="12" fill="#FFF1E8" stroke="#FFD0B0"/>
+      <circle cx="26" cy="30" r="11" fill="url(#orange)"/>
+      <text x="80" y="35" fill="#C2410C" font-size="17">Logs</text>
+      <text x="74" y="58" fill="#94704F" font-size="11" font-weight="500">Journaux applicatifs</text>
+    </g>
+    <g transform="translate(248,582)">
+      <rect width="145" height="78" rx="12" fill="#FFF1E8" stroke="#FFD0B0"/>
+      <circle cx="26" cy="30" r="11" fill="url(#orange)"/>
+      <text x="82" y="35" fill="#C2410C" font-size="17">Traces</text>
+      <text x="80" y="58" fill="#94704F" font-size="11" font-weight="500">Transactions / APM</text>
+    </g>
+  </g>
+  <text x="232" y="700" fill="#5A6B82" font-size="12.5" font-weight="600" text-anchor="middle">Outils tiers &amp; agents · OpenTelemetry · connecteurs</text>
+  <text x="232" y="722" fill="#8FA0B8" font-size="11.5" text-anchor="middle">(BMC Helix &amp; sources externes)</text>
+
+  <!-- =================================================================== -->
+  <!-- ZONE 2 : BMC HELIX OPERATIONS MANAGEMENT + AIOps -->
+  <!-- =================================================================== -->
+  <g filter="url(#shadow)">
+    <rect x="445" y="185" width="755" height="700" rx="22" fill="url(#brain)"/>
+    <rect x="445" y="185" width="755" height="700" rx="22" fill="none" stroke="#FE5000" stroke-opacity="0.45" stroke-width="1.5"/>
+  </g>
+
+  <!-- Header band -->
+  <g>
+    <path d="M445,207 a22,22 0 0 1 22,-22 h711 a22,22 0 0 1 22,22 v74 h-755 z" fill="url(#orangeH)"/>
+    <text x="475" y="232" fill="#FFFFFF" font-size="23" font-weight="800">BMC Helix Operations Management with AIOps</text>
+    <text x="475" y="258" fill="#FFE6D5" font-size="13.5" font-weight="600">Data lake intelligent · corrélation, contextualisation &amp; orchestration événementielle</text>
+    <!-- HelixGPT badge -->
+    <g transform="translate(1035,222)">
+      <rect width="140" height="34" rx="17" fill="#0C1626" opacity="0.92"/>
+      <circle cx="22" cy="17" r="7" fill="#28C9D2"/>
+      <text x="78" y="22" fill="#FFFFFF" font-size="13.5" font-weight="700" text-anchor="middle">BMC HelixGPT</text>
+    </g>
+  </g>
+
+  <text x="475" y="312" fill="#9FB6D4" font-size="13" font-weight="700" letter-spacing="1.5">CAPACITÉS AIOps</text>
+
+  <!-- Capability cards grid 2 x 3 -->
+  <!-- Row 1 -->
+  <g filter="url(#softshadow)">
+    <rect x="470" y="326" width="350" height="148" rx="14" fill="#FFFFFF"/>
+    <rect x="470" y="326" width="7" height="148" rx="3.5" fill="url(#orange)"/>
+  </g>
+  <text x="496" y="362" fill="#0C1626" font-size="18" font-weight="700">Détection de Situations</text>
+  <text x="496" y="388" fill="#56697F" font-size="13.5">Situation Analyzer — regroupement</text>
+  <text x="496" y="408" fill="#56697F" font-size="13.5">intelligent des événements en</text>
+  <text x="496" y="428" fill="#56697F" font-size="13.5">incidents actionnables (réduction</text>
+  <text x="496" y="448" fill="#56697F" font-size="13.5">du bruit / noise reduction).</text>
+
+  <g filter="url(#softshadow)">
+    <rect x="828" y="326" width="350" height="148" rx="14" fill="#FFFFFF"/>
+    <rect x="828" y="326" width="7" height="148" rx="3.5" fill="url(#orange)"/>
+  </g>
+  <text x="854" y="362" fill="#0C1626" font-size="18" font-weight="700">Root Cause Analysis</text>
+  <text x="854" y="388" fill="#56697F" font-size="13.5">Deep RCA — agents autonomes qui</text>
+  <text x="854" y="408" fill="#56697F" font-size="13.5">analysent logs &amp; changements et</text>
+  <text x="854" y="428" fill="#56697F" font-size="13.5">produisent un graphe causal</text>
+  <text x="854" y="448" fill="#56697F" font-size="13.5">explicable de la cause racine.</text>
+
+  <!-- Row 2 -->
+  <g filter="url(#softshadow)">
+    <rect x="470" y="488" width="350" height="148" rx="14" fill="#FFFFFF"/>
+    <rect x="470" y="488" width="7" height="148" rx="3.5" fill="url(#orange)"/>
+  </g>
+  <text x="496" y="524" fill="#0C1626" font-size="18" font-weight="700">Probable Cause Analysis</text>
+  <text x="496" y="550" fill="#56697F" font-size="13.5">Détermination de la cause la plus</text>
+  <text x="496" y="570" fill="#56697F" font-size="13.5">probable d'un incident à l'échelle</text>
+  <text x="496" y="590" fill="#56697F" font-size="13.5">du service, avec explication des</text>
+  <text x="496" y="610" fill="#56697F" font-size="13.5">situations (situation explanation).</text>
+
+  <g filter="url(#softshadow)">
+    <rect x="828" y="488" width="350" height="148" rx="14" fill="#FFFFFF"/>
+    <rect x="828" y="488" width="7" height="148" rx="3.5" fill="url(#orange)"/>
+  </g>
+  <text x="854" y="524" fill="#0C1626" font-size="18" font-weight="700">Best Action Recommendation</text>
+  <text x="854" y="550" fill="#56697F" font-size="13.5">BAR (breveté) — plan d'action de</text>
+  <text x="854" y="570" fill="#56697F" font-size="13.5">remédiation étape par étape généré</text>
+  <text x="854" y="590" fill="#56697F" font-size="13.5">par HelixGPT pour accélérer le</text>
+  <text x="854" y="610" fill="#56697F" font-size="13.5">MTTR (résolution).</text>
+
+  <!-- Row 3 -->
+  <g filter="url(#softshadow)">
+    <rect x="470" y="650" width="350" height="148" rx="14" fill="#FFFFFF"/>
+    <rect x="470" y="650" width="7" height="148" rx="3.5" fill="url(#orange)"/>
+  </g>
+  <text x="496" y="686" fill="#0C1626" font-size="18" font-weight="700">Deep / Causal Analysis</text>
+  <text x="496" y="712" fill="#56697F" font-size="13.5">Investigation approfondie multi-</text>
+  <text x="496" y="732" fill="#56697F" font-size="13.5">signaux (events, metrics, logs,</text>
+  <text x="496" y="752" fill="#56697F" font-size="13.5">traces) et raisonnement LLM pour</text>
+  <text x="496" y="772" fill="#56697F" font-size="13.5">le diagnostic explicable.</text>
+
+  <g filter="url(#softshadow)">
+    <rect x="828" y="650" width="350" height="148" rx="14" fill="#FFFFFF"/>
+    <rect x="828" y="650" width="7" height="148" rx="3.5" fill="url(#orange)"/>
+  </g>
+  <text x="854" y="686" fill="#0C1626" font-size="18" font-weight="700">Prédiction proactive</text>
+  <text x="854" y="712" fill="#56697F" font-size="13.5">Service Failure Prediction &amp; Change</text>
+  <text x="854" y="732" fill="#56697F" font-size="13.5">Risk Advisor — gestion prédictive</text>
+  <text x="854" y="752" fill="#56697F" font-size="13.5">des services à risque avant</text>
+  <text x="854" y="772" fill="#56697F" font-size="13.5">l'impact métier.</text>
+
+  <text x="822" y="848" fill="#9FB6D4" font-size="13" font-weight="600" text-anchor="middle">Moteur de corrélation &amp; d'orchestration — du signal brut à la décision automatisée</text>
+
+  <!-- =================================================================== -->
+  <!-- ZONE 3 : OUTPUTS -->
+  <!-- =================================================================== -->
+
+  <!-- Card: BMC Helix ITSM -->
+  <g filter="url(#shadow)">
+    <rect x="1245" y="185" width="355" height="230" rx="16" fill="#FFFFFF"/>
+    <rect x="1245" y="185" width="8" height="230" rx="4" fill="url(#orange)"/>
+  </g>
+  <g transform="translate(1543,202)">
+    <rect width="44" height="30" rx="6" fill="url(#orange)"/>
+    <text x="22" y="22" fill="#FFFFFF" font-size="17" font-weight="800" text-anchor="middle">bmc</text>
+  </g>
+  <text x="1273" y="222" fill="#0C1626" font-size="20" font-weight="700">BMC Helix ITSM</text>
+  <text x="1273" y="246" fill="#5A6B82" font-size="13" font-weight="600">Gestion des services IT</text>
+  <g fill="#33465E" font-size="14">
+    <text x="1273" y="282">• Création de tickets d'incident</text>
+    <text x="1273" y="310">• Cycle de vie incident / problème</text>
+    <text x="1273" y="338">• CMDB partagée avec Discovery</text>
+    <text x="1273" y="366">• Workflows &amp; SLA</text>
+  </g>
+  <text x="1273" y="398" fill="#C2410C" font-size="12.5" font-weight="700">→ Enregistrement &amp; traçabilité des incidents</text>
+
+  <!-- Card: SIGNL4 -->
+  <g filter="url(#shadow)">
+    <rect x="1245" y="445" width="355" height="395" rx="16" fill="#FFFFFF"/>
+    <rect x="1245" y="445" width="8" height="395" rx="4" fill="url(#teal)"/>
+  </g>
+  <!-- SIGNL4 logo -->
+  <g transform="translate(1470,460)">
+    <rect width="118" height="32" rx="8" fill="#0E2230"/>
+    <text x="59" y="22" fill="#2ED3DC" font-size="17" font-weight="800" text-anchor="middle" letter-spacing="1">SIGNL4</text>
+  </g>
+  <text x="1273" y="486" fill="#0C1626" font-size="20" font-weight="700">SIGNL4</text>
+  <text x="1273" y="508" fill="#5A6B82" font-size="13" font-weight="600">by Derdack · Mobile Alerting &amp; On-Call</text>
+  <g fill="#33465E" font-size="14">
+    <text x="1273" y="546">• Gestion des astreintes (on-call duty)</text>
+    <text x="1273" y="574">• Notifications : Push · SMS · Voix · Email</text>
+    <text x="1273" y="602">• Escalade &amp; accusé de réception</text>
+    <text x="1273" y="630">• Calendriers &amp; plannings d'équipe</text>
+    <text x="1273" y="658">• Catégorisation &amp; routage des alertes</text>
+    <text x="1273" y="686">• Suivi temps réel des acquittements</text>
+  </g>
+  <!-- channel chips -->
+  <g font-size="12.5" font-weight="700" text-anchor="middle" fill="#0E8C97">
+    <g transform="translate(1273,706)"><rect width="74" height="30" rx="15" fill="#E3FAFC" stroke="#9FE7ED"/><text x="37" y="20">Push</text></g>
+    <g transform="translate(1357,706)"><rect width="74" height="30" rx="15" fill="#E3FAFC" stroke="#9FE7ED"/><text x="37" y="20">SMS</text></g>
+    <g transform="translate(1441,706)"><rect width="74" height="30" rx="15" fill="#E3FAFC" stroke="#9FE7ED"/><text x="37" y="20">Voix</text></g>
+    <g transform="translate(1273,744)"><rect width="74" height="30" rx="15" fill="#E3FAFC" stroke="#9FE7ED"/><text x="37" y="20">Email</text></g>
+    <g transform="translate(1357,744)"><rect width="158" height="30" rx="15" fill="#E3FAFC" stroke="#9FE7ED"/><text x="79" y="20">App mobile &amp; escalade</text></g>
+  </g>
+  <text x="1273" y="800" fill="#0E8C97" font-size="12.5" font-weight="700">→ La bonne personne alertée, au bon moment</text>
+
+  <!-- =================================================================== -->
+  <!-- FLOW ARROWS -->
+  <!-- =================================================================== -->
+  <!-- Discovery -> center -->
+  <path d="M405,300 C425,320 430,360 443,375" fill="none" stroke="#FF8A3D" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="412" y="345" fill="#FFB27A" font-size="11.5" font-weight="600" transform="rotate(20 412 345)">topologie &amp; contexte</text>
+  <!-- Monitoring -> center -->
+  <path d="M405,560 C425,545 430,520 443,505" fill="none" stroke="#FF8A3D" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="410" y="555" fill="#FFB27A" font-size="11.5" font-weight="600" transform="rotate(-18 410 555)">events · metrics · logs · traces</text>
+
+  <!-- center -> ITSM -->
+  <path d="M1200,300 C1218,290 1226,300 1243,300" fill="none" stroke="#FF8A3D" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="1205" y="284" fill="#FFB27A" font-size="11.5" font-weight="700">Incidents</text>
+  <!-- center -> SIGNL4 -->
+  <path d="M1200,600 C1218,610 1226,600 1243,600" fill="none" stroke="#28C9D2" stroke-width="3" marker-end="url(#arrowT)"/>
+  <text x="1203" y="586" fill="#7FE3E9" font-size="11.5" font-weight="700">Alertes / astreinte</text>
+
+  <!-- bi-directional ITSM <-> SIGNL4 hint -->
+  <path d="M1422,415 L1422,443" fill="none" stroke="#9FB6D4" stroke-width="1.6" stroke-dasharray="4 4"/>
+
+  <!-- =================================================================== -->
+  <!-- LEGEND / FOOTER -->
+  <!-- =================================================================== -->
+  <g transform="translate(60,915)">
+    <text x="0" y="0" fill="#9FB6D4" font-size="13" font-weight="700" letter-spacing="1">LÉGENDE</text>
+    <g transform="translate(0,18)">
+      <line x1="0" y1="8" x2="40" y2="8" stroke="#FF8A3D" stroke-width="3" marker-end="url(#arrow)"/>
+      <text x="50" y="12" fill="#C7D6EA" font-size="13">Flux de données &amp; d'incidents (BMC Helix)</text>
+    </g>
+    <g transform="translate(360,18)">
+      <line x1="0" y1="8" x2="40" y2="8" stroke="#28C9D2" stroke-width="3" marker-end="url(#arrowT)"/>
+      <text x="50" y="12" fill="#C7D6EA" font-size="13">Notification / alerting (SIGNL4)</text>
+    </g>
+    <g transform="translate(680,18)">
+      <rect x="0" y="0" width="16" height="16" rx="4" fill="url(#orange)"/>
+      <text x="26" y="13" fill="#C7D6EA" font-size="13">Composants BMC Helix</text>
+    </g>
+    <g transform="translate(960,18)">
+      <rect x="0" y="0" width="16" height="16" rx="4" fill="url(#teal)"/>
+      <text x="26" y="13" fill="#C7D6EA" font-size="13">SIGNL4 — Derdack</text>
+    </g>
+  </g>
+
+  <text x="60" y="1015" fill="#6E83A0" font-size="12">Du signal à l'action : Discovery (contexte) + Observabilité (signaux) → AIOps (corrélation, RCA, recommandation, prédiction) → ITSM (ticket) &amp; SIGNL4 (engagement de l'astreinte).</text>
+  <text x="1600" y="1050" fill="#41546E" font-size="11" text-anchor="end">Schéma d'architecture · proposition client · 2026</text>
+</svg>
