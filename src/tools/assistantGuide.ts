@@ -254,7 +254,7 @@ export function buildServerInstructions(): string {
     "",
     "Classes de nœud RÉELLES : Host, SoftwareInstance, NetworkDevice, SoftwareContainer, BusinessService, BusinessApplicationInstance, Cluster, StorageSystem… Mappe les alias FR/EN vers la vraie classe avec `discovery_resolve_kind` ; ne devine jamais un kind.",
     "Limites & pagination : par défaut un appel ramène le max de l'API. Si un cap est configuré (MCP_RESULT_LIMIT), chaque page est bornée — quand le résumé indique hasMore, rappeler le même outil avec offset=nextOffset pour la suite. N'invente aucun paramètre de limite par appel.",
-    "DSL : n'écris jamais de DSL à la main → `discovery_build_query` compose+valide, puis `discovery_execute_dsl` exécute. Le cookbook DSL complet (grammaire + exemples) est embarqué dans la description de `discovery_execute_dsl` (chargé à la connexion) ; il est aussi exposé en resource `mcp://discovery/dsl-cookbook`.",
+    "DSL : n'écris jamais de DSL à la main → `discovery_build_query` compose+valide, puis `discovery_execute_dsl` exécute. **Double validation** sur `discovery_execute_dsl` : le 1er appel (confirm=false) valide et ESTIME le nombre de lignes sans exécuter ; présente l'estimation à l'utilisateur et ne rappelle avec confirm=true QUE s'il valide (coût en tokens). Le cookbook DSL complet (grammaire + exemples) est embarqué dans la description de `discovery_execute_dsl` (chargé à la connexion) ; il est aussi exposé en resource `mcp://discovery/dsl-cookbook`.",
     "Prompts MCP disponibles (workflows guidés) : cve_impact, value_review, eol_audit, dependency_analysis.",
     "",
     "Règles d'orchestration :",

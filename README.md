@@ -166,7 +166,7 @@ The CSV is the source of truth; no live cloud pricing or currency conversion is 
 
 ## Discovery DSL authoring helpers
 
-`discovery_execute_dsl` is the guarded DSL execution tool for exploratory raw BMC Discovery DSL: it requires no user confirmation, validates the candidate query locally, then verifies referenced kinds against the live taxonomy before executing. Its description includes the DSL reference for clause ordering, traversal syntax, key expressions, `NODECOUNT`, named traversals, string literals, canonical examples, and recovery hints.
+`discovery_execute_dsl` is the guarded DSL execution tool for exploratory raw BMC Discovery DSL. It validates the candidate query locally (Gate 1), verifies referenced kinds against the live taxonomy (Gate 2), then applies a **two-step confirmation** (Gate 3): the first call (`confirm=false`, default) validates and **estimates the matching row count without executing** (`stage='confirmation_required'`) so the token cost can be reviewed; re-call with `confirm=true` only after the user approves. Its description includes the DSL reference for clause ordering, traversal syntax, key expressions, `NODECOUNT`, named traversals, string literals, canonical examples, and recovery hints.
 
 Before writing raw DSL for `discovery_execute_dsl`:
 

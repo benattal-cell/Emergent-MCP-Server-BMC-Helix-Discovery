@@ -14,13 +14,30 @@ function fakeClient() {
 }
 
 describe("discovery_execute_dsl", () => {
-  it("executes a valid query directly without userConfirmed or provenance", async () => {
+  it("requires confirmation first (confirm=false): estimates rows without executing", async () => {
     const client = fakeClient();
     const tool = executeDslTools(client).discovery_execute_dsl;
 
     const result = await tool.handler({
       request: "Explore hosts",
       query: "SEARCH Host SHOW name"
+    });
+
+    expect(result.stage).toBe("confirmation_required");
+    expect(result.executed).toBe(false);
+    expect(result.estimatedRows).toBe(1); // from the cheap count-only query
+    expect(client.queryJson).toHaveBeenCalledTimes(1);
+    expect(client.queryJson).toHaveBeenCalledWith("SEARCH Host SHOW name", 0, expect.any(Object)); // count-only, not the full run
+  });
+
+  it("executes a valid query when confirm=true", async () => {
+    const client = fakeClient();
+    const tool = executeDslTools(client).discovery_execute_dsl;
+
+    const result = await tool.handler({
+      request: "Explore hosts",
+      query: "SEARCH Host SHOW name",
+      confirm: true
     });
 
     expect(result.stage).toBe("executed");
